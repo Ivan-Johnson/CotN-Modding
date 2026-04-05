@@ -20,12 +20,13 @@
 				system = "x86_64-linux";
 				config.allowUnfreePredicate = pkg: builtins.elem (nixpkgs.lib.getName pkg) [ "vscode" ];
 			};
+
+			shell = pkgs.mkShell { buildInputs = [ pkgs.vscode ]; };
 		in
 		{
-			devShells.x86_64-linux.default = pkgs.mkShell {
-				buildInputs = [
-					pkgs.vscode
-				];
-			};
+			devShells.x86_64-linux.default = shell;
+
+			# TODO - update my pre-push hook so that it doesn't require this to exist
+			packages.x86_64-linux.default = shell;
 		};
 }

@@ -1,3 +1,2 @@
-crawl.py
 flake.nix
-dev-tools/bin/download-docs
+download-docs
