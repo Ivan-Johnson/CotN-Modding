@@ -1,0 +1,94 @@
+#!/usr/bin/env nix-shell
+#!nix-shell -i bash -p htmlq -p pandoc
+set -euo pipefail
+
+if [[ -v DEBUG ]]; then
+	set -x
+fi
+
+###################
+# PARSE ARGUMENTS #
+###################
+
+basename="$(basename "$0")"
+
+if [ "$#" -ge 1 ] && ( [ "$1" = "-h" ] || [ "$1" = "--help" ] ); then
+	cat <<-EOF
+		This script is used to foo.
+
+		You need bar before you can use this script. Then baz, abc, and xyz.
+	EOF
+
+	# We use printf to print example commands in two columns, while making sure that the columns are aligned
+	fstring="\t%-40s %s\n"
+	printf "$fstring" "[EXAMPLE COMMAND]" "[DESCRIPTION]"
+	printf "$fstring" "$basename" 'This invokes the default behavior, of doing abc, and then xyz.'
+	#printf "$fstring" "$basename --foo" "The foo option is used to ..."
+	exit 0
+fi
+
+if [ "$#" -ge 1 ] && [ "${1:0:1}" = '-' ]; then
+	echo "Error: This script takes no arguments."
+	echo
+	"$0" --help
+	exit 1
+fi
+
+# TODO
+#
+# Do fancy `while getopts "..." opt; do` parsing
+
+#########
+# SETUP #
+#########
+REPO_ROOT="$(git -C "$(dirname "$0")" rev-parse --show-toplevel)"
+cd "$REPO_ROOT"
+
+##############
+# MAIN LOGIC #
+##############
+
+CACHE_DIR="$(realpath Cache)"
+mkdir -p "$CACHE_DIR"
+
+ORIGINAL_HTML_DIR="$CACHE_DIR/1-OriginalHTML"
+MINIMAL_HTML_DIR="$CACHE_DIR/2-MinimalHTML"
+MD_DIR="$CACHE_DIR/3-Markdown"
+
+trash "$MINIMAL_HTML_DIR" || true
+# trash "$MD_DIR" || true
+
+mkdir -p "$ORIGINAL_HTML_DIR" "$MINIMAL_HTML_DIR" "$MD_DIR"
+
+# 1. Download HTML from the website
+#
+# mkdir -p "$ORIGINAL_HTML_DIR"
+# cd "$ORIGINAL_HTML_DIR"
+# wget --mirror --convert-links --adjust-extension --page-requisites -P . https://vortexbuffer.com/synchrony/docs/ --wait=3
+
+
+# 2. Remove boilerplate code & cleanup file structure
+# time find "$ORIGINAL_HTML_DIR" -name '*.html' | while read old_path; do
+# 	relative_path="${old_path#$ORIGINAL_HTML_DIR/}"
+# 	new_path="$MINIMAL_HTML_DIR/$relative_path"
+# 	mkdir -p "$(dirname "$new_path")"
+#
+# 	htmlq article --ignore-whitespace --pretty --filename "$old_path" --output "$new_path"
+# done
+
+
+# 3. HTML -> Markdown
+time find "$MINIMAL_HTML_DIR" -name '*.html' | while read old_path; do
+	relative_path="${old_path#$MINIMAL_HTML_DIR/}"
+	new_path="$MD_DIR/$relative_path"
+	mkdir -p "$(dirname "$new_path")"
+
+	new_path="${new_path/.html}.md"
+
+	if [ "$(basename "$new_path")" = "index.md" ]; then
+		new_path="${new_path/\/index.md}.md"
+	fi
+
+	#
+	pandoc --from=html --to=commonmark-alerts-ascii_identifiers-attributes-autolink_bare_uris-bracketed_spans-definition_lists-east_asian_line_breaks-emoji-fancy_lists-fenced_divs-footnotes-gfm_auto_identifiers-hard_line_breaks-implicit_figures-implicit_header_references-pipe_tables-raw_attribute-raw_html-rebase_relative_paths-smart-sourcepos-strikeout-subscript-superscript-task_lists-tex_math_dollars-tex_math_gfm-wikilinks_title_after_pipe-wikilinks_title_before_pipe-yaml_metadata_block  "$old_path" --output "$new_path"
+done
