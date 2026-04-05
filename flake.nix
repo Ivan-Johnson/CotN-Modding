@@ -21,7 +21,14 @@
 				config.allowUnfreePredicate = pkg: builtins.elem (nixpkgs.lib.getName pkg) [ "vscode" ];
 			};
 
-			shell = pkgs.mkShell { buildInputs = [ pkgs.vscode ]; };
+			shell = pkgs.mkShell {
+				buildInputs = [
+					pkgs.gnumake
+					pkgs.htmlq
+					pkgs.pandoc
+					pkgs.vscode
+				];
+			};
 		in
 		{
 			devShells.x86_64-linux.default = shell;
