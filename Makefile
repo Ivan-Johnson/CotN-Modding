@@ -4,8 +4,6 @@ SHELL := bash
 
 all: output/1-original-html.tar.gz
 
-REPO_ROOT := $(shell git rev-parse --show-toplevel)
-
 .PHONY: all clean
 
 # We intentionally do not define a `clean` target. Downloading the HTML files is 
@@ -14,23 +12,22 @@ REPO_ROOT := $(shell git rev-parse --show-toplevel)
 # clean:
 #	rm -rf output/
 
-output/:
-	mkdir -p "output"
-
-output/1-original-html.tar.gz: output/
+output/1-original-html.tar.gz:
+	set -x
 	tmp="$$(mktemp -d)"
+	trap 'rm -rf "$$tmp"' EXIT
+	echo "$$tmp"
 
 	# Production:
-	# wget --mirror --convert-links --adjust-extension --page-requisites -P . https://vortexbuffer.com/synchrony/docs/ --wait=3
+	# wget --mirror --convert-links --adjust-extension --page-requisites -P "$$tmp" https://vortexbuffer.com/synchrony/docs/ --wait=3
 
 	# Development:
-	wget -P "$$tmp" --wait=3 https://vortexbuffer.com/synchrony/docs/
-	wget -P "$$tmp" --wait=3 https://vortexbuffer.com/synchrony/docs/modules/necro.audio.Music/
-	wget -P "$$tmp" --wait=3 https://vortexbuffer.com/synchrony/docs/components/necro.game.data.component.character.BeatDelayComponents/
+	# wget -P "$$tmp" --wait=3 https://vortexbuffer.com/synchrony/docs/
+	# wget -P "$$tmp" --wait=3 https://vortexbuffer.com/synchrony/docs/modules/necro.audio.Music/
+	# wget -P "$$tmp" --wait=3 https://vortexbuffer.com/synchrony/docs/components/necro.game.data.component.character.BeatDelayComponents/
 
-	tar -zcvf "$@" -C "$$tmp" .
-
-	rm -rf "$$tmp"
+	tar -zcf "$@.tmp" -C "$$tmp" .
+	mv "$@.tmp" "$@"
 
 #minimal-html: download-html
 #	trash "$(MINIMAL_HTML_DIR)" || true
