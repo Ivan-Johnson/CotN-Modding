@@ -2,7 +2,7 @@ SHELL := bash
 .SHELLFLAGS := -eu -o pipefail -c
 .ONESHELL:
 
-all: output/1-original-html.tar.gz
+all: output/2-minimal-html.tar.gz
 
 .PHONY: all clean
 
@@ -23,22 +23,29 @@ output/1-original-html.tar.gz:
 
 	# Development:
 	# wget -P "$$tmp" --wait=3 https://vortexbuffer.com/synchrony/docs/
-	# wget -P "$$tmp" --wait=3 https://vortexbuffer.com/synchrony/docs/modules/necro.audio.Music/
-	# wget -P "$$tmp" --wait=3 https://vortexbuffer.com/synchrony/docs/components/necro.game.data.component.character.BeatDelayComponents/
 
 	tar -zcf "$@.tmp" -C "$$tmp" .
 	mv "$@.tmp" "$@"
 
-#minimal-html: download-html
-#	trash "$(MINIMAL_HTML_DIR)" || true
-#	mkdir -p "$(ORIGINAL_HTML_DIR)" "$(MINIMAL_HTML_DIR)"
-#	time find "$(ORIGINAL_HTML_DIR)" -name '*.html' | while read -r old_path; do \
-#		relative_path="$${old_path#$(ORIGINAL_HTML_DIR)/}"; \
-#		new_path="$(MINIMAL_HTML_DIR)/$$relative_path"; \
-#		mkdir -p "$$(dirname "$$new_path")"; \
-#		htmlq article --ignore-whitespace --pretty --filename "$$old_path" --output "$$new_path"; \
-#	done
-#
+output/2-minimal-html.tar.gz: output/1-original-html.tar.gz
+	tmp="$$(mktemp -d)"
+	trap 'rm -rf "$$tmp"' EXIT
+	src="$$tmp/src"
+	dst="$$tmp/dst"
+	mkdir -p "$$src" "$$dst"
+
+	tar -zxf "$<" -C "$$src"
+
+	find "$$src" -name '*.html' | while read -r old_path; do
+		relative_path="$${old_path#$$src/}"
+		new_path="$$dst/$$relative_path"
+		mkdir -p "$$(dirname "$$new_path")"
+		htmlq article --ignore-whitespace --pretty --filename "$$old_path" --output "$$new_path"
+	done
+
+	tar -zcf "$@.tmp" -C "$$dst" .
+	mv "$@.tmp" "$@"
+
 #html-to-markdown: minimal-html
 #	mkdir -p "$(MD_DIR)"
 #	time find "$(MINIMAL_HTML_DIR)" -name '*.html' | while read -r old_path; do \
