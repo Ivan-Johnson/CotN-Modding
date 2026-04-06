@@ -2,30 +2,39 @@ SHELL := bash
 .SHELLFLAGS := -eu -o pipefail -c
 .ONESHELL:
 
+DEBUG_ACCEPT_REGEX := ^.*/docs/(index.html|modules/|modules/necro.client.ClientEvents/|components/|components/necro.game.data.component.character.AutoCastComponents/)$$
+PRODUCTION_ACCEPT_REGEX := .*
+
+ifeq ($(BUILD_MODE),debug)
+ACCEPT_REGEX := $(DEBUG_ACCEPT_REGEX)
+else ifeq ($(BUILD_MODE),production)
+ACCEPT_REGEX := $(PRODUCTION_ACCEPT_REGEX)
+else ifeq ($(strip $(BUILD_MODE)),)
+# Use debug by default
+ACCEPT_REGEX := $(DEBUG_ACCEPT_REGEX)
+else
+$(error Invalid BUILD_MODE='$(BUILD_MODE)' (use BUILD_MODE=debug or BUILD_MODE=production))
+endif
+
 all: output/3-html-to-markdown.tar.gz
 
 .PHONY: all clean
 
-# We intentionally do not define a `clean` target. Downloading the HTML files is 
-# time-consuming, so we want to avoid accidentally deleting them.
-#
-# clean:
-#	rm -rf output/
+clean:
+	rm -f output/2-minimal-html.tar.gz output/3-html-to-markdown.tar.gz
 
+# This takes about an hour to run
 output/1-original-html.tar.gz:
 	set -x
+	mkdir output
 	tmp="$$(mktemp -d)"
 	trap 'rm -rf "$$tmp"' EXIT
 	echo "$$tmp"
-
-	# Production:
-	wget --mirror --convert-links --adjust-extension --page-requisites -P "$$tmp" https://vortexbuffer.com/synchrony/docs/ --wait=3
-
-	# Development:
-	# wget -P "$$tmp" --wait=3 https://vortexbuffer.com/synchrony/docs/
+	wget --recursive --level=inf --wait=3 --convert-links --adjust-extension "--directory-prefix=$$tmp" https://vortexbuffer.com/synchrony/docs/index.html "--accept-regex=$(ACCEPT_REGEX)"
 
 	tar -zcf "$@.tmp" -C "$$tmp" .
 	mv "$@.tmp" "$@"
+	chmod -w "$@"
 
 output/2-minimal-html.tar.gz: output/1-original-html.tar.gz
 	tmp="$$(mktemp -d)"
