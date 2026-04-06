@@ -68,3 +68,19 @@ output/3-html-to-markdown.tar.gz: output/2-minimal-html.tar.gz
 
 	tar -zcf "$@.tmp" -C "$$dst" .
 	mv "$@.tmp" "$@"
+
+deploy: output/3-html-to-markdown.tar.gz
+	tmp="$$(mktemp -d)"
+	echo "$$tmp"
+	# trap 'rm -rf "$$tmp"' EXIT
+	tar -zxf "$<" -C "$$tmp"
+	cd "$$tmp"
+	git init
+	git remote add origin git@github.com:Ivan-Johnson/CotN-docs.git
+	git fetch origin mainline
+	git switch --create mainline
+	git reset --soft origin/mainline
+	echo "$$(date)" > timestamp.txt
+	git add .
+	git commit -m "Update $$(cat timestamp.txt)"
+	git push origin mainline
