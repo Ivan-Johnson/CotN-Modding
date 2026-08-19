@@ -1,2 +1,4 @@
-flake.nix
 Makefile
+
+flake.nix
+open_files.txt
