@@ -2,7 +2,7 @@
 	description = "Dev Env for PracticeTracker2";
 
 	inputs = {
-		nixpkgs.url = "nixpkgs/nixos-25.11-small";
+		nixpkgs.url = "nixpkgs/nixos-26.05";
 		fenix = {
 			url = "github:nix-community/fenix";
 			inputs.nixpkgs.follows = "nixpkgs";
