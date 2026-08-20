@@ -5,13 +5,19 @@ SHELL := bash
 ACCEPT_REGEX_DEBUG := ^.*/docs/(index.html|modules/|modules/necro.client.ClientEvents/|components/|components/necro.game.data.component.character.AutoCastComponents/)$$
 ACCEPT_REGEX_PRODUCTION := .*
 
+BRANCH_DEBUG := debug
+BRANCH_PRODUCTION := mainline
+
 ifeq ($(BUILD_MODE),debug)
 ACCEPT_REGEX := $(ACCEPT_REGEX_DEBUG)
+BRANCH := $(BRANCH_DEBUG)
 else ifeq ($(BUILD_MODE),production)
 ACCEPT_REGEX := $(ACCEPT_REGEX_PRODUCTION)
+BRANCH := $(BRANCH_PRODUCTION)
 else ifeq ($(strip $(BUILD_MODE)),)
 # Use debug by default
 ACCEPT_REGEX := $(ACCEPT_REGEX_DEBUG)
+BRANCH := $(BRANCH_DEBUG)
 else
 $(error Invalid BUILD_MODE='$(BUILD_MODE)' (use BUILD_MODE=debug or BUILD_MODE=production))
 endif
@@ -87,10 +93,10 @@ deploy: output/3-html-to-markdown.tar.gz
 	cd "$$tmp"
 	git init
 	git remote add origin git@github.com:Ivan-Johnson/CotN-docs.git
-	git fetch origin mainline
-	git switch --create mainline
-	git reset --soft origin/mainline
+	git fetch origin "$(BRANCH)"
+	git switch --create "$(BRANCH)"
+	git reset --soft "origin/$(BRANCH)"
 	echo "$$(date)" > timestamp.txt
 	git add .
 	git commit -m "Update $$(cat timestamp.txt)"
-	git push origin mainline
+	git push origin "$(BRANCH)"
