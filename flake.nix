@@ -23,10 +23,16 @@
 
 			shell = pkgs.mkShell {
 				buildInputs = [
+					pkgs.bash
+					pkgs.coreutils
+					pkgs.git
 					pkgs.gnumake
 					pkgs.htmlq
+					pkgs.nix
+					pkgs.nixfmt
 					pkgs.pandoc
 					pkgs.vscode
+					pkgs.which
 				];
 			};
 		in
