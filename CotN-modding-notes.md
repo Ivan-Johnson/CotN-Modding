@@ -35,6 +35,28 @@
 * For support and troubleshooting, the docs recommend the Discord
   `#mod-help` channel.
 
+## Installed mod patterns
+
+* Each copied mod ships as a packaged `.zip` with a `mod.json` manifest
+  and one or more Lua entrypoints.
+* `mod.json` is the key metadata file: it records namespace, display
+  name, version, Synchrony version, description, author, icon, banner,
+  homepage, and the Lua `scriptPath`.
+* Some mods load Lua from the archive root, while others point
+  `scriptPath` at a subdirectory such as `scripts/`.
+* The entrypoint style is straightforward: require modules, register
+  events, and mutate game state or UI from handlers.
+* The examples include both gameplay mods and utility/QoL mods, such as
+  racing tools, level-start grace, restart tweaks, and practice logging.
+* The archives can include extra assets alongside Lua, such as icons,
+  banners, sprites, audio, and nested folders like `gfx/`.
+* At least one mod includes a `.bak` backup of its Lua file, so unpacked
+  archives may contain editor leftovers as well as runtime files.
+* Real mods often use `ModEvent.addUnloadHandler()` to clean up settings
+  overrides and other state when the mod is disabled.
+* The code makes heavy use of shared settings, snapshot variables, and
+  event overrides, which is a useful template for future mods.
+
 ## Local doc sources
 
 * `Tmp/CotN-docs/vortexbuffer.com/synchrony/docs.md`

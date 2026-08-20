@@ -18,6 +18,10 @@
 					pkgs.git
 					pkgs.nix
 					pkgs.nixfmt
+
+					# For packaging mods
+					pkgs.zip
+					pkgs.unzip
 				];
 				shellHook = "";
 			};
