@@ -2,16 +2,16 @@ SHELL := bash
 .SHELLFLAGS := -eu -o pipefail -c
 .ONESHELL:
 
-DEBUG_ACCEPT_REGEX := ^.*/docs/(index.html|modules/|modules/necro.client.ClientEvents/|components/|components/necro.game.data.component.character.AutoCastComponents/)$$
-PRODUCTION_ACCEPT_REGEX := .*
+ACCEPT_REGEX_DEBUG := ^.*/docs/(index.html|modules/|modules/necro.client.ClientEvents/|components/|components/necro.game.data.component.character.AutoCastComponents/)$$
+ACCEPT_REGEX_PRODUCTION := .*
 
 ifeq ($(BUILD_MODE),debug)
-ACCEPT_REGEX := $(DEBUG_ACCEPT_REGEX)
+ACCEPT_REGEX := $(ACCEPT_REGEX_DEBUG)
 else ifeq ($(BUILD_MODE),production)
-ACCEPT_REGEX := $(PRODUCTION_ACCEPT_REGEX)
+ACCEPT_REGEX := $(ACCEPT_REGEX_PRODUCTION)
 else ifeq ($(strip $(BUILD_MODE)),)
 # Use debug by default
-ACCEPT_REGEX := $(DEBUG_ACCEPT_REGEX)
+ACCEPT_REGEX := $(ACCEPT_REGEX_DEBUG)
 else
 $(error Invalid BUILD_MODE='$(BUILD_MODE)' (use BUILD_MODE=debug or BUILD_MODE=production))
 endif
