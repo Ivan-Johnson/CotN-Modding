@@ -91,6 +91,13 @@ output/3-html-to-markdown.tar.gz: output/2-minimal-html.tar.gz
 deploy: output/1-original-html.tar.gz
 	tmp="$$(mktemp -d)"
 	echo "$$tmp"
+
+	# Do git stuff (and other metadata) before cd
+	git rev-parse HEAD > "$$tmp/git_HEAD.txt"
+	git diff HEAD > "$$tmp/git_diff.txt"
+	git status > "$$tmp/git_status.txt"
+	echo "$$(date)" > "$$tmp/timestamp.txt"
+
 	# trap 'rm -rf "$$tmp"' EXIT
 	tar -zxf "$<" -C "$$tmp"
 	cd "$$tmp"
@@ -99,9 +106,6 @@ deploy: output/1-original-html.tar.gz
 	git fetch origin "$(BRANCH)"
 	git switch --create "$(BRANCH)"
 	git reset --soft "origin/$(BRANCH)"
-	echo "$$(date)" > timestamp.txt
-	git status > git_status.txt
-	git rev-parse HEAD > git_commit.txt
 
 	git add .
 	git commit -m "Update $$(cat timestamp.txt)"
