@@ -33,7 +33,7 @@
 		{
 			devShells.x86_64-linux.default = shell;
 
-			# TODO - update my pre-push hook so that it doesn't require this to exist
+			# TODO - can we do something useful here instead?
 			packages.x86_64-linux.default = shell;
 		};
 }
