@@ -1,0 +1,14 @@
+{
+	"namespace": "HelloWorldMod",
+	"displayName": "Hello World Mod",
+	"version": "1.0.0",
+	"synchronyVersion": "4.2.0",
+	"description": "A minimal hello world mod for Crypt of the NecroDancer: Synchrony.",
+	"author": "Ivan Johnson",
+	"dependencies": {},
+	"api": {
+		"scriptPath": ""
+	},
+	"name": "HelloWorldMod",
+	"tags": []
+}
