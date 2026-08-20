@@ -16,10 +16,7 @@
 			fenix,
 		}:
 		let
-			pkgs = import nixpkgs {
-				system = "x86_64-linux";
-				config.allowUnfreePredicate = pkg: builtins.elem (nixpkgs.lib.getName pkg) [ "vscode" ];
-			};
+			pkgs = import nixpkgs { system = "x86_64-linux"; };
 
 			shell = pkgs.mkShell {
 				buildInputs = [
@@ -31,7 +28,6 @@
 					pkgs.nix
 					pkgs.nixfmt
 					pkgs.pandoc
-					pkgs.vscode
 					pkgs.which
 				];
 			};
