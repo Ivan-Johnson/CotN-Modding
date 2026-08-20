@@ -9,6 +9,11 @@
 		{ self, nixpkgs }:
 		let
 			pkgs = import nixpkgs { system = "x86_64-linux"; };
+			helloWorldModZip = pkgs.runCommand "hello-world-mod-zip" { nativeBuildInputs = [ pkgs.zip ]; } ''
+				mkdir -p "$out"
+				cd ${./HelloWorldMod}
+				zip -qr "$out/HelloWorldMod.zip" .
+			'';
 
 			shell = pkgs.mkShell {
 				buildInputs = with pkgs; [
@@ -23,13 +28,26 @@
 					pkgs.zip
 					pkgs.unzip
 				];
-				shellHook = "";
+				shellHook = "
+					alias 'build-install="nix build && nix run .#install-hello-world-mod"'
+				";
 			};
 		in
 		{
 			devShells.x86_64-linux.default = shell;
 
-			# TODO - actually build something useful here
-			packages.x86_64-linux.default = shell;
+			packages.x86_64-linux.default = helloWorldModZip;
+
+			apps.x86_64-linux.install-hello-world-mod = {
+				type = "app";
+				program = "${pkgs.writeShellScriptBin "install-hello-world-mod" ''
+					set -eu
+
+					target_dir="$HOME/.local/share/NecroDancer/downloadedMods"
+
+					mkdir -p "$target_dir"
+					cp -f ${helloWorldModZip}/HelloWorldMod.zip "$target_dir/HelloWorldMod.zip"
+				''}/bin/install-hello-world-mod";
+			};
 		};
 }
