@@ -87,7 +87,7 @@ output/3-html-to-markdown.tar.gz: output/2-minimal-html.tar.gz
 	tar -zcf "$@.tmp" -C "$$dst" .
 	mv "$@.tmp" "$@"
 
-deploy: output/3-html-to-markdown.tar.gz
+deploy: output/1-original-html.tar.gz
 	tmp="$$(mktemp -d)"
 	echo "$$tmp"
 	# trap 'rm -rf "$$tmp"' EXIT
