@@ -2,3 +2,4 @@ Makefile
 
 flake.nix
 open_files.txt
+TODO.txt
