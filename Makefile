@@ -100,6 +100,9 @@ deploy: output/1-original-html.tar.gz
 	git switch --create "$(BRANCH)"
 	git reset --soft "origin/$(BRANCH)"
 	echo "$$(date)" > timestamp.txt
+	git status > git_status.txt
+	git rev-parse HEAD > git_commit.txt
+
 	git add .
 	git commit -m "Update $$(cat timestamp.txt)"
 	git push origin "$(BRANCH)"
