@@ -26,15 +26,16 @@ clean:
 # This takes about an hour to run
 output/1-original-html.tar.gz:
 	set -x
-	mkdir output
-	tmp="$$(mktemp -d)"
-	trap 'rm -rf "$$tmp"' EXIT
+	mkdir -p output
+	tmp="$@.work"
+	mkdir -p "$$tmp"
 	echo "$$tmp"
-	wget --recursive --level=inf --wait=3 --convert-links --adjust-extension "--directory-prefix=$$tmp" https://vortexbuffer.com/synchrony/docs/index.html "--accept-regex=$(ACCEPT_REGEX)"
+	wget --recursive --level=inf --wait=3 --continue --convert-links --adjust-extension "--directory-prefix=$$tmp" https://vortexbuffer.com/synchrony/docs/index.html "--accept-regex=$(ACCEPT_REGEX)"
 
 	tar -zcf "$@.tmp" -C "$$tmp" .
 	mv "$@.tmp" "$@"
 	chmod -w "$@"
+	rm -rf "$$tmp"
 
 output/2-minimal-html.tar.gz: output/1-original-html.tar.gz
 	tmp="$$(mktemp -d)"
