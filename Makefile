@@ -31,6 +31,8 @@ clean:
 
 # This takes about an hour to run
 output/1-original-html.tar.gz:
+	log="$@.log"
+	exec > >(tee -a "$$log") 2>&1
 	set -x
 	mkdir -p output
 	tmp="$@.work"
