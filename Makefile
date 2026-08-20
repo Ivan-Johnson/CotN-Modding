@@ -38,7 +38,8 @@ output/1-original-html.tar.gz:
 	tmp="$@.work"
 	mkdir -p "$$tmp"
 	echo "$$tmp"
-	wget --recursive --level=inf --wait=3 --continue --convert-links --adjust-extension "--directory-prefix=$$tmp" https://vortexbuffer.com/synchrony/docs/index.html "--accept-regex=$(ACCEPT_REGEX)"
+	# TODO: Figure out what to do with `--wait`.
+	wget --recursive --level=inf --wait=3 --continue "--directory-prefix=$$tmp" https://vortexbuffer.com/synchrony/docs/index.html "--accept-regex=$(ACCEPT_REGEX)"
 
 	tar -zcf "$@.tmp" -C "$$tmp" .
 	mv "$@.tmp" "$@"
