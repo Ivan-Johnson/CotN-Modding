@@ -31,10 +31,12 @@ clean:
 
 # This takes about an hour to run
 output/1-original-html.tar.gz:
+	# Gotta make the directory first, otherwise the logs won't be saved
+	mkdir -p output
 	log="$@.log"
+
 	exec > >(tee -a "$$log") 2>&1
 	set -x
-	mkdir -p output
 	tmp="$@.work"
 	mkdir -p "$$tmp"
 	echo "$$tmp"
