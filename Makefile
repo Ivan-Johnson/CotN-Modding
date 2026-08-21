@@ -22,6 +22,14 @@ else
 $(error Invalid BUILD_MODE='$(BUILD_MODE)' (use BUILD_MODE=debug or BUILD_MODE=production))
 endif
 
+# Bad links:
+#
+# * On this page: https://vortexbuffer.com/synchrony/docs/events/holder/
+#
+#   Expected: https://vortexbuffer.com/synchrony/docs/events/object
+#   Actual:   https://vortexbuffer.com/synchrony/docs/events/events/object
+REJECT_REGEX := synchrony/docs/events/events/object
+
 all: output/3-html-to-markdown.tar.gz
 
 .PHONY: all clean
@@ -41,7 +49,7 @@ output/1-original-html.tar.gz:
 	mkdir -p "$$tmp"
 	echo "$$tmp"
 	# TODO: Figure out what to do with `--wait`.
-	wget --recursive --level=inf --wait=3 --continue "--directory-prefix=$$tmp" https://vortexbuffer.com/synchrony/docs/index.html "--accept-regex=$(ACCEPT_REGEX)"
+	wget --recursive --level=inf --wait=0 --continue "--directory-prefix=$$tmp" https://vortexbuffer.com/synchrony/docs/index.html "--accept-regex=$(ACCEPT_REGEX)" "--reject-regex=$(REJECT_REGEX)"
 
 	tar -zcf "$@.tmp" -C "$$tmp" .
 	mv "$@.tmp" "$@"
