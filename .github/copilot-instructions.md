@@ -13,6 +13,8 @@
   `nix eval --raw --impure --expr '(builtins.getFlake (toString ./.)).inputs.cotn-docs.outPath'`.
 - Check both Bash scripts for syntax errors with
   `bash -n crawl-and-push.bash html-to-docs.bash`.
+- Run the conversion tests with `nix develop -c ./test-html-to-docs.bash`. They
+  build tiny throwaway crawls, so they finish in seconds.
 - The dev shell provides `nixfmt`; format `flake.nix` with
   `nix develop -c nixfmt flake.nix`. There is no configured `nix fmt` formatter.
 
@@ -30,7 +32,9 @@ This repository is a two-stage documentation mirroring pipeline:
    `DST_DIR/share/man/man3/` tree.
 3. `flake.nix` pins the `CotN-docs` mirror as a non-flake input and packages the
    second stage. The default package, `.#markdown`, and `.#man` are the same
-   derivation, and the dev shell puts its man pages on `MANPATH`.
+   derivation, and the dev shell's `man-crypt` builds it on demand to read a
+   page. `docs` is deliberately not an input of the dev shell, so that the
+   shell stays usable when the conversion is broken.
    After publishing a production crawl, update that input with
    `nix flake update cotn-docs`.
 
@@ -74,3 +78,9 @@ generated state, not source files.
   HEAD, diff, status, and a timestamp in the mirror commit.
 - The private flake input is fetched over GitHub SSH. A build may require an SSH
   key with access when the pinned input is not already available locally.
+- `test-html-to-docs.bash` generates its fixtures rather than committing them,
+  so each case and its near-miss variants stay side by side. When adding a
+  behavior, add a case that fails without it; the existing cases are known to
+  fail if the dedupe, the page assertion, either of its error propagations, the
+  man collision check, the man section, or the `index.html` collapse guard is
+  removed.

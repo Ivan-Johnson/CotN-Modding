@@ -50,12 +50,15 @@ The result is a store path containing `minimal-html/`, `markdown/`, and
 `share/man/man3/`. `.#markdown` and `.#man` are aliases for that same
 derivation.
 
-The dev shell puts the man pages on `MANPATH`, so inside `nix develop` you can
-read any page directly:
+The dev shell provides `man-crypt`, which rebuilds the docs and then reads a
+page out of them:
 
 ```bash
-man necro.game.object.Map
+man-crypt necro.game.object.Map
 ```
+
+The docs are built on demand rather than being an input of the shell, so the
+shell can still be entered when the conversion is broken.
 
 The mirror is a private repo, so the input is fetched over SSH; you need a
 GitHub SSH key that can read it. The pinned revision lives in `flake.lock`, so

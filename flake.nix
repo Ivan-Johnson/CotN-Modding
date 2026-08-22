@@ -23,43 +23,45 @@
 		let
 			pkgs = import nixpkgs { system = "x86_64-linux"; };
 
+			# Everything `html-to-docs.bash` needs to run.
+			conversionTools = [
+				pkgs.bash
+				pkgs.coreutils
+				pkgs.findutils
+				pkgs.htmlq
+				pkgs.pandoc
+			];
+
 			shell = pkgs.mkShell {
-				buildInputs = [
-					pkgs.bash
-					pkgs.coreutils
+				buildInputs = conversionTools ++ [
 					pkgs.git
 					pkgs.gnumake
-					pkgs.htmlq
 					pkgs.less
 					pkgs.man-db
 					pkgs.nix
 					pkgs.nixfmt
-					pkgs.pandoc
 					pkgs.which
-					docs
 				];
+				# `docs` is deliberately not an input of this shell. Depending on
+				# it would mean the shell could not be entered whenever the
+				# conversion is broken, which is exactly when it is needed. It is
+				# built on demand instead.
 				shellHook = ''
-					export MANPATH="${docs}/share/man''${MANPATH:+:$MANPATH}"
+					# Rebuild the documentation, then read a page from it.
+					man-crypt() {
+						local out="$(nix build --no-link --print-out-paths "$ITJ_FLAKE_ROOT#man")" || return
+						MANPATH="$out/share/man" man "$@"
+					}
+					export -f man-crypt
 				'';
 			};
 
 			# The markdown and man page renderings of the HTML mirrored in the
 			# CotN-docs repo.
-			docs =
-				pkgs.runCommand "cotn-docs-rendered"
-					{
-						nativeBuildInputs = [
-							pkgs.bash
-							pkgs.coreutils
-							pkgs.findutils
-							pkgs.htmlq
-							pkgs.pandoc
-						];
-					}
-					''
-						export LC_ALL=C.UTF-8
-						bash ${./html-to-docs.bash} ${cotn-docs} "$out"
-					'';
+			docs = pkgs.runCommand "cotn-docs-rendered" { nativeBuildInputs = conversionTools; } ''
+				export LC_ALL=C.UTF-8
+				bash ${./html-to-docs.bash} ${cotn-docs} "$out"
+			'';
 		in
 		{
 			devShells.x86_64-linux.default = shell;
