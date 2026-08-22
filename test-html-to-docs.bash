@@ -9,6 +9,8 @@
 # Needs the same tools as the conversion itself, so run it in the dev shell:
 #
 #   nix develop -c ./test-html-to-docs.bash
+#
+# `nix flake check` runs it too, as a derivation.
 
 set -euo pipefail
 

@@ -5,11 +5,11 @@
 - `nix build` builds the docs. `result` holds `minimal-html/`, `markdown/`,
   `share/man/man3/`, and the `share/man/index.db` that `apropos` searches.
   `default` is the only package.
-- `nix flake check --no-build` evaluates the flake outputs.
-- `nix develop -c ./test-html-to-docs.bash` runs the conversion tests. They
-  build tiny throwaway crawls, so they finish in seconds.
-- `bash -n crawl-and-push.bash html-to-docs.bash test-html-to-docs.bash` checks
-  syntax.
+- `nix flake check` is the one validation command: it evaluates every output,
+  syntax checks all three scripts, and runs the conversion tests. The tests
+  build tiny throwaway crawls, so it finishes in seconds.
+- `nix develop -c ./test-html-to-docs.bash` runs just the tests, and prints
+  their output directly rather than through a build log.
 - The pinned raw crawl, which is what the conversion reads and what its output
   has to be compared against:
   `nix eval --raw --impure --expr '(builtins.getFlake (toString ./.)).inputs.cotn-docs.outPath'`

@@ -56,6 +56,27 @@
 				'';
 			};
 
+			# The scripts, isolated from the generated state around them so that
+			# a rebuilt `result` or a fresh crawl does not invalidate the tests.
+			scripts = pkgs.lib.fileset.toSource {
+				root = ./.;
+				fileset = pkgs.lib.fileset.unions [
+					./crawl-and-push.bash
+					./html-to-docs.bash
+					./test-html-to-docs.bash
+				];
+			};
+
+			# The conversion's own tests, which build throwaway crawls of their
+			# own and so need nothing from the network or the mirror.
+			tests = pkgs.runCommand "cotn-docs-tests" { nativeBuildInputs = conversionTools; } ''
+				export LC_ALL=C.UTF-8
+				cd ${scripts}
+				bash -n crawl-and-push.bash html-to-docs.bash test-html-to-docs.bash
+				bash ./test-html-to-docs.bash
+				touch "$out"
+			'';
+
 			# The markdown and man page renderings of the HTML mirrored in the
 			# CotN-docs repo.
 			docs =
@@ -82,5 +103,7 @@
 			devShells.x86_64-linux.default = shell;
 
 			packages.x86_64-linux.default = docs;
+
+			checks.x86_64-linux.tests = tests;
 		};
 }
