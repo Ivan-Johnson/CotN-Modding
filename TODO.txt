@@ -11,11 +11,6 @@
    are most of what the API reference actually says, so this is the one item
    that loses content rather than making it harder to find.
 
-1. Give the man pages a `.SH NAME` section. None of the 681 have one, so
-   `whatis`, `apropos` and `man -k` come up empty. Together with the missing
-   navigation, that leaves no way to find a page without already knowing its
-   name.
-
 1. Turn cross references into `name(3)` in the man pages. Pandoc drops the
    target of a relative link entirely, so `overview.3` mentions "the Modules
    section" with no way to reach it. `rewrite_links` already resolves a link to
@@ -35,8 +30,8 @@
 1. Add the `markdown` and `man` flake outputs. `README.md` and
    `.github/copilot-instructions.md` both describe them as aliases for the
    default package, but `flake.nix` only defines `default`, so `nix build .#man`
-   fails and `man-crypt` with it. While in there, `description` still says
-   "Dev Env for PracticeTracker2".
+   fails. While in there, `description` still says "Dev Env for
+   PracticeTracker2".
 
 1. Try making `wget` more efficient. i.e. if we re-run it *without* deleting the
    existing files, it should be smart enough to not re-download existing

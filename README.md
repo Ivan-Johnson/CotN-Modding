@@ -50,7 +50,8 @@ nix build
 ```
 
 The result is a store path containing `minimal-html/`, `markdown/`, and
-`share/man/man3/`. `.#markdown` and `.#man` are aliases for that same
+`share/man/man3/`, alongside the `share/man/index.db` that `whatis` and
+`apropos` search. `.#markdown` and `.#man` are aliases for that same
 derivation.
 
 The dev shell provides `man-crypt`, which rebuilds the docs and then reads a
@@ -58,6 +59,12 @@ page out of them:
 
 ```bash
 man-crypt necro.game.object.Map
+```
+
+It is just `man` against the built docs, so it searches them too:
+
+```bash
+man-crypt -k map
 ```
 
 ## Extra Info

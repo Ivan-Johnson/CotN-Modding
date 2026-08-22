@@ -39,8 +39,19 @@ begin() {
 	mkdir -p "$src"
 }
 
-# Write a page containing `body` to `path`, creating parent directories.
+# Write a page containing `body` to `path`, creating parent directories. Every
+# crawled page leads with a heading, and the conversion insists on one to
+# summarize the page by, so `body` is given a placeholder unless it brings its
+# own.
 write_page() {
+	local path="$1" body="$2"
+
+	[[ "$body" == *"<h1"* ]] || body="<h1>Heading</h1>$body"
+	write_raw_page "$path" "$body"
+}
+
+# Write a page whose body is used exactly as given, heading or not.
+write_raw_page() {
 	local path="$1" body="$2"
 
 	mkdir -p "$(dirname "$path")"
@@ -274,6 +285,51 @@ test_foreign_links_are_left_alone() {
 	assert_matches "$dst/minimal-html/index.html" 'href="uncrawled.html"'
 }
 
+# `man` works without a NAME section, but `whatis` and `apropos` index nothing
+# without one, which leaves a page findable only by guessing its name.
+test_man_pages_have_a_name_section() {
+	begin man-pages-have-a-name-section
+
+	write_page "$src/modules/necro.game.object.Map/index.html" '<h1>Module Map</h1>'
+
+	convert_expecting_success || return
+
+	local page="$dst/share/man/man3/necro.game.object.Map.3"
+	assert_matches "$page" '^\.SH NAME$'
+	assert_matches "$page" '^necro\.game\.object\.Map \\- Module Map$'
+
+	# NAME has to come before the body for `whatis` to find it.
+	assert_matches "$page" '^\.TH .*$'
+	[[ "$(grep -n '^\.SH NAME$' "$page" | cut -d: -f1)" -lt \
+		"$(grep -n '^\.SH Module Map$' "$page" | cut -d: -f1)" ]] ||
+		fail "expected NAME to precede the body"
+}
+
+# Long pages use several top level headings; the first one titles the page.
+test_name_summary_comes_from_the_first_heading() {
+	begin name-summary-comes-from-the-first-heading
+
+	write_page "$src/overview/index.html" \
+		'<h1>Synchrony API   overview</h1><p>x</p><h1>Scripting</h1>'
+
+	convert_expecting_success || return
+
+	# Whitespace inside the heading is collapsed, so NAME stays one tidy line.
+	assert_matches "$dst/share/man/man3/overview.3" \
+		'^overview \\- Synchrony API overview$'
+	assert_not_matches "$dst/share/man/man3/overview.3" '\\- Scripting'
+}
+
+# A page with no heading has nothing to be summarized by, and would be
+# published as a man page that `apropos` cannot describe.
+test_pages_without_a_heading_are_rejected() {
+	begin pages-without-a-heading-are-rejected
+
+	write_raw_page "$src/page.html" '<p>no heading here</p>'
+
+	convert_expecting_failure 'no heading to summarize it'
+}
+
 test_duplicate_pages_are_converted_once
 test_mismatched_copies_are_rejected
 test_copies_with_different_links_are_rejected
@@ -285,6 +341,9 @@ test_links_between_pages_are_rewritten
 test_links_survive_nesting
 test_link_fragments_are_kept
 test_foreign_links_are_left_alone
+test_man_pages_have_a_name_section
+test_name_summary_comes_from_the_first_heading
+test_pages_without_a_heading_are_rejected
 
 if [[ "$failures" -ne 0 ]]; then
 	echo "$failures assertion(s) failed" >&2

@@ -72,6 +72,21 @@ page_name() {
 	echo "${name##*/}"
 }
 
+# The one line summary that a man page is listed under, taken from the page's
+# own heading. A page whose first heading is missing or empty has nothing to be
+# summarized by, and would be published as an unfindable man page.
+page_summary() {
+	local path="$1" summary
+
+	summary="$(htmlq 'h1:first-of-type' --text --ignore-whitespace \
+		--filename "$path" | tr '\n' ' ' | sed -e 's|  *| |g' -e 's|^ ||' -e 's| $||')"
+	if [[ -z "$summary" ]]; then
+		echo "'$path' has no heading to summarize it in its man page's NAME section" >&2
+		return 1
+	fi
+	echo "$summary"
+}
+
 to_man() {
 	local old_path="$1" dst="$2" relative_path="$3"
 
@@ -86,10 +101,18 @@ to_man() {
 		exit 1
 	fi
 
+	local summary
+	summary="$(page_summary "$old_path")" || exit 1
+
+	# `man` itself does not need a NAME section, but `whatis` and `apropos`
+	# index nothing without one. The template puts header-includes directly
+	# after the .TH line, which is where NAME belongs.
 	pandoc --from=html --to=man --standalone \
 		--metadata "title=$name" \
 		--variable "section=$MAN_SECTION" \
 		--variable "header=$MAN_HEADER" \
+		--variable "header-includes=.SH NAME
+$(quote_roff "$name") \\- $(quote_roff "$summary")" \
 		"$old_path" --output "$new_path"
 }
 
@@ -101,6 +124,12 @@ quote_bre() {
 # Escape a literal string so that it can be used as a sed replacement.
 quote_replacement() {
 	printf '%s' "$1" | sed 's|[\\&]|\\&|g'
+}
+
+# Escape a literal string so that it can be used in roff source. A leading `.`
+# or `'` would start a request rather than a line of text.
+quote_roff() {
+	printf '%s' "$1" | sed -e 's|\\|\\e|g' -e "s|^[.']|\\\\\&&|"
 }
 
 # The path, relative to the minimal-html tree's root, of the page crawled to

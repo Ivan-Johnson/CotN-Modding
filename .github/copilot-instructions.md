@@ -4,8 +4,8 @@
 
 - Build the generated docs with `nix build` (equivalently, `nix build .#markdown`
   or `nix build .#man`; all three are the same derivation). The `result` symlink
-  points to a store path containing `minimal-html/`, `markdown/`, and
-  `share/man/man3/`.
+  points to a store path containing `minimal-html/`, `markdown/`,
+  `share/man/man3/`, and the `share/man/index.db` that `apropos` searches.
 - Evaluate all flake outputs without building them with
   `nix flake check --no-build`.
 - Print the store path of the pinned raw crawl, which is what the conversion
@@ -69,6 +69,17 @@ generated state, not source files.
 - Man pages are flat and unprefixed in section 3, named after the page (e.g.
   `necro.game.object.Map.3`). Upstream page names are fully qualified and
   unique; `to_man` hard-fails on a name collision rather than clobbering.
+- Each man page gets a `.SH NAME` section, without which `whatis` and `apropos`
+  index nothing. Its summary is the page's first `<h1>`, injected ahead of the
+  body through Pandoc's `header-includes` template variable. `page_summary`
+  hard-fails on a page with no heading rather than publishing one that
+  `apropos` cannot describe, so `write_page` in the tests supplies a default
+  heading and `write_raw_page` is the way to opt out of one.
+- The `mandb` index that `whatis`, `apropos` and `man -k` search is built in
+  `flake.nix`, because the pages are read-only once they reach the store. It
+  needs a `MANDB_MAP` line naming where the index belongs; given only a
+  `MANDATORY_MANPATH`, `mandb` reports an empty search path and silently
+  creates nothing.
 - Keep the Pandoc output dialect in the single `PANDOC_TO` constant; changing it
   affects every generated Markdown page. Man pages are converted straight from
   `minimal-html`, not from the Markdown, so they are unaffected by `PANDOC_TO`.
@@ -84,4 +95,5 @@ generated state, not source files.
   behavior, add a case that fails without it; the existing cases are known to
   fail if the dedupe, the page assertion, either of its error propagations, the
   man collision check, the man section, the `index.html` collapse guard, the
-  headerlink removal, or either half of the link rewriting is removed.
+  headerlink removal, either half of the link rewriting, or the NAME section is
+  removed.

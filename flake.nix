@@ -58,10 +58,25 @@
 
 			# The markdown and man page renderings of the HTML mirrored in the
 			# CotN-docs repo.
-			docs = pkgs.runCommand "cotn-docs-rendered" { nativeBuildInputs = conversionTools; } ''
-				export LC_ALL=C.UTF-8
-				bash ${./html-to-docs.bash} ${cotn-docs} "$out"
-			'';
+			docs =
+				pkgs.runCommand "cotn-docs-rendered" { nativeBuildInputs = conversionTools ++ [ pkgs.man-db ]; }
+					''
+						export LC_ALL=C.UTF-8
+						bash ${./html-to-docs.bash} ${cotn-docs} "$out"
+
+						# `man -k` and `whatis` search an index rather than the pages
+						# themselves, and nothing can build one later, because by then
+						# the pages live in the read only store. MANDB_MAP is what
+						# tells `mandb` where a manpath's index belongs; without it
+						# there is nowhere to put one, and it quietly builds nothing.
+						echo "MANDATORY_MANPATH $out/share/man" >man.conf
+						echo "MANDB_MAP $out/share/man $out/share/man" >>man.conf
+						mandb --config-file man.conf --create
+
+						# Keep the index, but not the empty directory `mandb` makes to
+						# cache formatted pages in; the store has no use for it.
+						rm -rf "$out/share/man/cat"*
+					'';
 		in
 		{
 			devShells.x86_64-linux.default = shell;
