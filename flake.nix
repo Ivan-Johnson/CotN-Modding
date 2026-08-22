@@ -61,6 +61,7 @@
 			scripts = pkgs.lib.fileset.toSource {
 				root = ./.;
 				fileset = pkgs.lib.fileset.unions [
+					./check-docs.bash
 					./crawl-and-push.bash
 					./html-to-docs.bash
 					./test-html-to-docs.bash
@@ -72,7 +73,7 @@
 			tests = pkgs.runCommand "cotn-docs-tests" { nativeBuildInputs = conversionTools; } ''
 				export LC_ALL=C.UTF-8
 				cd ${scripts}
-				bash -n crawl-and-push.bash html-to-docs.bash test-html-to-docs.bash
+				bash -n *.bash
 				bash ./test-html-to-docs.bash
 				touch "$out"
 			'';
@@ -98,6 +99,14 @@
 						# cache formatted pages in; the store has no use for it.
 						rm -rf "$out/share/man/cat"*
 					'';
+
+			# The same conversion, checked over a whole build rather than a
+			# handwritten crawl of two or three pages.
+			corpus = pkgs.runCommand "cotn-docs-corpus" { nativeBuildInputs = conversionTools; } ''
+				export LC_ALL=C.UTF-8
+				bash ${./check-docs.bash} ${docs}
+				touch "$out"
+			'';
 		in
 		{
 			devShells.x86_64-linux.default = shell;
@@ -105,5 +114,7 @@
 			packages.x86_64-linux.default = docs;
 
 			checks.x86_64-linux.tests = tests;
+
+			checks.x86_64-linux.corpus = corpus;
 		};
 }

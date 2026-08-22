@@ -6,10 +6,12 @@
   `share/man/man3/`, and the `share/man/index.db` that `apropos` searches.
   `default` is the only package.
 - `nix flake check` is the one validation command: it evaluates every output,
-  syntax checks all three scripts, and runs the conversion tests. The tests
-  build tiny throwaway crawls, so it finishes in seconds.
+  syntax checks the scripts, runs the conversion tests, and runs
+  `check-docs.bash` over a real build. It needs the pinned crawl, so a machine
+  without it needs SSH access to the mirror.
 - `nix develop -c ./test-html-to-docs.bash` runs just the tests, and prints
   their output directly rather than through a build log.
+- `nix develop -c ./check-docs.bash result` checks an already built tree.
 - The pinned raw crawl, which is what the conversion reads and what its output
   has to be compared against:
   `nix eval --raw --impure --expr '(builtins.getFlake (toString ./.)).inputs.cotn-docs.outPath'`
@@ -68,3 +70,7 @@
   with access when the pinned input is not already local.
 - `test-html-to-docs.bash` generates its fixtures rather than committing them.
   When adding a behavior, add a case that fails without it.
+- `check-docs.bash` asserts over a whole build, catching what two-page fixtures
+  cannot. Each assertion is paired with a guard against passing over nothing,
+  since a check that silently examines no files looks exactly like one that
+  passes.
