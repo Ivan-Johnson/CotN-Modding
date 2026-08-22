@@ -21,27 +21,41 @@ There are two scripts:
 
   2. Pushes that raw HTML to the CotN-docs mirror.
 
-* `./html-to-markdown.bash SRC_DIR DST_DIR`
+* `./html-to-docs.bash SRC_DIR DST_DIR`
 
-  Converts every `*.html` file under `SRC_DIR` into markdown. Both output trees
-  mirror `SRC_DIR`'s directory structure:
+  Converts every `*.html` file under `SRC_DIR` into markdown and man pages:
 
   1. Preprocesses the HTML into `DST_DIR/minimal-html/`.
 
   2. Converts that into `DST_DIR/markdown/`.
 
-  Nothing currently publishes the markdown; it is only produced locally.
+  3. Converts that into `DST_DIR/share/man/man3/`.
 
-## Building the markdown with Nix
+  The HTML and markdown trees mirror `SRC_DIR`'s directory structure. The man
+  pages are flat, as `man` expects; upstream page names are already fully
+  qualified, so they don't collide.
+
+  Nothing currently publishes these; they are only produced locally.
+
+## Building the docs with Nix
 
 The flake takes the CotN-docs mirror as an input (the `mainline` branch, i.e.
-the output of a `production` crawl) and runs `./html-to-markdown.bash` over it:
+the output of a `production` crawl) and runs `./html-to-docs.bash` over it:
 
 ```bash
 nix build
 ```
 
-The result is a store path containing `minimal-html/` and `markdown/`.
+The result is a store path containing `minimal-html/`, `markdown/`, and
+`share/man/man3/`. `.#markdown` and `.#man` are aliases for that same
+derivation.
+
+The dev shell puts the man pages on `MANPATH`, so inside `nix develop` you can
+read any page directly:
+
+```bash
+man necro.game.object.Map
+```
 
 The mirror is a private repo, so the input is fetched over SSH; you need a
 GitHub SSH key that can read it. The pinned revision lives in `flake.lock`, so

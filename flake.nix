@@ -41,15 +41,17 @@
 					pkgs.pandoc
 					pkgs.which
 					helloWorldMan
+					docs
 				];
 				shellHook = ''
-					export MANPATH="${helloWorldMan}/share/man''${MANPATH:+:$MANPATH}"
+					export MANPATH="${helloWorldMan}/share/man:${docs}/share/man''${MANPATH:+:$MANPATH}"
 				'';
 			};
 
-			# The markdown rendering of the HTML mirrored in the CotN-docs repo.
-			markdown =
-				pkgs.runCommand "cotn-docs-markdown"
+			# The markdown and man page renderings of the HTML mirrored in the
+			# CotN-docs repo.
+			docs =
+				pkgs.runCommand "cotn-docs-rendered"
 					{
 						nativeBuildInputs = [
 							pkgs.bash
@@ -61,13 +63,16 @@
 					}
 					''
 						export LC_ALL=C.UTF-8
-						bash ${./html-to-markdown.bash} ${cotn-docs} "$out"
+						bash ${./html-to-docs.bash} ${cotn-docs} "$out"
 					'';
 		in
 		{
 			devShells.x86_64-linux.default = shell;
 
-			packages.x86_64-linux.default = markdown;
-			packages.x86_64-linux.markdown = markdown;
+			# A single derivation renders every format; the aliases are just
+			# conveniences for `nix build .#markdown` / `nix build .#man`.
+			packages.x86_64-linux.default = docs;
+			packages.x86_64-linux.markdown = docs;
+			packages.x86_64-linux.man = docs;
 		};
 }

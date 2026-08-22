@@ -2,13 +2,14 @@
 
 ## Commands
 
-- Build the generated Markdown tree with `nix build` (equivalently,
-  `nix build .#markdown`). The `result` symlink points to a store path containing
-  `minimal-html/` and `markdown/`.
+- Build the generated docs with `nix build` (equivalently, `nix build .#markdown`
+  or `nix build .#man`; all three are the same derivation). The `result` symlink
+  points to a store path containing `minimal-html/`, `markdown/`, and
+  `share/man/man3/`.
 - Evaluate all flake outputs without building them with
   `nix flake check --no-build`.
 - Check both Bash scripts for syntax errors with
-  `bash -n crawl-and-push.bash html-to-markdown.bash`.
+  `bash -n crawl-and-push.bash html-to-docs.bash`.
 - The dev shell provides `nixfmt`; format `flake.nix` with
   `nix develop -c nixfmt flake.nix`. There is no configured `nix fmt` formatter.
 
@@ -20,11 +21,13 @@ This repository is a two-stage documentation mirroring pipeline:
    documentation into `output/1-original-html.tar.gz`, then creates a temporary
    Git repository containing the crawl plus provenance files and pushes it to
    the separate private `Ivan-Johnson/CotN-docs` mirror.
-2. `html-to-markdown.bash SRC_DIR DST_DIR` is the local transformation stage.
+2. `html-to-docs.bash SRC_DIR DST_DIR` is the local transformation stage.
    It extracts each page's `<article>` into `DST_DIR/minimal-html/`, then uses
-   Pandoc to produce the parallel `DST_DIR/markdown/` tree.
+   Pandoc to produce the parallel `DST_DIR/markdown/` tree and the flat
+   `DST_DIR/share/man/man3/` tree.
 3. `flake.nix` pins the `CotN-docs` mirror as a non-flake input and packages the
-   second stage. The default package and `.#markdown` are the same derivation.
+   second stage. The default package, `.#markdown`, and `.#man` are the same
+   derivation, and the dev shell puts its man pages on `MANPATH`.
    After publishing a production crawl, update that input with
    `nix flake update cotn-docs`.
 
@@ -44,12 +47,18 @@ generated state, not source files.
 - Crawl filtering is centralized in `ACCEPT_REGEX_DEBUG`,
   `ACCEPT_REGEX_PRODUCTION`, and `REJECT_REGEX`. Preserve the explicit rejected
   malformed events URL unless the upstream link is known to be fixed.
-- HTML conversion processes only `*.html` files, in `LC_ALL=C` sorted order,
-  while preserving relative directories. Markdown output collapses
-  `foo/index.html` to `foo.md`, but keeps a top-level `index.html` as
-  `index.md`.
+- HTML conversion processes only `*.html` files, in `LC_ALL=C` sorted order.
+  The crawl mirrors a page reachable at `foo` as both `foo.html` and
+  `foo/index.html`; `list_pages` drops the former so every page is converted
+  exactly once. The HTML and Markdown trees preserve relative directories, and
+  Markdown output collapses `foo/index.html` to `foo.md` while keeping a
+  top-level `index.html` as `index.md`.
+- Man pages are flat and unprefixed in section 3, named after the page (e.g.
+  `necro.game.object.Map.3`). Upstream page names are fully qualified and
+  unique; `to_man` hard-fails on a name collision rather than clobbering.
 - Keep the Pandoc output dialect in the single `PANDOC_TO` constant; changing it
-  affects every generated Markdown page.
+  affects every generated Markdown page. Man pages are converted straight from
+  `minimal-html`, not from the Markdown, so they are unaffected by `PANDOC_TO`.
 - The crawl tarball is made read-only after creation. Crawl logs are appended to
   `output/1-original-html.tar.gz.log`.
 - The temporary clone used for publishing is intentionally retained so failed
