@@ -93,6 +93,17 @@ assert_matches() {
 		fail "expected '${path#"$dst"/}' to match '$pattern'"
 }
 
+assert_not_matches() {
+	local path="$1" pattern="$2"
+
+	if [[ ! -e "$path" ]]; then
+		fail "expected '${path#"$dst"/}' to exist"
+		return
+	fi
+	! grep -q -- "$pattern" "$path" ||
+		fail "expected '${path#"$dst"/}' not to match '$pattern'"
+}
+
 # The crawl mirrors a page reachable at `foo` as both `foo.html` and
 # `foo/index.html`, which must be recognized as one page rather than two.
 test_duplicate_pages_are_converted_once() {
@@ -183,12 +194,31 @@ test_colliding_man_pages_are_rejected() {
 	convert_expecting_failure 'claimed by more than one page'
 }
 
+# Upstream hangs a `¶` permalink off every heading. It is website chrome, and
+# survives into both output formats as a stray character if it is not dropped.
+test_heading_permalinks_are_dropped() {
+	begin heading-permalinks-are-dropped
+
+	write_page "$src/page.html" \
+		'<h1 id="t">Title<a class="headerlink" href="index.html#t" title="Permanent link">&para;</a></h1>'
+
+	convert_expecting_success || return
+
+	assert_not_matches "$dst/minimal-html/page.html" 'headerlink'
+	assert_not_matches "$dst/markdown/page.md" '¶'
+	assert_not_matches "$dst/share/man/man3/page.3" '¶'
+
+	# Only the anchor goes; the heading it was attached to stays.
+	assert_matches "$dst/markdown/page.md" '^# Title$'
+}
+
 test_duplicate_pages_are_converted_once
 test_mismatched_copies_are_rejected
 test_copies_with_different_links_are_rejected
 test_output_layout
 test_man_pages_are_titled_after_their_page
 test_colliding_man_pages_are_rejected
+test_heading_permalinks_are_dropped
 
 if [[ "$failures" -ne 0 ]]; then
 	echo "$failures assertion(s) failed" >&2

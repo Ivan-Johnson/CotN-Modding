@@ -26,13 +26,18 @@ usage() {
 	echo "Usage: ${BASH_SOURCE[0]} SRC_DIR DST_DIR" >&2
 }
 
-# Strip everything outside of the page's <article> element.
+# Strip everything outside of the page's <article> element, along with the
+# chrome inside it.
 to_minimal_html() {
 	local old_path="$1" dst="$2" relative_path="$3"
 
 	local new_path="$dst/$relative_path"
 	mkdir -p "$(dirname "$new_path")"
-	htmlq article --ignore-whitespace --pretty --filename "$old_path" --output "$new_path"
+
+	# a.headerlink deletes the ¶s that are created on every header
+	htmlq article --ignore-whitespace --pretty \
+		--remove-nodes "a.headerlink" \
+		--filename "$old_path" --output "$new_path"
 }
 
 to_markdown() {
