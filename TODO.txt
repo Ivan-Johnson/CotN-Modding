@@ -1,30 +1,6 @@
 1. Fix tables in the markdown output. `PANDOC_TO` disables `pipe_tables`, so
    tables are flattened; the man pages render them fine.
 
-1. Re-enable `clean` target. Just have it remove everything except for raw HTML.
-
-1. Remove numbers from target names; they'll make it hard to re-order things later.
-
-1. Add proper nix package:
-
-   1. Instead of auto-generating `output/1-original-html.tar.gz`, commit it to
-      this repo?
-
-      (This creates copyright concerns)
-
-   1. Create separate `make update-original-html` target
-
-   1. Actually create the nix package; have it run `make`
-
-      (separate packages for each target?)
-
-   1. Create systemd user service which will, once per month, run `make
-      update-original-html` && `make deploy`.
-
-
-
-# Backlog
-
 1. Try making `wget` more efficient. i.e. if we re-run it *without* deleting the
    existing files, it should be smart enough to not re-download existing
    files. However, is it smart enough to re-download files if the remote
