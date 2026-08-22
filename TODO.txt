@@ -1,5 +1,42 @@
+1. Recover the navigation. `htmlq article` throws away the sidebar, which is
+   the full table of contents; every crawled page carries all 764 links of it.
+   That leaves the three hub pages saying only "Use the left sidebar to select
+   a module to view documentation for.", and nothing in either output tree
+   lists the 681 pages. Harvest the nav into a generated index page, and into a
+   `cotn-docs.3` for the man tree.
+
 1. Fix tables in the markdown output. `PANDOC_TO` disables `pipe_tables`, so
-   tables are flattened; the man pages render them fine.
+   tables are flattened to a `[TABLE]` placeholder; 2385 of them, across 362 of
+   the 681 pages. The man pages render them fine. The component field tables
+   are most of what the API reference actually says, so this is the one item
+   that loses content rather than making it harder to find.
+
+1. Give the man pages a `.SH NAME` section. None of the 681 have one, so
+   `whatis`, `apropos` and `man -k` come up empty. Together with the missing
+   navigation, that leaves no way to find a page without already knowing its
+   name.
+
+1. Turn cross references into `name(3)` in the man pages. Pandoc drops the
+   target of a relative link entirely, so `overview.3` mentions "the Modules
+   section" with no way to reach it. `rewrite_links` already resolves a link to
+   the page it names, so this should be another `published_path` mapper.
+
+1. Tidy up the man rendering. 524 of the 681 page names are too long for the
+   `.TH` header and show up as `necr...nents(3)`, and the tables run to 146
+   columns.
+
+1. Emit code blocks as code blocks. Upstream marks them up as a `<code>` inside
+   a `<p>`, so they convert to inline code with a stray leading space; 543
+   lines of it. They should be fenced, and tagged as Lua.
+
+1. Drop the shared `vortexbuffer.com/synchrony/docs/` prefix from the output
+   trees. It is three levels of directory that every single page sits under.
+
+1. Add the `markdown` and `man` flake outputs. `README.md` and
+   `.github/copilot-instructions.md` both describe them as aliases for the
+   default package, but `flake.nix` only defines `default`, so `nix build .#man`
+   fails and `man-crypt` with it. While in there, `description` still says
+   "Dev Env for PracticeTracker2".
 
 1. Try making `wget` more efficient. i.e. if we re-run it *without* deleting the
    existing files, it should be smart enough to not re-download existing
