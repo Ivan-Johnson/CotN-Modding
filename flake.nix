@@ -66,10 +66,6 @@
 		{
 			devShells.x86_64-linux.default = shell;
 
-			# A single derivation renders every format; the aliases are just
-			# conveniences for `nix build .#markdown` / `nix build .#man`.
 			packages.x86_64-linux.default = docs;
-			packages.x86_64-linux.markdown = docs;
-			packages.x86_64-linux.man = docs;
 		};
 }

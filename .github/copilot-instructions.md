@@ -33,10 +33,7 @@ This repository is a two-stage documentation mirroring pipeline:
 3. `flake.nix` pins the `CotN-docs` mirror as a non-flake input and packages the
    second stage. The default package, `.#markdown`, and `.#man` are the same
    derivation, and the dev shell's `man-crypt` builds it on demand to read a
-   page. `docs` is deliberately not an input of the dev shell, so that the
-   shell stays usable when the conversion is broken.
-   After publishing a production crawl, update that input with
-   `nix flake update cotn-docs`.
+   page.
 
 `output/`, the local `CotN-docs/` checkout, and the `result` symlink are ignored
 generated state, not source files.
