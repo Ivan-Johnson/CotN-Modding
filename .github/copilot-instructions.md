@@ -62,6 +62,10 @@ generated state, not source files.
   difference. The HTML and Markdown trees preserve relative directories, and
   Markdown output collapses `foo/index.html` to `foo.md` while keeping a
   top-level `index.html` as `index.md`.
+- Both renames above move a page relative to the links pointing at it, so
+  `rewrite_links` resolves each link back to the page it names and respells it
+  for the tree being written. `run_pass` publishes the pass's pages in
+  `page_set` so that a link out of the crawl can be told apart and left alone.
 - Man pages are flat and unprefixed in section 3, named after the page (e.g.
   `necro.game.object.Map.3`). Upstream page names are fully qualified and
   unique; `to_man` hard-fails on a name collision rather than clobbering.
@@ -79,5 +83,5 @@ generated state, not source files.
   so each case and its near-miss variants stay side by side. When adding a
   behavior, add a case that fails without it; the existing cases are known to
   fail if the dedupe, the page assertion, either of its error propagations, the
-  man collision check, the man section, or the `index.html` collapse guard is
-  removed.
+  man collision check, the man section, the `index.html` collapse guard, the
+  headerlink removal, or either half of the link rewriting is removed.

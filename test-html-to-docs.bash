@@ -212,6 +212,68 @@ test_heading_permalinks_are_dropped() {
 	assert_matches "$dst/markdown/page.md" '^# Title$'
 }
 
+# A link written against the crawl names a `.html` file, relative to the copy of
+# the page it was written in. Conversion renames the file and, when
+# `foo/index.html` collapses to `foo.md`, moves it up a level; the link has to
+# follow it through both.
+test_links_between_pages_are_rewritten() {
+	begin links-between-pages-are-rewritten
+
+	write_page "$src/index.html" '<a href="page.html">p</a>'
+	write_page "$src/page.html" '<a href="index.html">i</a>'
+	write_page "$src/page/index.html" '<a href="../index.html">i</a>'
+
+	convert_expecting_success || return
+
+	# `page.html` was dropped as a duplicate, so the link has to name the copy
+	# that survived instead.
+	assert_matches "$dst/minimal-html/index.html" 'href="page/index.html"'
+	assert_matches "$dst/minimal-html/page/index.html" 'href="../index.html"'
+
+	# In markdown the target is `page.md`, a sibling of `index.md`, and
+	# `page.md` sits one level above where its own copy was crawled.
+	assert_matches "$dst/markdown/index.md" '](page\.md)'
+	assert_matches "$dst/markdown/page.md" '](index\.md)'
+}
+
+test_links_survive_nesting() {
+	begin links-survive-nesting
+
+	write_page "$src/a/b/index.html" '<a href="../c.html">c</a>'
+	write_page "$src/a/c/index.html" 'c'
+
+	convert_expecting_success || return
+
+	assert_matches "$dst/minimal-html/a/b/index.html" 'href="../c/index.html"'
+	assert_matches "$dst/markdown/a/b.md" '](c\.md)'
+}
+
+test_link_fragments_are_kept() {
+	begin link-fragments-are-kept
+
+	write_page "$src/index.html" '<a href="page.html#sec">p</a>'
+	write_page "$src/page/index.html" 'p'
+
+	convert_expecting_success || return
+
+	assert_matches "$dst/minimal-html/index.html" 'href="page/index.html#sec"'
+	assert_matches "$dst/markdown/index.md" '](page\.md#sec)'
+}
+
+# Only links that name another page are ours to redirect.
+test_foreign_links_are_left_alone() {
+	begin foreign-links-are-left-alone
+
+	write_page "$src/index.html" \
+		'<a href="https://example.com/a.html">a</a><a href="#here">h</a><a href="uncrawled.html">u</a>'
+
+	convert_expecting_success || return
+
+	assert_matches "$dst/minimal-html/index.html" 'href="https://example.com/a.html"'
+	assert_matches "$dst/minimal-html/index.html" 'href="#here"'
+	assert_matches "$dst/minimal-html/index.html" 'href="uncrawled.html"'
+}
+
 test_duplicate_pages_are_converted_once
 test_mismatched_copies_are_rejected
 test_copies_with_different_links_are_rejected
@@ -219,6 +281,10 @@ test_output_layout
 test_man_pages_are_titled_after_their_page
 test_colliding_man_pages_are_rejected
 test_heading_permalinks_are_dropped
+test_links_between_pages_are_rewritten
+test_links_survive_nesting
+test_link_fragments_are_kept
+test_foreign_links_are_left_alone
 
 if [[ "$failures" -ne 0 ]]; then
 	echo "$failures assertion(s) failed" >&2

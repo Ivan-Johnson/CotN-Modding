@@ -49,7 +49,7 @@
 				shellHook = ''
 					# Rebuild the documentation, then read a page from it.
 					man-crypt() {
-						local out="$(nix build --no-link --print-out-paths "$ITJ_FLAKE_ROOT#man")" || return
+						local out="$(nix build --no-link --print-out-paths "$ITJ_FLAKE_ROOT")" || return
 						MANPATH="$out/share/man" man "$@"
 					}
 					export -f man-crypt

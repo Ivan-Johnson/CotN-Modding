@@ -22,6 +22,15 @@ readonly PANDOC_TO='commonmark-alerts-ascii_identifiers-attributes-autolink_bare
 readonly MAN_SECTION=3
 readonly MAN_HEADER='Crypt of the NecroDancer Modding Documentation'
 
+# An imaginary root to resolve relative links against. Links are rewritten
+# purely lexically, so this only has to be somewhere the real paths are not.
+readonly LINK_ROOT=/cotn-docs
+
+# The pages of the pass currently running, as a set of paths relative to that
+# pass's source root. Rebuilt by `run_pass`, and read by the converters to tell
+# a link that points at another page from one that points anywhere else.
+declare -A page_set
+
 usage() {
 	echo "Usage: ${BASH_SOURCE[0]} SRC_DIR DST_DIR" >&2
 }
@@ -37,21 +46,19 @@ to_minimal_html() {
 	# a.headerlink deletes the ¶s that are created on every header
 	htmlq article --ignore-whitespace --pretty \
 		--remove-nodes "a.headerlink" \
-		--filename "$old_path" --output "$new_path"
+		--filename "$old_path" --output "$work_file"
+	rewrite_links "$work_file" "$new_path" "$relative_path" minimal_html_path
 }
 
 to_markdown() {
 	local old_path="$1" dst="$2" relative_path="$3"
 
-	local new_path="$dst/${relative_path%.html}.md"
-	# Collapse `foo/index.html` into `foo.md`, but leave a top level
-	# `index.html` alone; collapsing it would clobber the output root.
-	if [[ "$relative_path" == */index.html ]]; then
-		new_path="${new_path%/index.md}.md"
-	fi
+	local new_path
+	new_path="$dst/$(markdown_path "$relative_path")"
 
 	mkdir -p "$(dirname "$new_path")"
-	pandoc --from=html "--to=$PANDOC_TO" "$old_path" --output "$new_path"
+	rewrite_links "$old_path" "$work_file" "$relative_path" markdown_path
+	pandoc --from=html "--to=$PANDOC_TO" "$work_file" --output "$new_path"
 }
 
 # The name a page is published under, e.g. both `foo/index.html` and `foo.html`
@@ -89,6 +96,99 @@ to_man() {
 # Escape a literal string so that it can be used in a sed basic regex.
 quote_bre() {
 	printf '%s' "$1" | sed 's|[][\\.*^$]|\\&|g'
+}
+
+# Escape a literal string so that it can be used as a sed replacement.
+quote_replacement() {
+	printf '%s' "$1" | sed 's|[\\&]|\\&|g'
+}
+
+# The path, relative to the minimal-html tree's root, of the page crawled to
+# `relative_path`. That tree mirrors the crawl, so this is a no-op; it exists so
+# that every pass names its output the same way.
+minimal_html_path() {
+	echo "$1"
+}
+
+# The path, relative to the markdown tree's root, of the page at
+# `relative_path`.
+markdown_path() {
+	local relative_path="$1"
+
+	local path="${relative_path%.html}.md"
+	# Collapse `foo/index.html` into `foo.md`, but leave a top level
+	# `index.html` alone; collapsing it would clobber the output root.
+	if [[ "$relative_path" == */index.html ]]; then
+		path="${path%/index.md}.md"
+	fi
+	echo "$path"
+}
+
+# The page in the current pass's source tree that `target` names, if any.
+resolve_page() {
+	local target="$1"
+
+	if [[ -n "${page_set[$target]+set}" ]]; then
+		echo "$target"
+		return 0
+	fi
+	# `foo.html` and `foo/index.html` are the same page, and only the latter
+	# survives `list_pages` when the crawl caught both. Links written against
+	# the crawl still spell it the first way.
+	local deep="${target%.html}/index.html"
+	if [[ "$target" == *.html && -n "${page_set[$deep]+set}" ]]; then
+		echo "$deep"
+		return 0
+	fi
+	return 1
+}
+
+# Rewrite the relative links of the page at `in_path` for the tree it is being
+# converted into, writing the result to `out_path`.
+#
+# The crawl's links point at `.html` files, spelled relative to the directory of
+# the copy they were written in. Both of those change during conversion: pages
+# are renamed by `published_path`, and `foo/index.html` moves up a level when it
+# collapses to `foo.md`. So each link is resolved back to the page it means, and
+# then respelled from wherever this page has landed.
+#
+# `relative_path` is the page being converted, relative to the pass's source
+# root, and `published_path` names the function that maps a page to its path in
+# the output tree.
+rewrite_links() {
+	local in_path="$1" out_path="$2" relative_path="$3" published_path="$4"
+
+	local hrefs
+	hrefs="$(htmlq --attribute href a --filename "$in_path" | LC_ALL=C sort -u)"
+
+	local from_dir
+	from_dir="$(dirname "$("$published_path" "$relative_path")")"
+
+	local -a edits=()
+	local href path target page new
+	while IFS= read -r href; do
+		# Anything that already names where it wants to go: absolute and
+		# protocol relative URLs, and links into the page itself.
+		[[ "$href" != *:* && "$href" != //* && "$href" != '#'* ]] || continue
+
+		path="${href%%[#?]*}"
+		[[ -n "$path" ]] || continue
+
+		target="$(realpath -m --relative-to="$LINK_ROOT" \
+			"$LINK_ROOT/$(dirname "$relative_path")/$path")"
+		# A link out of the crawl has nothing to be pointed at instead.
+		page="$(resolve_page "$target")" || continue
+
+		new="$(realpath -m --relative-to="$LINK_ROOT/$from_dir" \
+			"$LINK_ROOT/$("$published_path" "$page")")${href#"$path"}"
+		edits+=(-e "s|href=\"$(quote_bre "$href")\"|href=\"$(quote_replacement "$new")\"|g")
+	done <<< "$hrefs"
+
+	if [[ "${#edits[@]}" -eq 0 ]]; then
+		cp "$in_path" "$out_path"
+		return
+	fi
+	sed "${edits[@]}" "$in_path" >"$out_path"
 }
 
 # A page's HTML with the depth of its relative links normalized away.
@@ -143,7 +243,8 @@ list_pages() {
 # Run `convert` over every page in `src`, writing the results into `dst`.
 # `convert` is called as `convert OLD DST REL`, where REL is OLD's path relative
 # to `src` and DST is the output root. The converter picks OLD's destination
-# path within DST and creates whatever subdirectories it needs.
+# path within DST and creates whatever subdirectories it needs. `page_set` holds
+# the pass's pages while it runs, so that `convert` can resolve links into them.
 run_pass() {
 	local src="$1" dst="$2" convert="$3"
 
@@ -156,6 +257,12 @@ run_pass() {
 	pages="$(list_pages "$src")" || return 1
 
 	local old_path relative_path
+	page_set=()
+	while IFS= read -r old_path; do
+		[[ -n "$old_path" ]] || continue
+		page_set["${old_path#"$src"/}"]=1
+	done <<< "$pages"
+
 	while IFS= read -r old_path; do
 		[[ -n "$old_path" ]] || continue
 		relative_path="${old_path#"$src"/}"
@@ -178,6 +285,13 @@ if [[ ! -d "$src_dir" ]]; then
 fi
 
 mkdir -p "$dst_dir"
+
+# Scratch space for the converters, which each rewrite a page's links into it
+# on the way past.
+work_file="$(mktemp)"
+readonly work_file
+trap 'rm -f "$work_file"' EXIT
+
 run_pass "$src_dir" "$dst_dir/minimal-html" to_minimal_html
 run_pass "$dst_dir/minimal-html" "$dst_dir/markdown" to_markdown
 run_pass "$dst_dir/minimal-html" "$dst_dir/share/man/man$MAN_SECTION" to_man

@@ -35,6 +35,9 @@ There are two scripts:
   pages are flat, as `man` expects; upstream page names are already fully
   qualified, so they don't collide.
 
+  Links between pages are rewritten to follow them, so they still resolve in
+  the HTML and markdown trees. Links out of the crawl are left alone.
+
   Nothing currently publishes these; they are only produced locally.
 
 ## Building the docs with Nix
