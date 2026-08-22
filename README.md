@@ -6,38 +6,43 @@ repo](https://github.com/Ivan-Johnson/CotN-docs).
 In order to push an update to that repo, all you need to do is:
 
 ```bash
-trash output
-BUILD_MODE=production make deploy
+BUILD_MODE=production ./crawl-and-push.bash
 ```
 
 ## Technical Details
 
-Internally, this is what happens when you run `make deploy`:
+There are two scripts:
 
-1. `make output/1-original-html.tar.gz`: Crawl [the official Crypt of the
-   Necrodancer (CotN) modding
-   documentation](https://vortexbuffer.com/synchrony/docs/index.html).
+* `./crawl-and-push.bash`
 
-2. `make output/2-minimal-html.tar.gz`: Preprocess the HTML
+  1. Crawls [the official Crypt of the Necrodancer (CotN) modding
+     documentation](https://vortexbuffer.com/synchrony/docs/index.html) into
+     `output/1-original-html.tar.gz`.
 
-3. `make output/3-html-to-markdown.tar.gz` (or `make all`): Convert the HTML to
-   markdown
+  2. Pushes that raw HTML to the CotN-docs mirror.
 
-4. `make deploy`: Push an update to the CotN-docs mirror
+* `./html-to-markdown.bash`
+
+  1. Reads `output/1-original-html.tar.gz`.
+
+  2. Preprocesses the HTML into `output/2-minimal-html.tar.gz`.
+
+  3. Converts the HTML to markdown in `output/3-html-to-markdown.tar.gz`.
+
+  Nothing currently publishes the markdown; it is only produced locally.
 
 ## Extra Info
 
-The `Makefile` makes a few concessions in order to avoid hitting the official
-webserver too hard:
+`./crawl-and-push.bash` always re-crawls from scratch, which takes about an hour
+in production mode. In order to avoid hitting the official webserver too hard,
+it defaults to crawling only a tiny subset of the official docs and pushing the
+result to the `debug` branch of the mirror.
 
-* `make clean` does NOT delete `output/1-original-html.tar.gz`. If you want to
-  re-download the original HTML files, then you'll need to delete that tarball
-  manually.
+Set `BUILD_MODE` to pick a mode:
 
-* By default these scripts will only crawl a tiny subset of the official docs.
+| `BUILD_MODE` | Crawls        | Mirror branch |
+| ------------ | ------------- | ------------- |
+| `debug`      | a tiny subset | `debug`       |
+| `production` | everything    | `mainline`    |
 
-  In order to download everything, you'll need to run:
-
-  ```bash
-  BUILD_MODE=production make all
-  ```
+`BUILD_MODE` defaults to `debug`.
