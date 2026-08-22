@@ -22,10 +22,6 @@
 		}:
 		let
 			pkgs = import nixpkgs { system = "x86_64-linux"; };
-			helloWorldMan = pkgs.runCommand "hello-world-manpage" { } ''
-				mkdir -p "$out/share/man/man1"
-				cp ${./man/hello-world.1} "$out/share/man/man1/hello-world.1"
-			'';
 
 			shell = pkgs.mkShell {
 				buildInputs = [
@@ -40,11 +36,10 @@
 					pkgs.nixfmt
 					pkgs.pandoc
 					pkgs.which
-					helloWorldMan
 					docs
 				];
 				shellHook = ''
-					export MANPATH="${helloWorldMan}/share/man:${docs}/share/man''${MANPATH:+:$MANPATH}"
+					export MANPATH="${docs}/share/man''${MANPATH:+:$MANPATH}"
 				'';
 			};
 

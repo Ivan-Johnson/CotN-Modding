@@ -38,7 +38,9 @@ generated state, not source files.
 
 - Both scripts use strict Bash mode (`set -euo pipefail`), quoted paths, and
   read-only configuration. Keep behavior in functions rather than introducing
-  another task runner.
+  another task runner. Note that `set -e` does not fire inside the subshell of
+  a command substitution, so `list_pages` propagates assertion failures to
+  `run_pass` by hand rather than relying on `errexit`.
 - `BUILD_MODE` defaults to `debug`: it crawls a small URL subset and pushes the
   mirror's `debug` branch. `BUILD_MODE=production` crawls the full site, takes
   about an hour, and pushes `mainline`.
@@ -50,7 +52,10 @@ generated state, not source files.
 - HTML conversion processes only `*.html` files, in `LC_ALL=C` sorted order.
   The crawl mirrors a page reachable at `foo` as both `foo.html` and
   `foo/index.html`; `list_pages` drops the former so every page is converted
-  exactly once. The HTML and Markdown trees preserve relative directories, and
+  exactly once. The two copies are never byte-identical, because each has its
+  relative links written from its own directory, so `assert_same_page` compares
+  them only after normalizing that depth away, and hard-fails on any other
+  difference. The HTML and Markdown trees preserve relative directories, and
   Markdown output collapses `foo/index.html` to `foo.md` while keeping a
   top-level `index.html` as `index.md`.
 - Man pages are flat and unprefixed in section 3, named after the page (e.g.

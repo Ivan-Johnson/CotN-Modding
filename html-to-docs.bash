@@ -81,17 +81,54 @@ to_man() {
 		"$old_path" --output "$new_path"
 }
 
+# Escape a literal string so that it can be used in a sed basic regex.
+quote_bre() {
+	printf '%s' "$1" | sed 's|[][\\.*^$]|\\&|g'
+}
+
+# A page's HTML with the depth of its relative links normalized away.
+#
+# The crawler rewrites each copy of a page so that its links are relative to
+# that copy's own directory. Relative to `foo.html`, a sibling `bar` is spelled
+# `bar` and a child is spelled `foo/baz`; relative to `foo/index.html`, those
+# same targets are spelled `../bar` and `baz`. Dropping every leading `../` and
+# `foo/` from quoted attribute values therefore spells both copies alike.
+normalize_link_depth() {
+	local path="$1" name
+	name="$(quote_bre "$2")"
+
+	sed -e "s|\([\"']\)\.\./|\1|g" -e "s|\([\"']\)$name/|\1|g" "$path"
+}
+
+# Verify that the two copies of a page really are the same page.
+#
+# They are never byte-identical, since their relative links are written from
+# different directories, but they must agree once that is normalized away.
+assert_same_page() {
+	local shallow="$1" deep="$2" name="$3"
+
+	if ! cmp --silent \
+		<(normalize_link_depth "$shallow" "$name") \
+		<(normalize_link_depth "$deep" "$name"); then
+		echo "'$shallow' and '$deep' should be two copies of the page '$name', but they differ by more than the depth of their relative links" >&2
+		return 1
+	fi
+}
+
 # The *.html files in `src` that represent distinct pages, in a stable order.
 #
 # The crawl mirrors a page reachable at `foo` as both `foo.html` and
-# `foo/index.html`. The two differ only in the prefixes of their relative links,
-# so only the `index.html` copy is kept.
+# `foo/index.html`. The two are the same page, so only the `index.html` copy is
+# kept.
 list_pages() {
 	local src="$1"
 
-	local path
+	local path deep name
 	while IFS= read -r path; do
-		if [[ -f "${path%.html}/index.html" ]]; then
+		deep="${path%.html}/index.html"
+		if [[ -f "$deep" ]]; then
+			name="${path%.html}"
+			assert_same_page "$path" "$deep" "${name##*/}" || return 1
 			continue
 		fi
 		echo "$path"
@@ -107,11 +144,18 @@ run_pass() {
 
 	mkdir -p "$dst"
 
+	# Collected up front rather than streamed in, so that a failed assertion in
+	# `list_pages` aborts the run. `set -e` does not fire inside the subshell
+	# of a command substitution, so the failure is propagated by hand.
+	local pages
+	pages="$(list_pages "$src")" || return 1
+
 	local old_path relative_path
 	while IFS= read -r old_path; do
+		[[ -n "$old_path" ]] || continue
 		relative_path="${old_path#"$src"/}"
 		"$convert" "$old_path" "$dst" "$relative_path"
-	done < <(list_pages "$src")
+	done <<< "$pages"
 }
 
 if [[ "$#" -ne 2 ]]; then
