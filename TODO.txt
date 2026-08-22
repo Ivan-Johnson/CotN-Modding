@@ -27,10 +27,6 @@
 1. Drop the shared `vortexbuffer.com/synchrony/docs/` prefix from the output
    trees. It is three levels of directory that every single page sits under.
 
-1. Add `markdown` and `man` flake outputs, so that either tree can be built on
-   its own; `flake.nix` currently only defines `default`. While in there,
-   `description` still says "Dev Env for PracticeTracker2".
-
 1. Try making `wget` more efficient. i.e. if we re-run it *without* deleting the
    existing files, it should be smart enough to not re-download existing
    files. However, is it smart enough to re-download files if the remote

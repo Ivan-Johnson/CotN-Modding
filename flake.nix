@@ -1,5 +1,5 @@
 {
-	description = "Dev Env for PracticeTracker2";
+	description = "Offline version of the CotN modding docs";
 
 	inputs = {
 		nixpkgs.url = "nixpkgs/nixos-26.05";
