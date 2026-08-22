@@ -1,4 +1,5 @@
-1. Fix tables
+1. Fix tables in the markdown output. `PANDOC_TO` disables `pipe_tables`, so
+   tables are flattened; the man pages render them fine.
 
 1. Re-enable `clean` target. Just have it remove everything except for raw HTML.
 
@@ -19,8 +20,6 @@
 
    1. Create systemd user service which will, once per month, run `make
       update-original-html` && `make deploy`.
-
-   1. Add nix package for building & installing man pages?
 
 
 
