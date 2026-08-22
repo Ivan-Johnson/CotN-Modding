@@ -8,6 +8,9 @@
   `share/man/man3/`.
 - Evaluate all flake outputs without building them with
   `nix flake check --no-build`.
+- Print the store path of the pinned raw crawl, which is what the conversion
+  reads and what its output has to be compared against, with
+  `nix eval --raw --impure --expr '(builtins.getFlake (toString ./.)).inputs.cotn-docs.outPath'`.
 - Check both Bash scripts for syntax errors with
   `bash -n crawl-and-push.bash html-to-docs.bash`.
 - The dev shell provides `nixfmt`; format `flake.nix` with
