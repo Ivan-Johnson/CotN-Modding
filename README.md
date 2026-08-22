@@ -13,30 +13,27 @@ BUILD_MODE=production ./crawl-and-push.bash
 
 There are two scripts:
 
-* `./crawl-and-push.bash`
+* `./crawl-and-push.bash` crawls [the official Crypt of the Necrodancer (CotN)
+  modding documentation](https://vortexbuffer.com/synchrony/docs/index.html)
+  into `output/1-original-html.tar.gz`, then pushes that raw HTML to the
+  CotN-docs mirror.
 
-  1. Crawls [the official Crypt of the Necrodancer (CotN) modding
-     documentation](https://vortexbuffer.com/synchrony/docs/index.html) into
-     `output/1-original-html.tar.gz`.
+  It always re-crawls from scratch, which takes about an hour in production
+  mode. To avoid hitting the official webserver too hard, `BUILD_MODE` defaults
+  to `debug`:
 
-  2. Pushes that raw HTML to the CotN-docs mirror.
+  | `BUILD_MODE` | Crawls        | Mirror branch |
+  | ------------ | ------------- | ------------- |
+  | `debug`      | a tiny subset | `debug`       |
+  | `production` | everything    | `mainline`    |
 
-* `./html-to-docs.bash SRC_DIR DST_DIR`
+* `./html-to-docs.bash SRC_DIR DST_DIR` converts every `*.html` under `SRC_DIR`
+  into `DST_DIR/minimal-html/`, then `DST_DIR/markdown/` and
+  `DST_DIR/share/man/man3/`.
 
-  Converts every `*.html` file under `SRC_DIR` into markdown and man pages:
-
-  1. Preprocesses the HTML into `DST_DIR/minimal-html/`.
-
-  2. Converts that into `DST_DIR/markdown/`.
-
-  3. Converts that into `DST_DIR/share/man/man3/`.
-
-  The HTML and markdown trees mirror `SRC_DIR`'s directory structure. The man
-  pages are flat, as `man` expects; upstream page names are already fully
-  qualified, so they don't collide.
-
-  Links between pages are rewritten to follow them, so they still resolve in
-  the HTML and markdown trees. Links out of the crawl are left alone.
+  The first two trees mirror `SRC_DIR`; the man pages are flat, as `man`
+  expects. Links between pages are rewritten to follow them; links out of the
+  crawl are left alone.
 
   Nothing currently publishes these; they are only produced locally.
 
@@ -49,36 +46,10 @@ the output of a `production` crawl) and runs `./html-to-docs.bash` over it:
 nix build
 ```
 
-The result is a store path containing `minimal-html/`, `markdown/`, and
-`share/man/man3/`, alongside the `share/man/index.db` that `whatis` and
-`apropos` search. `.#markdown` and `.#man` are aliases for that same
-derivation.
-
-The dev shell provides `man-crypt`, which rebuilds the docs and then reads a
-page out of them:
+The dev shell provides `man-crypt`, which rebuilds the docs and then runs `man`
+against them. The build includes a `mandb` index, so searching works too:
 
 ```bash
 man-crypt necro.game.object.Map
-```
-
-It is just `man` against the built docs, so it searches them too:
-
-```bash
 man-crypt -k map
 ```
-
-## Extra Info
-
-`./crawl-and-push.bash` always re-crawls from scratch, which takes about an hour
-in production mode. In order to avoid hitting the official webserver too hard,
-it defaults to crawling only a tiny subset of the official docs and pushing the
-result to the `debug` branch of the mirror.
-
-Set `BUILD_MODE` to pick a mode:
-
-| `BUILD_MODE` | Crawls        | Mirror branch |
-| ------------ | ------------- | ------------- |
-| `debug`      | a tiny subset | `debug`       |
-| `production` | everything    | `mainline`    |
-
-`BUILD_MODE` defaults to `debug`.

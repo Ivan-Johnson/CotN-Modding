@@ -2,13 +2,9 @@
 #
 # Convert a tree of raw CotN documentation HTML into markdown and man pages.
 #
-# SRC_DIR is searched recursively for *.html files; anything else in it is
-# ignored. The HTML and markdown output trees mirror SRC_DIR's directory
-# structure; the man pages are flat, as `man` expects.
-#
-# Writes: DST_DIR/minimal-html/  (just the <article> of each page)
-#         DST_DIR/markdown/
-#         DST_DIR/share/man/manN/
+# Writes DST_DIR/minimal-html/ (each page's <article>) and DST_DIR/markdown/,
+# both mirroring SRC_DIR, plus the flat DST_DIR/share/man/manN/ that `man`
+# expects.
 #
 # Usage:
 #   ./html-to-docs.bash SRC_DIR DST_DIR
@@ -22,28 +18,26 @@ readonly PANDOC_TO='commonmark-alerts-ascii_identifiers-attributes-autolink_bare
 readonly MAN_SECTION=3
 readonly MAN_HEADER='Crypt of the NecroDancer Modding Documentation'
 
-# An imaginary root to resolve relative links against. Links are rewritten
-# purely lexically, so this only has to be somewhere the real paths are not.
+# Links are resolved lexically, against a root chosen not to collide with any
+# real path.
 readonly LINK_ROOT=/cotn-docs
 
-# The pages of the pass currently running, as a set of paths relative to that
-# pass's source root. Rebuilt by `run_pass`, and read by the converters to tell
-# a link that points at another page from one that points anywhere else.
+# The current pass's pages, keyed by path relative to its source root. Rebuilt
+# by `run_pass`; it is how a link to another page is told from any other link.
 declare -A page_set
 
 usage() {
 	echo "Usage: ${BASH_SOURCE[0]} SRC_DIR DST_DIR" >&2
 }
 
-# Strip everything outside of the page's <article> element, along with the
-# chrome inside it.
+# Strip everything outside the page's <article>, and the chrome inside it.
 to_minimal_html() {
 	local old_path="$1" dst="$2" relative_path="$3"
 
 	local new_path="$dst/$relative_path"
 	mkdir -p "$(dirname "$new_path")"
 
-	# a.headerlink deletes the ¶s that are created on every header
+	# a.headerlink is the ¶ permalink upstream hangs off every heading.
 	htmlq article --ignore-whitespace --pretty \
 		--remove-nodes "a.headerlink" \
 		--filename "$old_path" --output "$work_file"
@@ -61,9 +55,9 @@ to_markdown() {
 	pandoc --from=html "--to=$PANDOC_TO" "$work_file" --output "$new_path"
 }
 
-# The name a page is published under, e.g. both `foo/index.html` and `foo.html`
-# document `foo`. Directories are dropped; the upstream page names are already
-# fully qualified, so they are unique on their own.
+# The name a page is published under; `foo.html` and `foo/index.html` are both
+# `foo`. Upstream names are fully qualified, so dropping directories keeps them
+# unique.
 page_name() {
 	local relative_path="$1"
 
@@ -72,9 +66,9 @@ page_name() {
 	echo "${name##*/}"
 }
 
-# The one line summary that a man page is listed under, taken from the page's
-# own heading. A page whose first heading is missing or empty has nothing to be
-# summarized by, and would be published as an unfindable man page.
+# The summary for the man page's NAME section, taken from the page's first
+# heading. Without a NAME section `whatis` and `apropos` index nothing, so a
+# page with no heading is refused rather than published unfindable.
 page_summary() {
 	local path="$1" summary
 
@@ -104,9 +98,7 @@ to_man() {
 	local summary
 	summary="$(page_summary "$old_path")" || exit 1
 
-	# `man` itself does not need a NAME section, but `whatis` and `apropos`
-	# index nothing without one. The template puts header-includes directly
-	# after the .TH line, which is where NAME belongs.
+	# `header-includes` lands directly after .TH, which is where NAME belongs.
 	pandoc --from=html --to=man --standalone \
 		--metadata "title=$name" \
 		--variable "section=$MAN_SECTION" \
@@ -126,21 +118,18 @@ quote_replacement() {
 	printf '%s' "$1" | sed 's|[\\&]|\\&|g'
 }
 
-# Escape a literal string so that it can be used in roff source. A leading `.`
-# or `'` would start a request rather than a line of text.
+# Escape a literal string for roff. A leading `.` or `'` would start a request.
 quote_roff() {
 	printf '%s' "$1" | sed -e 's|\\|\\e|g' -e "s|^[.']|\\\\\&&|"
 }
 
-# The path, relative to the minimal-html tree's root, of the page crawled to
-# `relative_path`. That tree mirrors the crawl, so this is a no-op; it exists so
-# that every pass names its output the same way.
+# Where a page is published in each tree. The minimal-html tree mirrors the
+# crawl, so that mapping is identity; it exists so both passes can be
+# parameterized the same way.
 minimal_html_path() {
 	echo "$1"
 }
 
-# The path, relative to the markdown tree's root, of the page at
-# `relative_path`.
 markdown_path() {
 	local relative_path="$1"
 
@@ -153,7 +142,7 @@ markdown_path() {
 	echo "$path"
 }
 
-# The page in the current pass's source tree that `target` names, if any.
+# The page that `target` names, if any.
 resolve_page() {
 	local target="$1"
 
@@ -161,9 +150,7 @@ resolve_page() {
 		echo "$target"
 		return 0
 	fi
-	# `foo.html` and `foo/index.html` are the same page, and only the latter
-	# survives `list_pages` when the crawl caught both. Links written against
-	# the crawl still spell it the first way.
+	# Links written against the crawl still spell a deduped page `foo.html`.
 	local deep="${target%.html}/index.html"
 	if [[ "$target" == *.html && -n "${page_set[$deep]+set}" ]]; then
 		echo "$deep"
@@ -172,18 +159,13 @@ resolve_page() {
 	return 1
 }
 
-# Rewrite the relative links of the page at `in_path` for the tree it is being
-# converted into, writing the result to `out_path`.
+# Copy `in_path` to `out_path`, respelling its links for the tree it is headed
+# into.
 #
-# The crawl's links point at `.html` files, spelled relative to the directory of
-# the copy they were written in. Both of those change during conversion: pages
-# are renamed by `published_path`, and `foo/index.html` moves up a level when it
-# collapses to `foo.md`. So each link is resolved back to the page it means, and
-# then respelled from wherever this page has landed.
-#
-# `relative_path` is the page being converted, relative to the pass's source
-# root, and `published_path` names the function that maps a page to its path in
-# the output tree.
+# Conversion moves pages relative to the links pointing at them: `published_path`
+# renames them, and `foo/index.html` climbs a level when it collapses to
+# `foo.md`. So each link is resolved back to the page it means, then written
+# out afresh from where this page has landed.
 rewrite_links() {
 	local in_path="$1" out_path="$2" relative_path="$3" published_path="$4"
 
@@ -196,8 +178,7 @@ rewrite_links() {
 	local -a edits=()
 	local href path target page new
 	while IFS= read -r href; do
-		# Anything that already names where it wants to go: absolute and
-		# protocol relative URLs, and links into the page itself.
+		# Anything that already names where it wants to go.
 		[[ "$href" != *:* && "$href" != //* && "$href" != '#'* ]] || continue
 
 		path="${href%%[#?]*}"
@@ -222,11 +203,10 @@ rewrite_links() {
 
 # A page's HTML with the depth of its relative links normalized away.
 #
-# The crawler rewrites each copy of a page so that its links are relative to
-# that copy's own directory. Relative to `foo.html`, a sibling `bar` is spelled
-# `bar` and a child is spelled `foo/baz`; relative to `foo/index.html`, those
-# same targets are spelled `../bar` and `baz`. Dropping every leading `../` and
-# `foo/` from quoted attribute values therefore spells both copies alike.
+# The crawler spells each copy's links relative to that copy's own directory: a
+# sibling `bar` is `bar` from `foo.html` but `../bar` from `foo/index.html`, and
+# a child is `foo/baz` then `baz`. Dropping every leading `../` and `foo/` from
+# quoted attributes therefore spells both copies alike.
 normalize_link_depth() {
 	local path="$1" name
 	name="$(quote_bre "$2")"
@@ -234,10 +214,9 @@ normalize_link_depth() {
 	sed -e "s|\([\"']\)\.\./|\1|g" -e "s|\([\"']\)$name/|\1|g" "$path"
 }
 
-# Verify that the two copies of a page really are the same page.
-#
-# They are never byte-identical, since their relative links are written from
-# different directories, but they must agree once that is normalized away.
+# The two copies of a page are never byte-identical, since their links are
+# written from different directories, but they must agree once that is
+# normalized away.
 assert_same_page() {
 	local shallow="$1" deep="$2" name="$3"
 
@@ -249,11 +228,9 @@ assert_same_page() {
 	fi
 }
 
-# The *.html files in `src` that represent distinct pages, in a stable order.
-#
-# The crawl mirrors a page reachable at `foo` as both `foo.html` and
-# `foo/index.html`. The two are the same page, so only the `index.html` copy is
-# kept.
+# The *.html files in `src` that are distinct pages, in a stable order. The
+# crawl mirrors a page reachable at `foo` as both `foo.html` and
+# `foo/index.html`; only the latter is kept.
 list_pages() {
 	local src="$1"
 
@@ -269,19 +246,16 @@ list_pages() {
 	done < <(find "$src" -name '*.html' | LC_ALL=C sort)
 }
 
-# Run `convert` over every page in `src`, writing the results into `dst`.
-# `convert` is called as `convert OLD DST REL`, where REL is OLD's path relative
-# to `src` and DST is the output root. The converter picks OLD's destination
-# path within DST and creates whatever subdirectories it needs. `page_set` holds
-# the pass's pages while it runs, so that `convert` can resolve links into them.
+# Run `convert OLD DST REL` over every page in `src`. The converter picks OLD's
+# destination within DST and creates whatever subdirectories it needs.
 run_pass() {
 	local src="$1" dst="$2" convert="$3"
 
 	mkdir -p "$dst"
 
-	# Collected up front rather than streamed in, so that a failed assertion in
-	# `list_pages` aborts the run. `set -e` does not fire inside the subshell
-	# of a command substitution, so the failure is propagated by hand.
+	# Collected up front so that a failed assertion in `list_pages` aborts the
+	# run: `set -e` does not fire inside the subshell of a command
+	# substitution, so the failure is propagated by hand.
 	local pages
 	pages="$(list_pages "$src")" || return 1
 
@@ -315,8 +289,7 @@ fi
 
 mkdir -p "$dst_dir"
 
-# Scratch space for the converters, which each rewrite a page's links into it
-# on the way past.
+# Scratch space for the converters, which each pass a page through it.
 work_file="$(mktemp)"
 readonly work_file
 trap 'rm -f "$work_file"' EXIT
