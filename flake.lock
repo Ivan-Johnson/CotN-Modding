@@ -1,5 +1,22 @@
 {
   "nodes": {
+    "cotn-docs": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1787277132,
+        "narHash": "sha256-JuH4+t0dlLljFtG3hkCfDTjf1HcABajinR0XtIo5tEs=",
+        "ref": "mainline",
+        "rev": "2ed1802ef0940b73ea943480a686d23f6b96fce5",
+        "revCount": 5,
+        "type": "git",
+        "url": "ssh://git@github.com/Ivan-Johnson/CotN-docs.git"
+      },
+      "original": {
+        "ref": "mainline",
+        "type": "git",
+        "url": "ssh://git@github.com/Ivan-Johnson/CotN-docs.git"
+      }
+    },
     "fenix": {
       "inputs": {
         "nixpkgs": [
@@ -37,6 +54,7 @@
     },
     "root": {
       "inputs": {
+        "cotn-docs": "cotn-docs",
         "fenix": "fenix",
         "nixpkgs": "nixpkgs"
       }

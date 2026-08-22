@@ -7,6 +7,10 @@
 			url = "github:nix-community/fenix";
 			inputs.nixpkgs.follows = "nixpkgs";
 		};
+		cotn-docs = {
+			url = "git+ssh://git@github.com/Ivan-Johnson/CotN-docs.git?ref=mainline";
+			flake = false;
+		};
 	};
 
 	outputs =
@@ -14,6 +18,7 @@
 			self,
 			nixpkgs,
 			fenix,
+			cotn-docs,
 		}:
 		let
 			pkgs = import nixpkgs { system = "x86_64-linux"; };
@@ -41,11 +46,28 @@
 					export MANPATH="${helloWorldMan}/share/man''${MANPATH:+:$MANPATH}"
 				'';
 			};
+
+			# The markdown rendering of the HTML mirrored in the CotN-docs repo.
+			markdown =
+				pkgs.runCommand "cotn-docs-markdown"
+					{
+						nativeBuildInputs = [
+							pkgs.bash
+							pkgs.coreutils
+							pkgs.findutils
+							pkgs.htmlq
+							pkgs.pandoc
+						];
+					}
+					''
+						export LC_ALL=C.UTF-8
+						bash ${./html-to-markdown.bash} ${cotn-docs} "$out"
+					'';
 		in
 		{
 			devShells.x86_64-linux.default = shell;
 
-			# TODO - can we do something useful here instead?
-			packages.x86_64-linux.default = shell;
+			packages.x86_64-linux.default = markdown;
+			packages.x86_64-linux.markdown = markdown;
 		};
 }

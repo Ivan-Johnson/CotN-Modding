@@ -21,15 +21,32 @@ There are two scripts:
 
   2. Pushes that raw HTML to the CotN-docs mirror.
 
-* `./html-to-markdown.bash`
+* `./html-to-markdown.bash SRC_DIR DST_DIR`
 
-  1. Reads `output/1-original-html.tar.gz`.
+  Converts every `*.html` file under `SRC_DIR` into markdown. Both output trees
+  mirror `SRC_DIR`'s directory structure:
 
-  2. Preprocesses the HTML into `output/2-minimal-html.tar.gz`.
+  1. Preprocesses the HTML into `DST_DIR/minimal-html/`.
 
-  3. Converts the HTML to markdown in `output/3-html-to-markdown.tar.gz`.
+  2. Converts that into `DST_DIR/markdown/`.
 
   Nothing currently publishes the markdown; it is only produced locally.
+
+## Building the markdown with Nix
+
+The flake takes the CotN-docs mirror as an input (the `mainline` branch, i.e.
+the output of a `production` crawl) and runs `./html-to-markdown.bash` over it:
+
+```bash
+nix build
+```
+
+The result is a store path containing `minimal-html/` and `markdown/`.
+
+The mirror is a private repo, so the input is fetched over SSH; you need a
+GitHub SSH key that can read it. The pinned revision lives in `flake.lock`, so
+after pushing a fresh crawl you have to run `nix flake update cotn-docs` to pick
+it up.
 
 ## Extra Info
 
