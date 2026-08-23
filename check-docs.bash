@@ -73,6 +73,30 @@ assert_trees_agree() {
 	done
 }
 
+# The generated landing page should surface the sidebar navigation in all
+# three output formats.
+assert_navigation_is_promoted() {
+	local docs="$1"
+	local html="$docs/minimal-html/vortexbuffer.com/synchrony/docs/index.html"
+	local markdown="$docs/markdown/vortexbuffer.com/synchrony/docs.md"
+	local man="$docs/share/man/man$MAN_SECTION/cotn-docs.$MAN_SECTION"
+
+	grep -q 'href="overview/index.html"' "$html" ||
+		fail "$html does not show the recovered navigation"
+	grep -q 'href="modules/index.html"' "$html" ||
+		fail "$html does not show the recovered navigation"
+	grep -q '^# Synchrony API Documentation$' "$markdown" ||
+		fail "$markdown does not show the recovered navigation"
+	grep -q '](docs/modules.md)' "$markdown" ||
+		fail "$markdown does not show the recovered navigation"
+	grep -q '](docs/overview.md)' "$markdown" ||
+		fail "$markdown does not show the recovered navigation"
+	grep -qE '^\.SH NAME$' "$man" ||
+		fail "$man has no NAME section"
+	grep -q '^cotn-docs \\- Synchrony API Documentation navigation$' "$man" ||
+		fail "$man does not describe the navigation index"
+}
+
 # The upstream chrome that conversion strips has stayed stripped.
 assert_no_chrome() {
 	local docs="$1"
@@ -99,6 +123,7 @@ main() {
 	local docs="$1"
 
 	assert_trees_agree "$docs"
+	assert_navigation_is_promoted "$docs"
 	assert_no_chrome "$docs"
 	assert_links_resolve "$docs/minimal-html"
 	assert_links_resolve "$docs/markdown"

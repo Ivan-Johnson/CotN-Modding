@@ -60,6 +60,38 @@ write_raw_page() {
 	printf '<html><body><article>%s</article></body></html>\n' "$body" >"$path"
 }
 
+# Write a small page that carries a sidebar nav outside its article, matching
+# the shape the converter harvests in the real crawl.
+write_nav_root_page() {
+	local path="$1"
+
+	mkdir -p "$(dirname "$path")"
+	cat >"$path" <<'EOF'
+<html><body>
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a aria-label="Synchrony API Documentation" class="md-nav__button md-logo" data-md-component="logo" href="index.html" title="Synchrony API Documentation"><img alt="logo" src="assets/synchromod.png"></a>
+    Synchrony API Documentation
+  </label>
+  <ul class="md-nav__list" data-md-scrollfix="">
+    <li class="md-nav__item"><a class="md-nav__link" href="overview.html"><span class="md-ellipsis">Overview</span></a></li>
+    <li class="md-nav__item md-nav__item--nested">
+      <input class="md-nav__toggle md-toggle" id="__nav_2" type="checkbox">
+      <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0"><span class="md-ellipsis">Modules</span><span class="md-nav__icon md-icon"></span></label>
+      <nav aria-expanded="false" aria-labelledby="__nav_2_label" class="md-nav" data-md-level="1">
+        <label class="md-nav__title" for="__nav_2"><span class="md-nav__icon md-icon"></span>Modules</label>
+        <ul class="md-nav__list" data-md-scrollfix="">
+          <li class="md-nav__item"><a class="md-nav__link" href="modules/page.html"><span class="md-ellipsis">Page</span></a></li>
+        </ul>
+      </nav>
+    </li>
+  </ul>
+</nav>
+<article><h1>Home</h1></article>
+</body></html>
+EOF
+}
+
 # Convert `src` into `dst`, capturing all output. Returns the exit status of the
 # script under test.
 convert() {
@@ -183,6 +215,27 @@ test_output_layout() {
 	# Anything that is not a page is ignored.
 	assert_missing "$dst/minimal-html/notes.txt"
 	assert_missing "$dst/markdown/notes.txt"
+}
+
+test_navigation_is_promoted_to_the_root_and_man_page() {
+	begin navigation-is-promoted-to-the-root-and-man-page
+
+	write_nav_root_page "$src/index.html"
+	write_page "$src/overview.html" 'overview'
+	write_page "$src/modules/page.html" 'page'
+
+	convert_expecting_success || return
+
+	assert_matches "$dst/minimal-html/index.html" 'href="overview.html"'
+	assert_matches "$dst/minimal-html/index.html" 'href="modules/page.html"'
+	assert_matches "$dst/markdown/index.md" '^# Synchrony API Documentation$'
+	assert_matches "$dst/markdown/index.md" '](overview\.md)'
+	assert_matches "$dst/markdown/index.md" '](modules/page\.md)'
+	assert_exists "$dst/share/man/man3/cotn-docs.3"
+	assert_missing "$dst/share/man/man3/index.3"
+	assert_matches "$dst/share/man/man3/cotn-docs.3" '^\.SH NAME$'
+	assert_matches "$dst/share/man/man3/cotn-docs.3" \
+		'^cotn-docs \\- Synchrony API Documentation navigation$'
 }
 
 test_man_pages_are_titled_after_their_page() {
@@ -336,6 +389,7 @@ test_duplicate_pages_are_converted_once
 test_mismatched_copies_are_rejected
 test_copies_with_different_links_are_rejected
 test_output_layout
+test_navigation_is_promoted_to_the_root_and_man_page
 test_man_pages_are_titled_after_their_page
 test_colliding_man_pages_are_rejected
 test_heading_permalinks_are_dropped

@@ -27,15 +27,8 @@ There are two scripts:
   | `debug`      | a tiny subset | `debug`       |
   | `production` | everything    | `mainline`    |
 
-* `./html-to-docs.bash SRC_DIR DST_DIR` converts every `*.html` under `SRC_DIR`
-  into `DST_DIR/minimal-html/`, then `DST_DIR/markdown/` and
-  `DST_DIR/share/man/man3/`.
-
-  The first two trees mirror `SRC_DIR`; the man pages are flat, as `man`
-  expects. Links between pages are rewritten to follow them; links out of the
-  crawl are left alone.
-
-  Nothing currently publishes these; they are only produced locally.
+* `./html-to-docs.bash SRC_DIR DST_DIR` generates markdown and man-page docs
+  from the HTML.
 
 ## Building the docs with Nix
 

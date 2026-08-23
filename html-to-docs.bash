@@ -30,6 +30,101 @@ usage() {
 	echo "Usage: ${BASH_SOURCE[0]} SRC_DIR DST_DIR" >&2
 }
 
+# The crawl root is nested in the mirror tree in production, but the tests use
+# a small flat fixture. Either shape may serve as the nav source.
+nav_source_path() {
+	local src="$1"
+	local candidate
+
+	for candidate in \
+		"$src/vortexbuffer.com/synchrony/docs/index.html" \
+		"$src/index.html"; do
+		if [[ -f "$candidate" ]]; then
+			echo "$candidate"
+			return 0
+		fi
+	done
+	return 1
+}
+
+# Extract the sidebar navigation from the source tree, stripped down to the
+# page links and section labels that matter in the output.
+nav_fragment() {
+	local path="$1"
+
+	htmlq 'nav.md-nav--primary' --ignore-whitespace --pretty \
+		--remove-nodes 'input' \
+		--remove-nodes 'span.md-nav__icon' \
+		--remove-nodes 'a.md-nav__button' \
+		--remove-nodes 'label.md-nav__title' \
+		--filename "$path" \
+	| sed -e 's|<span class="md-ellipsis">||g' \
+		-e 's|</span>||g' \
+		-e 's| class="[^"]*"||g'
+}
+
+# Wrap the harvested navigation in the article shell used by the output tree.
+nav_page() {
+	local src="$1"
+	local dst="$2"
+	local fragment
+	local title='Synchrony API Documentation'
+
+	fragment="$(mktemp)"
+	if ! nav_fragment "$src" >"$fragment"; then
+		rm -f "$fragment"
+		return 1
+	fi
+	if [[ ! -s "$fragment" ]]; then
+		rm -f "$fragment"
+		return 1
+	fi
+	{
+		printf '<article><h1>%s</h1>\n' "$title"
+		cat "$fragment"
+		printf '\n</article>\n'
+	} >"$dst"
+	rm -f "$fragment"
+}
+
+# Publish the generated nav landing page into the tree's HTML root.
+nav_to_minimal_html() {
+	local nav="$1"
+	local dst="$2"
+	local relative_path="$3"
+
+	rewrite_links "$nav" "$dst/$relative_path" "$relative_path" minimal_html_path
+}
+
+# Publish the generated nav landing page into the tree's markdown root.
+nav_to_markdown() {
+	local nav="$1"
+	local dst="$2"
+	local relative_path="$3"
+
+	rewrite_links "$nav" "$work_file" "$relative_path" markdown_path
+	pandoc --from=html "--to=$PANDOC_TO" "$work_file" \
+		--output "$dst/$(markdown_path "$relative_path")"
+}
+
+# Publish the generated nav landing page into the tree's man root.
+nav_to_man() {
+	local nav="$1"
+	local dst="$2"
+	local relative_path="$3"
+	local name='cotn-docs'
+	local summary='Synchrony API Documentation navigation'
+
+	rewrite_links "$nav" "$work_file" "$relative_path" minimal_html_path
+	pandoc --from=html --to=man --standalone \
+		--metadata "title=$name" \
+		--variable "section=$MAN_SECTION" \
+		--variable "header=$MAN_HEADER" \
+		--variable "header-includes=.SH NAME
+$(quote_roff "$name") \\- $(quote_roff "$summary")" \
+		"$work_file" --output "$dst/$name.$MAN_SECTION"
+}
+
 # Strip everything outside the page's <article>, and the chrome inside it.
 to_minimal_html() {
 	local old_path="$1" dst="$2" relative_path="$3"
@@ -292,8 +387,20 @@ mkdir -p "$dst_dir"
 # Scratch space for the converters, which each pass a page through it.
 work_file="$(mktemp)"
 readonly work_file
-trap 'rm -f "$work_file"' EXIT
+nav_file="$(mktemp)"
+readonly nav_file
+trap 'rm -f "$work_file" "$nav_file"' EXIT
 
 run_pass "$src_dir" "$dst_dir/minimal-html" to_minimal_html
 run_pass "$dst_dir/minimal-html" "$dst_dir/markdown" to_markdown
 run_pass "$dst_dir/minimal-html" "$dst_dir/share/man/man$MAN_SECTION" to_man
+
+if nav_source="$(nav_source_path "$src_dir")"; then
+	nav_relative_path="${nav_source#"$src_dir"/}"
+	if nav_page "$nav_source" "$nav_file"; then
+		nav_to_minimal_html "$nav_file" "$dst_dir/minimal-html" "$nav_relative_path"
+		nav_to_markdown "$nav_file" "$dst_dir/markdown" "$nav_relative_path"
+		rm -f "$dst_dir/share/man/man$MAN_SECTION/$(page_name "$nav_relative_path").$MAN_SECTION"
+		nav_to_man "$nav_file" "$dst_dir/share/man/man$MAN_SECTION" "$nav_relative_path"
+	fi
+fi
