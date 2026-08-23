@@ -238,6 +238,19 @@ test_navigation_is_promoted_to_the_root_and_man_page() {
 		'^cotn-docs \\- Synchrony API Documentation navigation$'
 }
 
+test_markdown_tables_are_preserved() {
+	begin markdown-tables-are-preserved
+
+	write_page "$src/page.html" \
+		'<table><thead><tr><th>A</th><th>B</th></tr></thead><tbody><tr><td>1</td><td>2</td></tr></tbody></table>'
+
+	convert_expecting_success || return
+
+	assert_not_matches "$dst/markdown/page.md" '\[TABLE\]'
+	assert_matches "$dst/markdown/page.md" '^| A'
+	assert_matches "$dst/markdown/page.md" '^| 1'
+}
+
 test_man_pages_are_titled_after_their_page() {
 	begin man-pages-are-titled-after-their-page
 
@@ -390,6 +403,7 @@ test_mismatched_copies_are_rejected
 test_copies_with_different_links_are_rejected
 test_output_layout
 test_navigation_is_promoted_to_the_root_and_man_page
+test_markdown_tables_are_preserved
 test_man_pages_are_titled_after_their_page
 test_colliding_man_pages_are_rejected
 test_heading_permalinks_are_dropped

@@ -11,7 +11,9 @@
 
 set -euo pipefail
 
-readonly PANDOC_TO='commonmark-alerts-ascii_identifiers-attributes-autolink_bare_uris-bracketed_spans-definition_lists-east_asian_line_breaks-emoji-fancy_lists-fenced_divs-footnotes-gfm_auto_identifiers-hard_line_breaks-implicit_figures-implicit_header_references-pipe_tables-raw_attribute-raw_html-rebase_relative_paths-smart-sourcepos-strikeout-subscript-superscript-task_lists-tex_math_dollars-tex_math_gfm-wikilinks_title_after_pipe-wikilinks_title_before_pipe-yaml_metadata_block'
+# GFM preserves the pipe tables that the CommonMark writer flattens to
+# `[TABLE]`.
+readonly PANDOC_TO='gfm'
 
 # The documented modules are a Lua API, so they belong in the "library calls"
 # section.

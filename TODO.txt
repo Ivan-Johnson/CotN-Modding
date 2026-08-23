@@ -5,12 +5,6 @@
    lists the 681 pages. Harvest the nav into a generated index page, and into a
    `cotn-docs.3` for the man tree.
 
-2. Fix tables in the markdown output. `PANDOC_TO` disables `pipe_tables`, so
-   tables are flattened to a `[TABLE]` placeholder; 2385 of them, across 362 of
-   the 681 pages. The man pages render them fine. The component field tables
-   are most of what the API reference actually says, so this is the one item
-   that loses content rather than making it harder to find.
-
 3. Turn cross references into `name(3)` in the man pages. Pandoc drops the
    target of a relative link entirely, so `overview.3` mentions "the Modules
    section" with no way to reach it. `rewrite_links` already resolves a link to
