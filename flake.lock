@@ -17,6 +17,27 @@
         "url": "ssh://git@github.com/Ivan-Johnson/CotN-docs.git"
       }
     },
+    "dev_tools": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1787504758,
+        "narHash": "sha256-KCGSPzAxAp30GWcLfgYYWYJQUAyrAb5x8BS0U+CEjp0=",
+        "ref": "refs/heads/mainline",
+        "rev": "af6932617e1eb1f0972c0585df53a4a34607a71a",
+        "revCount": 2663,
+        "type": "git",
+        "url": "https://github.com/Ivan-Johnson/DevTools.git"
+      },
+      "original": {
+        "ref": "refs/heads/mainline",
+        "type": "git",
+        "url": "https://github.com/Ivan-Johnson/DevTools.git"
+      }
+    },
     "fenix": {
       "inputs": {
         "nixpkgs": [
@@ -55,6 +76,7 @@
     "root": {
       "inputs": {
         "cotn-docs": "cotn-docs",
+        "dev_tools": "dev_tools",
         "fenix": "fenix",
         "nixpkgs": "nixpkgs"
       }

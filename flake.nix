@@ -11,6 +11,11 @@
 			url = "git+ssh://git@github.com/Ivan-Johnson/CotN-docs.git?ref=mainline";
 			flake = false;
 		};
+
+		dev_tools = {
+			url = "git+https://github.com/Ivan-Johnson/DevTools.git?ref=refs/heads/mainline";
+			inputs.nixpkgs.follows = "nixpkgs";
+		};
 	};
 
 	outputs =
@@ -19,6 +24,7 @@
 			nixpkgs,
 			fenix,
 			cotn-docs,
+			dev_tools,
 		}:
 		let
 			pkgs = import nixpkgs { system = "x86_64-linux"; };
@@ -33,15 +39,7 @@
 			];
 
 			shell = pkgs.mkShell {
-				buildInputs = conversionTools ++ [
-					pkgs.git
-					pkgs.gnumake
-					pkgs.less
-					pkgs.man-db
-					pkgs.nix
-					pkgs.nixfmt
-					pkgs.which
-				];
+				buildInputs = conversionTools ++ [ dev_tools.packages.${pkgs.stdenv.hostPlatform.system}.default ];
 				# `docs` is deliberately not an input of this shell. Depending on
 				# it would mean the shell could not be entered whenever the
 				# conversion is broken, which is exactly when it is needed. It is
