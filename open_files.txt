@@ -4,3 +4,4 @@ crawl-and-push.bash
 flake.nix
 open_files.txt
 TODO.txt
+README.md
