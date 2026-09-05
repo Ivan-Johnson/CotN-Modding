@@ -38,22 +38,6 @@
                                 pkgs.pandoc
                         ];
 
-                        shell = pkgs.mkShell {
-                                buildInputs = conversionTools ++ [ dev_tools.packages.${pkgs.stdenv.hostPlatform.system}.default ];
-                                # `docs` is deliberately not an input of this shell. Depending on
-                                # it would mean the shell could not be entered whenever the
-                                # conversion is broken, which is exactly when it is needed. It is
-                                # built on demand instead.
-                                shellHook = ''
-                                        # Rebuild the documentation, then read a page from it.
-                                        man-crypt() {
-                                                local out="$(nix build --no-link --print-out-paths "$ITJ_FLAKE_ROOT")" || return
-                                                MANPATH="$out/share/man" man "$@"
-                                        }
-                                        export -f man-crypt
-                                '';
-                        };
-
                         # The scripts, isolated from the generated state around them so that
                         # a rebuilt `result` or a fresh crawl does not invalidate the tests.
                         scripts = pkgs.lib.fileset.toSource {
@@ -107,7 +91,21 @@
                         '';
                 in
                 {
-                        devShells.x86_64-linux.default = shell;
+                        devShells.x86_64-linux.default = pkgs.mkShell {
+                                buildInputs = conversionTools ++ [ dev_tools.packages.${pkgs.stdenv.hostPlatform.system}.default ];
+                                # `docs` is deliberately not an input of this shell. Depending on
+                                # it would mean the shell could not be entered whenever the
+                                # conversion is broken, which is exactly when it is needed. It is
+                                # built on demand instead.
+                                shellHook = ''
+                                        # Rebuild the documentation, then read a page from it.
+                                        man-crypt() {
+                                                local out="$(nix build --no-link --print-out-paths "$ITJ_FLAKE_ROOT")" || return
+                                                MANPATH="$out/share/man" man "$@"
+                                        }
+                                        export -f man-crypt
+                                '';
+                        };
 
                         packages.x86_64-linux.default = docs;
 
