@@ -1,12 +1,17 @@
 {
 	description = "IDK. Something to do with CotN mods & vibe coding.";
 
-	inputs = {
-		nixpkgs.url = "nixpkgs/nixos-26.05";
-	};
+        inputs = {
+                nixpkgs.url = "nixpkgs/nixos-26.05";
+
+                itj_dev_tools = {
+                        url = "git+https://github.com/Ivan-Johnson/DevTools.git?ref=refs/heads/mainline";
+                        inputs.nixpkgs.follows = "nixpkgs";
+                };
+        };
 
 	outputs =
-		{ self, nixpkgs }:
+		{ self, nixpkgs, itj_dev_tools }:
 		let
 			pkgs = import nixpkgs { system = "x86_64-linux"; };
 			helloWorldModZip = pkgs.runCommand "hello-world-mod-zip" { nativeBuildInputs = [ pkgs.zip ]; } ''
@@ -17,20 +22,15 @@
 
 			shell = pkgs.mkShell {
 				buildInputs = with pkgs; [
-					pkgs.coreutils
-					pkgs.which
-					pkgs.bash
-					pkgs.git
-					pkgs.nix
-					pkgs.nixfmt
+                                        itj_dev_tools.packages.${pkgs.stdenv.hostPlatform.system}.default
 
 					# For packaging mods
 					pkgs.zip
 					pkgs.unzip
 				];
-				shellHook = "
+				shellHook = ''
 					alias 'build-install="nix build && nix run .#install-hello-world-mod"'
-				";
+				'';
 			};
 		in
 		{
