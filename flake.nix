@@ -63,6 +63,8 @@
                                 export LC_ALL=C.UTF-8
                                 bash ${./DocDownloader/html-to-docs.bash} ${cotn-docs} "$out"
 
+                                cp -r ${cotn-docs} "$out/html-original"
+
                                 # `man -k` and `whatis` search an index rather than the pages
                                 # themselves, and nothing can build one later, because by then
                                 # the pages live in the read only store. MANDB_MAP is what
