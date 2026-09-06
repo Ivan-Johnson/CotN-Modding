@@ -40,6 +40,7 @@
                                         pkgs.unzip
                                 ];
                                 shellHook = ''
+                                        export ITJ_GIT_PREPUSH_ENABLE_NIX_CHECKS=
                                         alias 'build-install="nix build && nix run .#install-hello-world-mod"'
                                 '';
                         };
