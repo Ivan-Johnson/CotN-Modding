@@ -104,6 +104,17 @@
                                 cd ${./Mods/HelloWorldMod}
                                 zip -qr "$out/HelloWorldMod.zip" .
                         '';
+
+                        # Static analysis of every mod's Lua, catching syntax errors and
+                        # undefined globals (e.g. a typo'd event name) without needing the
+                        # game itself. `Mods/.luacheckrc` declares the globals Synchrony
+                        # injects into mods, such as `event`.
+                        modsLuaLint =
+                                pkgs.runCommand "cotn-mods-luacheck" { nativeBuildInputs = [ pkgs.luaPackages.luacheck ]; }
+                                        ''
+                                                luacheck --config ${./Mods/.luacheckrc} ${./Mods}
+                                                touch "$out"
+                                        '';
                 in
                 {
                         devShells.x86_64-linux.default = pkgs.mkShell {
@@ -151,6 +162,7 @@
                                 tests = tests;
                                 corpus = corpus;
                                 hello-world-mod = helloWorldModZip;
+                                mods-lua-lint = modsLuaLint;
                         };
                 };
 }
