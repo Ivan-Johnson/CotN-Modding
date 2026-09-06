@@ -217,8 +217,8 @@ test_output_layout() {
 	assert_missing "$dst/markdown/notes.txt"
 }
 
-test_navigation_is_promoted_to_the_root_and_man_page() {
-	begin navigation-is-promoted-to-the-root-and-man-page
+test_navigation_is_published_without_displacing_its_source_page() {
+	begin navigation-is-published-without-displacing-its-source-page
 
 	write_nav_root_page "$src/index.html"
 	write_page "$src/overview.html" 'overview'
@@ -226,16 +226,21 @@ test_navigation_is_promoted_to_the_root_and_man_page() {
 
 	convert_expecting_success || return
 
-	assert_matches "$dst/minimal-html/index.html" 'href="overview.html"'
-	assert_matches "$dst/minimal-html/index.html" 'href="modules/page.html"'
-	assert_matches "$dst/markdown/index.md" '^# Synchrony API Documentation$'
-	assert_matches "$dst/markdown/index.md" '](overview\.md)'
-	assert_matches "$dst/markdown/index.md" '](modules/page\.md)'
+	assert_matches "$dst/minimal-html/cotn-docs.html" 'href="overview.html"'
+	assert_matches "$dst/minimal-html/cotn-docs.html" 'href="modules/page.html"'
+	assert_matches "$dst/markdown/cotn-docs.md" '^# Synchrony API Documentation$'
+	assert_matches "$dst/markdown/cotn-docs.md" '](overview\.md)'
+	assert_matches "$dst/markdown/cotn-docs.md" '](modules/page\.md)'
 	assert_exists "$dst/share/man/man3/cotn-docs.3"
-	assert_missing "$dst/share/man/man3/index.3"
 	assert_matches "$dst/share/man/man3/cotn-docs.3" '^\.SH NAME$'
 	assert_matches "$dst/share/man/man3/cotn-docs.3" \
 		'^cotn-docs \\- Synchrony API Documentation navigation$'
+
+	# The page the sidebar was harvested from is a page like any other, so it
+	# keeps its own content in every tree.
+	assert_matches "$dst/minimal-html/index.html" '<h1>Home'
+	assert_matches "$dst/markdown/index.md" '^# Home$'
+	assert_matches "$dst/share/man/man3/index.3" '^index \\- Home$'
 }
 
 test_markdown_tables_are_preserved() {
@@ -402,7 +407,7 @@ test_duplicate_pages_are_converted_once
 test_mismatched_copies_are_rejected
 test_copies_with_different_links_are_rejected
 test_output_layout
-test_navigation_is_promoted_to_the_root_and_man_page
+test_navigation_is_published_without_displacing_its_source_page
 test_markdown_tables_are_preserved
 test_man_pages_are_titled_after_their_page
 test_colliding_man_pages_are_rejected

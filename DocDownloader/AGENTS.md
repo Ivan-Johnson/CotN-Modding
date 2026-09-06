@@ -40,6 +40,11 @@ man pages. See the repo-root `AGENTS.md` for shared commands and conventions.
 * Man pages are flat and unprefixed in section 3, named after the page (e.g.
   `necro.game.object.Map.3`). `to_man` hard-fails on a name collision rather
   than clobbering.
+* The sidebar navigation is harvested from the landing page into a page of its
+  own, `cotn-docs`, published beside the page it came from so that its links
+  still resolve from the directory they were written against. It is a separate
+  page rather than the landing page's replacement, because the landing page has
+  its own content and earns its own `docs.3`.
 * Every man page needs `.SH NAME`, or `whatis` and `apropos` index nothing. It
   comes from the page's first `<h1>`, via Pandoc's `header-includes`.
   `page_summary` hard-fails on a page with no heading, so the tests'

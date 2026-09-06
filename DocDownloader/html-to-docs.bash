@@ -20,6 +20,11 @@ readonly PANDOC_TO='gfm'
 readonly MAN_SECTION=3
 readonly MAN_HEADER='Crypt of the NecroDancer Modding Documentation'
 
+# The harvested navigation is published as a page in its own right. It is named
+# rather than left at the landing page's path so that it does not displace the
+# real page whose sidebar it was taken from.
+readonly NAV_NAME='cotn-docs'
+
 # Links are resolved lexically, against a root chosen not to collide with any
 # real path.
 readonly LINK_ROOT=/cotn-docs
@@ -65,6 +70,21 @@ nav_fragment() {
 		-e 's| class="[^"]*"||g'
 }
 
+# Where the generated navigation lands in the page namespace: a sibling of the
+# page it was harvested from, so that its links still resolve from the same
+# directory they were written against.
+nav_relative_path() {
+	local source_relative_path="$1"
+
+	local dir
+	dir="$(dirname "$source_relative_path")"
+	if [[ "$dir" == "." ]]; then
+		echo "$NAV_NAME.html"
+		return
+	fi
+	echo "$dir/$NAV_NAME.html"
+}
+
 # Wrap the harvested navigation in the article shell used by the output tree.
 nav_page() {
 	local src="$1"
@@ -95,7 +115,9 @@ nav_to_minimal_html() {
 	local dst="$2"
 	local relative_path="$3"
 
-	rewrite_links "$nav" "$dst/$relative_path" "$relative_path" minimal_html_path
+	local new_path="$dst/$relative_path"
+	mkdir -p "$(dirname "$new_path")"
+	rewrite_links "$nav" "$new_path" "$relative_path" minimal_html_path
 }
 
 # Publish the generated nav landing page into the tree's markdown root.
@@ -104,9 +126,12 @@ nav_to_markdown() {
 	local dst="$2"
 	local relative_path="$3"
 
+	local new_path
+	new_path="$dst/$(markdown_path "$relative_path")"
+
+	mkdir -p "$(dirname "$new_path")"
 	rewrite_links "$nav" "$work_file" "$relative_path" markdown_path
-	pandoc --from=html "--to=$PANDOC_TO" "$work_file" \
-		--output "$dst/$(markdown_path "$relative_path")"
+	pandoc --from=html "--to=$PANDOC_TO" "$work_file" --output "$new_path"
 }
 
 # Publish the generated nav landing page into the tree's man root.
@@ -114,8 +139,18 @@ nav_to_man() {
 	local nav="$1"
 	local dst="$2"
 	local relative_path="$3"
-	local name='cotn-docs'
 	local summary='Synchrony API Documentation navigation'
+
+	local name
+	name="$(page_name "$relative_path")"
+	local new_path="$dst/$name.$MAN_SECTION"
+
+	# The man namespace is flat, so a real page of this name would silently be
+	# replaced by the navigation.
+	if [[ -e "$new_path" ]]; then
+		echo "Man page name '$name' is claimed by a documentation page, so the navigation cannot be published under it" >&2
+		exit 1
+	fi
 
 	rewrite_links "$nav" "$work_file" "$relative_path" minimal_html_path
 	pandoc --from=html --to=man --standalone \
@@ -124,7 +159,7 @@ nav_to_man() {
 		--variable "header=$MAN_HEADER" \
 		--variable "header-includes=.SH NAME
 $(quote_roff "$name") \\- $(quote_roff "$summary")" \
-		"$work_file" --output "$dst/$name.$MAN_SECTION"
+		"$work_file" --output "$new_path"
 }
 
 # Strip everything outside the page's <article>, and the chrome inside it.
@@ -398,11 +433,10 @@ run_pass "$dst_dir/minimal-html" "$dst_dir/markdown" to_markdown
 run_pass "$dst_dir/minimal-html" "$dst_dir/share/man/man$MAN_SECTION" to_man
 
 if nav_source="$(nav_source_path "$src_dir")"; then
-	nav_relative_path="${nav_source#"$src_dir"/}"
+	nav_path="$(nav_relative_path "${nav_source#"$src_dir"/}")"
 	if nav_page "$nav_source" "$nav_file"; then
-		nav_to_minimal_html "$nav_file" "$dst_dir/minimal-html" "$nav_relative_path"
-		nav_to_markdown "$nav_file" "$dst_dir/markdown" "$nav_relative_path"
-		rm -f "$dst_dir/share/man/man$MAN_SECTION/$(page_name "$nav_relative_path").$MAN_SECTION"
-		nav_to_man "$nav_file" "$dst_dir/share/man/man$MAN_SECTION" "$nav_relative_path"
+		nav_to_minimal_html "$nav_file" "$dst_dir/minimal-html" "$nav_path"
+		nav_to_markdown "$nav_file" "$dst_dir/markdown" "$nav_path"
+		nav_to_man "$nav_file" "$dst_dir/share/man/man$MAN_SECTION" "$nav_path"
 	fi
 fi

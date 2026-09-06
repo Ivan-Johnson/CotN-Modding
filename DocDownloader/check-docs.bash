@@ -77,12 +77,13 @@ assert_trees_agree() {
 	done
 }
 
-# The generated landing page should surface the sidebar navigation in all
-# three output formats.
-assert_navigation_is_promoted() {
+# The generated navigation page should surface the sidebar in all three output
+# formats, without displacing the page it was harvested from.
+assert_navigation_is_published() {
 	local docs="$1"
-	local html="$docs/minimal-html/vortexbuffer.com/synchrony/docs/index.html"
-	local markdown="$docs/markdown/vortexbuffer.com/synchrony/docs.md"
+	local root="vortexbuffer.com/synchrony/docs"
+	local html="$docs/minimal-html/$root/cotn-docs.html"
+	local markdown="$docs/markdown/$root/cotn-docs.md"
 	local man="$docs/share/man/man$MAN_SECTION/cotn-docs.$MAN_SECTION"
 
 	grep -q 'href="overview/index.html"' "$html" ||
@@ -91,14 +92,31 @@ assert_navigation_is_promoted() {
 		fail "$html does not show the recovered navigation"
 	grep -q '^# Synchrony API Documentation$' "$markdown" ||
 		fail "$markdown does not show the recovered navigation"
-	grep -q '](docs/modules.md)' "$markdown" ||
+	grep -q '](modules.md)' "$markdown" ||
 		fail "$markdown does not show the recovered navigation"
-	grep -q '](docs/overview.md)' "$markdown" ||
+	grep -q '](overview.md)' "$markdown" ||
 		fail "$markdown does not show the recovered navigation"
 	grep -qE '^\.SH NAME$' "$man" ||
 		fail "$man has no NAME section"
 	grep -q '^cotn-docs \\- Synchrony API Documentation navigation$' "$man" ||
 		fail "$man does not describe the navigation index"
+}
+
+# The upstream landing page is a page like any other, so harvesting its sidebar
+# must leave its own content published in all three trees.
+assert_landing_page_survives() {
+	local docs="$1"
+	local marker='Once Synchrony is installed'
+	local html="$docs/minimal-html/vortexbuffer.com/synchrony/docs/index.html"
+	local markdown="$docs/markdown/vortexbuffer.com/synchrony/docs.md"
+	local man="$docs/share/man/man$MAN_SECTION/docs.$MAN_SECTION"
+
+	grep -q "$marker" "$html" ||
+		fail "$html no longer holds the landing page's own content"
+	grep -q "$marker" "$markdown" ||
+		fail "$markdown no longer holds the landing page's own content"
+	grep -q '^docs \\- Crypt of the NecroDancer: Synchrony Modding Documentation$' "$man" ||
+		fail "$man is not the landing page's own man page"
 }
 
 # The upstream chrome that conversion strips has stayed stripped.
@@ -134,7 +152,8 @@ main() {
 	local docs="$1"
 
 	assert_trees_agree "$docs"
-	assert_navigation_is_promoted "$docs"
+	assert_navigation_is_published "$docs"
+	assert_landing_page_survives "$docs"
 	assert_no_chrome "$docs"
 	assert_links_resolve "$docs/minimal-html"
 	assert_links_resolve "$docs/markdown"
