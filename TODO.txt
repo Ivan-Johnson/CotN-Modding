@@ -1,0 +1,19 @@
+* Recover key docs:
+
+  [ ] https://vortexbuffer.com/synchrony/docs/index.html
+  [ ] https://docs.google.com/document/d/1xTo-_QDvhZRL0ov7uTy_-ay8QLK2yT3b0wIaf5EU6AM/edit?tab=t.0#heading=h.k42rleh78ol3
+  [ ] https://mod.io/g/crypt/r/introduction-to-crypt-of-the-necrodancer-synchrony-modding
+
+* Make builds deterministic so that `--rebuild` actually works?
+
+* Parallelize `docs` build
+
+
+* Cleanup tests
+
+  * Verify that `build-release` is actually running all the tests
+
+  * Delete `check-docs.bash`'s `docs`' parameter? Shouldn't be necessary now
+    that `docs` is a `nativeBuildInputs`?
+
+  * Merge `test-html-to-docs.bash` and `check-docs.bash`, maybe?
