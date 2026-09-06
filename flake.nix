@@ -132,14 +132,16 @@
                                 '';
                         };
 
-                        packages.x86_64-linux.default = pkgs.linkFarm "cotn-modding" {
+                        packages.x86_64-linux = {
+                                default = pkgs.linkFarm "cotn-modding" {
+                                        docs = docs;
+                                        hello-world-mod = helloWorldModZip;
+                                };
+
                                 docs = docs;
+
                                 hello-world-mod = helloWorldModZip;
                         };
-
-                        packages.x86_64-linux.docs = docs;
-
-                        packages.x86_64-linux.hello-world-mod = helloWorldModZip;
 
                         apps.x86_64-linux.install-hello-world-mod = {
                                 type = "app";
