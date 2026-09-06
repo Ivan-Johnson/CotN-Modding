@@ -1,5 +1,2 @@
-print("Hello world from Hello World Mod!")
-
-event.gameStateLevel.add("helloWorldOnLevelStart", "config", function ()
-	print("Hello world from a level start event!")
-end)
+-- Press Shift+F1 to display debug output in-game
+print("Hello world, this is Hello World!")
