@@ -53,18 +53,30 @@
                         '';
 
                         # The markdown and man page renderings of the HTML mirrored in the
-                        # CotN-docs repo.
-                        docs = pkgs.runCommand "cotn-docs-rendered" { nativeBuildInputs = conversionTools; } ''
+                        # CotN-docs repo, before they are indexed.
+                        pages = pkgs.runCommand "cotn-docs-pages" { nativeBuildInputs = conversionTools; } ''
                                 export LC_ALL=C.UTF-8
                                 bash ${./DocDownloader/html-to-docs.bash} ${cotn-docs} "$out"
 
                                 cp -r ${cotn-docs} "$out/html-original"
+                        '';
 
-                                # `man -k` and `whatis` search an index rather than the pages
-                                # themselves, and nothing can build one later, because by then
-                                # the pages live in the read only store. MANDB_MAP is what
-                                # tells `mandb` where a manpath's index belongs; without it
-                                # there is nowhere to put one, and it quietly builds nothing.
+                        # The same renderings, with a `mandb` index over them. `man -k` and
+                        # `whatis` search that index rather than the pages themselves, and
+                        # nothing can build one later, because by then the pages live in the
+                        # read only store.
+                        #
+                        # Indexing is a stage of its own because `mandb` records each page's
+                        # mtime, and Nix normalizes mtimes only once a builder has exited.
+                        # Reading the pages back out of `pages`, where Nix has already
+                        # normalized them, is what keeps the index reproducible.
+                        docs = pkgs.runCommand "cotn-docs-rendered" { nativeBuildInputs = [ pkgs.man-db ]; } ''
+                                cp -a ${pages} "$out"
+                                chmod -R u+w "$out"
+
+                                # MANDB_MAP is what tells `mandb` where a manpath's index
+                                # belongs; without it there is nowhere to put one, and it
+                                # quietly builds nothing.
                                 echo "MANDATORY_MANPATH $out/share/man" >man.conf
                                 echo "MANDB_MAP $out/share/man $out/share/man" >>man.conf
                                 mandb --config-file man.conf --create

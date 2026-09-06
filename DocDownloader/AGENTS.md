@@ -52,7 +52,12 @@ man pages. See the repo-root `AGENTS.md` for shared commands and conventions.
 * The flake builds the `mandb` index, because the pages are read-only once they
   reach the store. It needs a `MANDB_MAP` line; given only a
   `MANDATORY_MANPATH`, `mandb` reports an empty search path and silently
-  creates nothing.
+  creates nothing. Indexing is a second derivation over the first's output
+  rather than a final step of the conversion, because `mandb` records each
+  page's mtime in `index.db` and Nix normalizes mtimes only after a builder
+  exits. Reading the pages back out of the store, already normalized, is what
+  keeps the index reproducible; indexing in place would rebuild it differently
+  every time.
 * `PANDOC_TO` is the single Markdown dialect knob. Man pages are converted from
   `minimal-html` rather than the Markdown, so it does not affect them.
 * Preserve the explicitly rejected malformed events URL in `REJECT_REGEX`
