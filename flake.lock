@@ -1,17 +1,34 @@
 {
   "nodes": {
-    "itj_dev_tools": {
+    "cotn-docs": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1787277132,
+        "narHash": "sha256-JuH4+t0dlLljFtG3hkCfDTjf1HcABajinR0XtIo5tEs=",
+        "ref": "mainline",
+        "rev": "2ed1802ef0940b73ea943480a686d23f6b96fce5",
+        "revCount": 5,
+        "type": "git",
+        "url": "ssh://git@github.com/Ivan-Johnson/CotN-docs.git"
+      },
+      "original": {
+        "ref": "mainline",
+        "type": "git",
+        "url": "ssh://git@github.com/Ivan-Johnson/CotN-docs.git"
+      }
+    },
+    "dev-tools": {
       "inputs": {
         "nixpkgs": [
           "nixpkgs"
         ]
       },
       "locked": {
-        "lastModified": 1788704204,
-        "narHash": "sha256-a9YYobmf8eUIl6N+SUlHRN85SZGZEF8+QTSH0COadig=",
+        "lastModified": 1788559221,
+        "narHash": "sha256-Cpj5AYlB7JV8XmNldy61lWiyNECx0zmM2OgZXrJohYM=",
         "ref": "refs/heads/mainline",
-        "rev": "5a15ef867b2328fddbd622ce8a4b46f506d26c1a",
-        "revCount": 2681,
+        "rev": "f5f41e4cf655a4cfa7501809aa4c76fcc9b2f825",
+        "revCount": 2680,
         "type": "git",
         "url": "https://github.com/Ivan-Johnson/DevTools.git"
       },
@@ -23,11 +40,11 @@
     },
     "nixpkgs": {
       "locked": {
-        "lastModified": 1788584326,
-        "narHash": "sha256-ahDTmIBX7dGq9GgQWH0m1uEIoJhGInEpNvKVLc1j47U=",
-        "rev": "6713828a351efa628b025a1adf7f43cbf8597513",
+        "lastModified": 1788405554,
+        "narHash": "sha256-z3ACU3NTAstjK+JNjW0zmIH2Q0GYo2pgGfJddesv7Xo=",
+        "rev": "a5cc6f2c37bf518436dc8d1c288ccd0c43c2f4c4",
         "type": "tarball",
-        "url": "https://releases.nixos.org/nixos/26.05/nixos-26.05.9173.6713828a351e/nixexprs.tar.xz"
+        "url": "https://releases.nixos.org/nixos/26.05/nixos-26.05.8954.a5cc6f2c37bf/nixexprs.tar.xz"
       },
       "original": {
         "id": "nixpkgs",
@@ -37,7 +54,8 @@
     },
     "root": {
       "inputs": {
-        "itj_dev_tools": "itj_dev_tools",
+        "cotn-docs": "cotn-docs",
+        "dev-tools": "dev-tools",
         "nixpkgs": "nixpkgs"
       }
     }
