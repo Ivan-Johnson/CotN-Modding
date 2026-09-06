@@ -2,23 +2,10 @@
 
 ## Commands
 
-- `nix build` builds the docs. `result` holds `minimal-html/`, `markdown/`,
-  `share/man/man3/`, and the `share/man/index.db` that `apropos` searches.
-  `default` is the only package.
-- `nix flake check` is the one validation command: it evaluates every output,
-  syntax checks the scripts, runs the conversion tests, and runs
-  `check-docs.bash` over a real build. It needs the pinned crawl, so a machine
-  without it needs SSH access to the mirror.
-- `nix develop -c ./test-html-to-docs.bash` runs just the tests, and prints
-  their output directly rather than through a build log.
-- `nix develop -c ./check-docs.bash result` checks an already built tree.
-- The pinned raw crawl, which is what the conversion reads and what its output
-  has to be compared against:
-  `nix eval --raw --impure --expr '(builtins.getFlake (toString ./.)).inputs.cotn-docs.outPath'`
 - Do **not** run `crawl-and-push.bash` to build or validate anything. It always
   re-crawls the website, and its final stage performs a real Git push.
-- `flake.nix` is tab indented and not `nixfmt` clean, so running the dev shell's
-  `nixfmt` over it rewrites the whole file.
+- `my-nix-format-all` auto-formats all nix files in the repo
+- `build-release` verifies that the build and all tests pass
 
 ## Architecture
 
