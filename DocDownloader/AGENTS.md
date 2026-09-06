@@ -63,6 +63,9 @@ man pages. See the repo-root `AGENTS.md` for shared commands and conventions.
   a key with access when the pinned input is not already local.
 * `test-html-to-docs.bash` generates its fixtures rather than committing them.
   When adding a behavior, add a case that fails without it.
+* `htmlq --pretty` reflows the `minimal-html` tree onto its own lines, so an
+  assertion over it must match within a single line: `<h1>Home` matches where
+  `<h1>Home</h1>` does not.
 * `check-docs.bash` asserts over a whole build, catching what two-page fixtures
   cannot. Each assertion is paired with a guard against passing over nothing,
   since a check that silently examines no files looks exactly like one that

@@ -6,7 +6,14 @@
 # These run over a whole build instead, which is where a regression that only
 # shows up at scale, or only on one odd upstream page, surfaces.
 #
-#   nix build && nix develop -c ./check-docs.bash result
+#   nix flake check
+#
+# The `man` assertions search an index that `man` locates through MANPATH, which
+# the `corpus` check gets for free by putting the docs derivation on PATH. Run by
+# hand, they fail unless it is supplied:
+#
+#   docs="$(nix build --no-link --print-out-paths .#docs)"
+#   MANPATH="$docs/share/man" nix develop -c ./DocDownloader/check-docs.bash "$docs"
 
 set -euo pipefail
 
