@@ -1,0 +1,14 @@
+{
+	"sandbox": {
+		"userPolicy": {
+			"filesystem": {
+				"readwritePaths": [
+					"~/.local/share/Steam/steamapps/compatdata/247080/pfx/drive_c/users/steamuser/AppData/Local/NecroDancer/mods"
+				],
+				"readonlyPaths": [
+					"~/.local/share/Steam/steamapps/common/Crypt of the NecroDancer/NecroDancer64/NecroDancer.log"
+				]
+			}
+		}
+	}
+}
