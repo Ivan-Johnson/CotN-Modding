@@ -15,7 +15,7 @@ This repo has two halves, each with its own `AGENTS.md` covering the details:
 
 * `my-nix-format-all` formats all `.nix` files; `my-nix-format --check FILE`
   verifies a single one.
-* `build-release` verifies that the build and all tests pass.
+* `build-release` runs `nix flake check` and the nix formatting check.
 
 ## Conventions
 
