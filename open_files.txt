@@ -1,0 +1,6 @@
+flake.nix
+
+DocDownloader/crawl-and-push.bash
+DocDownloader/html-to-docs.bash
+DocDownloader/README.md
+open_files.txt
