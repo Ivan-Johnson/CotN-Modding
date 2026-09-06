@@ -155,10 +155,10 @@
                                 ''}/bin/install-hello-world-mod";
                         };
 
-                        checks.x86_64-linux.tests = tests;
-
-                        checks.x86_64-linux.corpus = corpus;
-
-                        checks.x86_64-linux.hello-world-mod = helloWorldModZip;
+                        checks.x86_64-linux = {
+                                tests = tests;
+                                corpus = corpus;
+                                hello-world-mod = helloWorldModZip;
+                        };
                 };
 }
