@@ -1,31 +1,23 @@
-# Copilot instructions
+# Mods
 
-Crypt of the NecroDancer is a rhythm-based roguelike where movement, combat, and
-survival happen to the beat. Its Synchrony version adds full Lua modding
-support. This repo is for building Synchrony mods; it currently holds one
-minimal mod, `HelloWorldMod`.
-
-## Commands
-
-* `my-nix-format-all` formats all `.nix` files; `my-nix-format --check FILE`
-  verifies a single one.
-- `build-release` verifies that the build and all tests pass
+The Synchrony mods themselves, currently one minimal mod, `HelloWorldMod`. See
+the repo-root `AGENTS.md` for shared commands and conventions.
 
 ## API reference
 
-* The `itj_cotn_docs` flake input (built by the sibling `CotN-doc-downloader`
-  repo) puts the whole Synchrony API on the dev shell's MANPATH as flat section
-  3 pages named after the module: `man 3 necro.game.object.Map`,
-  `apropos -s 3 <term>`. The same content is under the package's `markdown/`.
+* The docs built from the sibling `DocDownloader/` put the whole Synchrony API
+  on the dev shell's MANPATH as flat section 3 pages named after the module:
+  `man 3 necro.game.object.Map`, `apropos -s 3 <term>`. The same content is
+  under the package's `markdown/`.
 * Look modules and events up there rather than guessing at signatures; the API
   is large and undocumented outside these pages.
 
 ## Architecture
 
-* `flake.nix` is the entire build system. A `runCommand` zips `HelloWorldMod/`
-  so the mod directory is the archive root, exposes it as `packages.default`,
-  and a matching app copies the zip into the game's mod directory. A second mod
-  means a second zip derivation and a second install app.
+* The flake is the entire build system. A `runCommand` zips `HelloWorldMod/` so
+  the mod directory is the archive root, exposes it as a package, and a
+  matching app copies the zip into the game's mod directory. A second mod means
+  a second zip derivation and a second install app.
 * A mod is a `mod.json` manifest plus Lua entrypoints. `api.scriptPath` names
   the directory Lua loads from; `""` (HelloWorldMod's value) means the archive
   root, while other mods point it at e.g. `scripts/`. `synchronyVersion` pins
@@ -37,13 +29,3 @@ minimal mod, `HelloWorldMod`.
   patterns observed in published mods, e.g. `ModEvent.addUnloadHandler()` to
   undo settings overrides when a mod is disabled. Extend it rather than
   re-deriving findings.
-
-## Conventions
-
-* Everything is tab-indented: Nix, Lua, and `mod.json`.
-* Markdown uses `*` for bullets.
-* Only Nix formatting is enforced, so run `my-nix-format-all` before committing.
-* The flake inputs both `follows` nixpkgs, so pin bumps go through
-  `flake.lock`, not per-input nixpkgs versions.
-* `open_files.txt` records the editor session's open files; it is not a build
-  input.
