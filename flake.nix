@@ -8,6 +8,10 @@
                         url = "git+https://github.com/Ivan-Johnson/DevTools.git?ref=refs/heads/mainline";
                         inputs.nixpkgs.follows = "nixpkgs";
                 };
+                itj_cotn_docs = {
+                        url = "git+https://github.com/Ivan-Johnson/CotN-doc-downloader.git?ref=refs/heads/mainline";
+                        inputs.nixpkgs.follows = "nixpkgs";
+                };
         };
 
         outputs =
@@ -15,6 +19,7 @@
                         self,
                         nixpkgs,
                         itj_dev_tools,
+                        itj_cotn_docs,
                 }:
                 let
                         pkgs = import nixpkgs { system = "x86_64-linux"; };
@@ -27,6 +32,8 @@
                         shell = pkgs.mkShell {
                                 buildInputs = with pkgs; [
                                         itj_dev_tools.packages.${pkgs.stdenv.hostPlatform.system}.default
+
+                                        itj_cotn_docs.packages.${pkgs.stdenv.hostPlatform.system}.default
 
                                         # For packaging mods
                                         pkgs.zip
