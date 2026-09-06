@@ -36,6 +36,7 @@
                                 pkgs.findutils
                                 pkgs.htmlq
                                 pkgs.pandoc
+                                pkgs.man-db
                         ];
 
                         # The scripts, isolated from the generated state around them so that
@@ -62,29 +63,32 @@
 
                         # The markdown and man page renderings of the HTML mirrored in the
                         # CotN-docs repo.
-                        docs =
-                                pkgs.runCommand "cotn-docs-rendered" { nativeBuildInputs = conversionTools ++ [ pkgs.man-db ]; }
-                                        ''
-                                                export LC_ALL=C.UTF-8
-                                                bash ${./html-to-docs.bash} ${cotn-docs} "$out"
+                        docs = pkgs.runCommand "cotn-docs-rendered" { nativeBuildInputs = conversionTools; } ''
+                                export LC_ALL=C.UTF-8
+                                bash ${./html-to-docs.bash} ${cotn-docs} "$out"
 
-                                                # `man -k` and `whatis` search an index rather than the pages
-                                                # themselves, and nothing can build one later, because by then
-                                                # the pages live in the read only store. MANDB_MAP is what
-                                                # tells `mandb` where a manpath's index belongs; without it
-                                                # there is nowhere to put one, and it quietly builds nothing.
-                                                echo "MANDATORY_MANPATH $out/share/man" >man.conf
-                                                echo "MANDB_MAP $out/share/man $out/share/man" >>man.conf
-                                                mandb --config-file man.conf --create
+                                # `man -k` and `whatis` search an index rather than the pages
+                                # themselves, and nothing can build one later, because by then
+                                # the pages live in the read only store. MANDB_MAP is what
+                                # tells `mandb` where a manpath's index belongs; without it
+                                # there is nowhere to put one, and it quietly builds nothing.
+                                echo "MANDATORY_MANPATH $out/share/man" >man.conf
+                                echo "MANDB_MAP $out/share/man $out/share/man" >>man.conf
+                                mandb --config-file man.conf --create
 
-                                                # Keep the index, but not the empty directory `mandb` makes to
-                                                # cache formatted pages in; the store has no use for it.
-                                                rm -rf "$out/share/man/cat"*
-                                        '';
+                                # Keep the index, but not the empty directory `mandb` makes to
+                                # cache formatted pages in; the store has no use for it.
+                                rm -rf "$out/share/man/cat"*
+
+                                # It appears as though `MANPATH` is constructed automatically
+                                # from `PATH`: if we don't create this empty `bin` directory,
+                                # then `man` won't be able to find our `share/man` directory.
+                                mkdir -p "$out/bin"
+                        '';
 
                         # The same conversion, checked over a whole build rather than a
                         # handwritten crawl of two or three pages.
-                        corpus = pkgs.runCommand "cotn-docs-corpus" { nativeBuildInputs = conversionTools; } ''
+                        corpus = pkgs.runCommand "cotn-docs-corpus" { nativeBuildInputs = conversionTools ++ [ docs ]; } ''
                                 export LC_ALL=C.UTF-8
                                 bash ${./check-docs.bash} ${docs}
                                 touch "$out"

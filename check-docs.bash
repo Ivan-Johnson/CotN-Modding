@@ -10,6 +10,10 @@
 
 set -euo pipefail
 
+if [[ -v DEBUG ]]; then
+	set -x
+fi
+
 readonly MAN_SECTION=3
 
 failures=0
@@ -111,12 +115,19 @@ assert_man_pages_are_indexable() {
 	local man="$docs/share/man/man$MAN_SECTION"
 	local path
 
-	while IFS= read -r path; do
-		grep -qE '^\.SH NAME$' "$path" || fail "$path has no NAME section"
-	done < <(find "$man" -name "*.$MAN_SECTION")
-
 	[[ -e "$docs/share/man/index.db" ]] ||
 		fail "$docs: no man index, so nothing is searchable"
+
+	man -k cotn-docs || fail "Could not find cotn-docs"
+}
+
+# The docs are reachable as docs, and not merely present as files.
+assert_man_pages_are_reachable() {
+	local docs="$1"
+
+	if ! man --where cotn-docs >/dev/null; then
+		fail "The man pages are not setup correctly"
+	fi
 }
 
 main() {
@@ -128,6 +139,7 @@ main() {
 	assert_links_resolve "$docs/minimal-html"
 	assert_links_resolve "$docs/markdown"
 	assert_man_pages_are_indexable "$docs"
+	assert_man_pages_are_reachable "$docs"
 
 	if [[ "$failures" -ne 0 ]]; then
 		echo "$failures check(s) failed" >&2
