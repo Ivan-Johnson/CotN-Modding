@@ -1,4 +1,7 @@
 .#*
-/result
+/.agent_worktrees/
 /.bash_history
 /.omo
+/CotN-docs/
+/output/
+/result

@@ -1,0 +1,104 @@
+{
+  "nodes": {
+    "cotn-docs": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1787277132,
+        "narHash": "sha256-JuH4+t0dlLljFtG3hkCfDTjf1HcABajinR0XtIo5tEs=",
+        "ref": "mainline",
+        "rev": "2ed1802ef0940b73ea943480a686d23f6b96fce5",
+        "revCount": 5,
+        "type": "git",
+        "url": "ssh://git@github.com/Ivan-Johnson/CotN-docs.git"
+      },
+      "original": {
+        "ref": "mainline",
+        "type": "git",
+        "url": "ssh://git@github.com/Ivan-Johnson/CotN-docs.git"
+      }
+    },
+    "dev_tools": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1788559221,
+        "narHash": "sha256-Cpj5AYlB7JV8XmNldy61lWiyNECx0zmM2OgZXrJohYM=",
+        "ref": "refs/heads/mainline",
+        "rev": "f5f41e4cf655a4cfa7501809aa4c76fcc9b2f825",
+        "revCount": 2680,
+        "type": "git",
+        "url": "https://github.com/Ivan-Johnson/DevTools.git"
+      },
+      "original": {
+        "ref": "refs/heads/mainline",
+        "type": "git",
+        "url": "https://github.com/Ivan-Johnson/DevTools.git"
+      }
+    },
+    "fenix": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ],
+        "rust-analyzer-src": "rust-analyzer-src"
+      },
+      "locked": {
+        "lastModified": 1788519482,
+        "narHash": "sha256-T2uoQ2iqsCedON9A9An+4BOj7IvfKjEXA06bKmGJ6eQ=",
+        "owner": "nix-community",
+        "repo": "fenix",
+        "rev": "79d2951a375db0d95fdc0caeabea0dcc0ca83629",
+        "type": "github"
+      },
+      "original": {
+        "owner": "nix-community",
+        "repo": "fenix",
+        "type": "github"
+      }
+    },
+    "nixpkgs": {
+      "locked": {
+        "lastModified": 1788405554,
+        "narHash": "sha256-z3ACU3NTAstjK+JNjW0zmIH2Q0GYo2pgGfJddesv7Xo=",
+        "rev": "a5cc6f2c37bf518436dc8d1c288ccd0c43c2f4c4",
+        "type": "tarball",
+        "url": "https://releases.nixos.org/nixos/26.05/nixos-26.05.8954.a5cc6f2c37bf/nixexprs.tar.xz"
+      },
+      "original": {
+        "id": "nixpkgs",
+        "ref": "nixos-26.05",
+        "type": "indirect"
+      }
+    },
+    "root": {
+      "inputs": {
+        "cotn-docs": "cotn-docs",
+        "dev_tools": "dev_tools",
+        "fenix": "fenix",
+        "nixpkgs": "nixpkgs"
+      }
+    },
+    "rust-analyzer-src": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1788445421,
+        "narHash": "sha256-sKEuAgygSpMZFvrj7IcCPm+3al2bQWukulM6pMEpCcc=",
+        "owner": "rust-lang",
+        "repo": "rust-analyzer",
+        "rev": "e8f7e90aa3e7b26aa9a000200f606c1078da99ec",
+        "type": "github"
+      },
+      "original": {
+        "owner": "rust-lang",
+        "ref": "nightly",
+        "repo": "rust-analyzer",
+        "type": "github"
+      }
+    }
+  },
+  "root": "root",
+  "version": 7
+}
