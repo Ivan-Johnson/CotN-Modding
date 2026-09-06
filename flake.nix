@@ -102,6 +102,8 @@
                                 # conversion is broken, which is exactly when it is needed. It is
                                 # built on demand instead.
                                 shellHook = ''
+                                        export ITJ_GIT_PREPUSH_ENABLE_NIX_CHECKS=
+
                                         # Rebuild the documentation, then read a page from it.
                                         man-crypt() {
                                                 local out="$(nix build --no-link --print-out-paths "$ITJ_FLAKE_ROOT")" || return
