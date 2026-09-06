@@ -128,7 +128,12 @@
                                         }
                                         export -f man-crypt
 
-                                        alias 'build-install=nix build .#hello-world-mod && nix run .#install-hello-world-mod'
+                                        # This path is platform specific. e.g. if you're running the native steam runtime vs proton
+                                        # todo: commonize?
+                                        COTN_LOCAL_MODS_DIR="$HOME/.local/share/Steam/steamapps/compatdata/247080/pfx/drive_c/users/steamuser/AppData/Local/NecroDancer/mods/"
+
+                                        # At present this doesn't actually "build" anything; I just want to avoid confusion with the regular `install` command
+                                        alias 'build-install=${pkgs.rsync}/bin/rsync -rlt --delete "$ITJ_FLAKE_ROOT/Mods/HelloWorldMod" "$COTN_LOCAL_MODS_DIR"'
                                 '';
                         };
 
@@ -140,18 +145,6 @@
                                 docs = docs;
                                 pages = pages;
                                 hello-world-mod = helloWorldModZip;
-                        };
-
-                        apps.x86_64-linux.install-hello-world-mod = {
-                                type = "app";
-                                program = "${pkgs.writeShellScriptBin "install-hello-world-mod" ''
-                                        set -eu
-
-                                        target_dir="$HOME/.local/share/NecroDancer/downloadedMods"
-
-                                        mkdir -p "$target_dir"
-                                        cp -f ${helloWorldModZip}/HelloWorldMod.zip "$target_dir/HelloWorldMod.zip"
-                                ''}/bin/install-hello-world-mod";
                         };
 
                         checks.x86_64-linux = {
