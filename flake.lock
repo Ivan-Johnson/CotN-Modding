@@ -1,0 +1,47 @@
+{
+  "nodes": {
+    "itj_dev_tools": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1788704204,
+        "narHash": "sha256-a9YYobmf8eUIl6N+SUlHRN85SZGZEF8+QTSH0COadig=",
+        "ref": "refs/heads/mainline",
+        "rev": "5a15ef867b2328fddbd622ce8a4b46f506d26c1a",
+        "revCount": 2681,
+        "type": "git",
+        "url": "https://github.com/Ivan-Johnson/DevTools.git"
+      },
+      "original": {
+        "ref": "refs/heads/mainline",
+        "type": "git",
+        "url": "https://github.com/Ivan-Johnson/DevTools.git"
+      }
+    },
+    "nixpkgs": {
+      "locked": {
+        "lastModified": 1788584326,
+        "narHash": "sha256-ahDTmIBX7dGq9GgQWH0m1uEIoJhGInEpNvKVLc1j47U=",
+        "rev": "6713828a351efa628b025a1adf7f43cbf8597513",
+        "type": "tarball",
+        "url": "https://releases.nixos.org/nixos/26.05/nixos-26.05.9173.6713828a351e/nixexprs.tar.xz"
+      },
+      "original": {
+        "id": "nixpkgs",
+        "ref": "nixos-26.05",
+        "type": "indirect"
+      }
+    },
+    "root": {
+      "inputs": {
+        "itj_dev_tools": "itj_dev_tools",
+        "nixpkgs": "nixpkgs"
+      }
+    }
+  },
+  "root": "root",
+  "version": 7
+}
