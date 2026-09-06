@@ -137,9 +137,8 @@
                                         docs = docs;
                                         hello-world-mod = helloWorldModZip;
                                 };
-
                                 docs = docs;
-
+                                pages = pages;
                                 hello-world-mod = helloWorldModZip;
                         };
 
