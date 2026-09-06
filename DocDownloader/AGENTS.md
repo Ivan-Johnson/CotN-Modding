@@ -27,6 +27,13 @@ man pages. See the repo-root `AGENTS.md` for shared commands and conventions.
   than another task runner. `set -e` does not fire inside the subshell of a
   command substitution, so `list_pages` propagates failures to `run_pass` by
   hand.
+* `run_pass` converts pages in parallel, `NIX_BUILD_CORES` at a time, falling
+  back to `nproc` outside a Nix build; Nix resolves its `cores = 0` setting to
+  the machine's core count before exporting it. Workers are forked
+  rather than re-executed so that they inherit `page_set`, and each gets a
+  `work_file` of its own, since every converter stages its page through one.
+  `set -e` does not fire for a failing background job either, so `run_pass`
+  waits on each worker by hand.
 * The crawl mirrors a page reachable at `foo` as both `foo.html` and
   `foo/index.html`, and `list_pages` keeps only the latter. The two are never
   byte-identical, since each has its links written from its own directory, so
@@ -39,7 +46,9 @@ man pages. See the repo-root `AGENTS.md` for shared commands and conventions.
   link out of the crawl is told apart and left alone.
 * Man pages are flat and unprefixed in section 3, named after the page (e.g.
   `necro.game.object.Map.3`). `to_man` hard-fails on a name collision rather
-  than clobbering.
+  than clobbering, claiming the name by creating it under `noclobber`; pages
+  convert concurrently, so merely testing for the path would let two collide
+  in the window between the test and the write.
 * The sidebar navigation is harvested from the landing page into a page of its
   own, `cotn-docs`, published beside the page it came from so that its links
   still resolve from the directory they were written against. It is a separate

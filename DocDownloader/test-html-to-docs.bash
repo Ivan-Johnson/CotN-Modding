@@ -217,6 +217,28 @@ test_output_layout() {
 	assert_missing "$dst/markdown/notes.txt"
 }
 
+# Pages are converted in parallel, and every converter stages its page through
+# a scratch file. A worker sharing that file with its siblings publishes their
+# content under its own name, so each page has to come out carrying its own.
+test_pages_do_not_borrow_each_others_content() {
+	begin pages-do-not-borrow-each-others-content
+
+	local index
+	for (( index = 0; index < 24; index++ )); do
+		write_page "$src/page$index.html" \
+			"<h1>Title $index</h1><p>body $index</p>"
+	done
+
+	convert_expecting_success || return
+
+	for (( index = 0; index < 24; index++ )); do
+		assert_matches "$dst/minimal-html/page$index.html" "<h1>Title $index$"
+		assert_matches "$dst/markdown/page$index.md" "^body $index$"
+		assert_matches "$dst/share/man/man3/page$index.3" \
+			"^page$index \\\\- Title $index$"
+	done
+}
+
 test_navigation_is_published_without_displacing_its_source_page() {
 	begin navigation-is-published-without-displacing-its-source-page
 
@@ -407,6 +429,7 @@ test_duplicate_pages_are_converted_once
 test_mismatched_copies_are_rejected
 test_copies_with_different_links_are_rejected
 test_output_layout
+test_pages_do_not_borrow_each_others_content
 test_navigation_is_published_without_displacing_its_source_page
 test_markdown_tables_are_preserved
 test_man_pages_are_titled_after_their_page

@@ -221,8 +221,10 @@ to_man() {
 	local new_path="$dst/$name.$MAN_SECTION"
 
 	# The man namespace is flat, so distinct pages sharing a name would
-	# silently clobber each other.
-	if [[ -e "$new_path" ]]; then
+	# silently clobber each other. Pages convert in parallel, so the name is
+	# claimed by creating it under `noclobber`; merely testing for the path
+	# would let two collide in the window between the test and the write.
+	if ! (set -o noclobber; : >"$new_path") 2>/dev/null; then
 		echo "Man page name '$name' is claimed by more than one page; '$relative_path' collides" >&2
 		exit 1
 	fi
@@ -378,6 +380,21 @@ list_pages() {
 	done < <(find "$src" -name '*.html' | LC_ALL=C sort)
 }
 
+# How many pages to convert at once. Every page is an independent run of
+# `htmlq` and `pandoc`, so a pass scales with the machine. Nix tells a builder
+# how much of the machine it may use; outside one, take all of it.
+job_count() {
+	local jobs="${NIX_BUILD_CORES:-}"
+
+	# Nix exports this to every builder, resolving its `cores = 0` setting to
+	# the machine's core count first. The fallback is for running outside a
+	# build, where nothing has set it.
+	if [[ ! "$jobs" =~ ^[1-9][0-9]*$ ]]; then
+		jobs="$(nproc)"
+	fi
+	echo "$jobs"
+}
+
 # Run `convert OLD DST REL` over every page in `src`. The converter picks OLD's
 # destination within DST and creates whatever subdirectories it needs.
 run_pass() {
@@ -391,18 +408,55 @@ run_pass() {
 	local pages
 	pages="$(list_pages "$src")" || return 1
 
-	local old_path relative_path
+	local old_path
+	local -a paths=()
 	page_set=()
 	while IFS= read -r old_path; do
 		[[ -n "$old_path" ]] || continue
 		page_set["${old_path#"$src"/}"]=1
+		paths+=("$old_path")
 	done <<< "$pages"
 
-	while IFS= read -r old_path; do
-		[[ -n "$old_path" ]] || continue
-		relative_path="${old_path#"$src"/}"
-		"$convert" "$old_path" "$dst" "$relative_path"
-	done <<< "$pages"
+	local jobs
+	jobs="$(job_count)"
+	if (( jobs > ${#paths[@]} )); then
+		jobs="${#paths[@]}"
+	fi
+	(( jobs > 0 )) || return 0
+
+	# Workers are forked rather than re-executed so that they inherit
+	# `page_set`, which every converter needs and which costs a pass over the
+	# whole crawl to rebuild.
+	#
+	# Each takes every `jobs`th page instead of a contiguous block: upstream
+	# names group related pages together, so a block split tends to hand one
+	# worker a run of unusually large ones.
+	local -a pids=()
+	local worker
+	for (( worker = 0; worker < jobs; worker++ )); do
+		(
+			# The converters stage each page through `work_file`, so a worker
+			# sharing one with its siblings would convert their pages instead
+			# of its own.
+			work_file="$(mktemp)"
+			trap 'rm -f "$work_file"' EXIT
+
+			local index
+			for (( index = worker; index < ${#paths[@]}; index += jobs )); do
+				"$convert" "${paths[index]}" "$dst" "${paths[index]#"$src"/}"
+			done
+		) &
+		pids+=("$!")
+	done
+
+	# `set -e` does not fire for a failing background job, so every worker is
+	# waited on by hand. They are all reaped before returning, so that a
+	# failure does not leave the rest still writing into `dst`.
+	local pid status=0
+	for pid in "${pids[@]}"; do
+		wait "$pid" || status=1
+	done
+	return "$status"
 }
 
 if [[ "$#" -ne 2 ]]; then
@@ -421,9 +475,10 @@ fi
 
 mkdir -p "$dst_dir"
 
-# Scratch space for the converters, which each pass a page through it.
+# Scratch space for the converters, which each pass a page through it. Not
+# `readonly`: `run_pass` gives every worker one of its own, and this one serves
+# the navigation, which is published after the passes have finished.
 work_file="$(mktemp)"
-readonly work_file
 nav_file="$(mktemp)"
 readonly nav_file
 trap 'rm -f "$work_file" "$nav_file"' EXIT
