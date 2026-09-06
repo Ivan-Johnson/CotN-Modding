@@ -7,21 +7,9 @@ minimal mod, `HelloWorldMod`.
 
 ## Commands
 
-* `nix build` packages `HelloWorldMod/` into `result/HelloWorldMod.zip`.
-* `nix run .#install-hello-world-mod` copies that zip into
-  `~/.local/share/NecroDancer/downloadedMods/`. The `build-install` shell alias
-  does both, but aliases only exist in an interactive shell.
-* `nix flake check` evaluates every flake output.
 * `my-nix-format-all` formats all `.nix` files; `my-nix-format --check FILE`
   verifies a single one.
-* `build-release` is the shared pre-push check, but it no-ops unless
-  `ITJ_GIT_PREPUSH_ENABLE_NIX_CHECKS` is set in the environment — it prints
-  "Pre-push has nothing to do" and exits 0. Verify with `nix flake check` plus
-  `my-nix-format-all` instead of trusting it.
-
-There is no test suite. Mods are validated by installing them and toggling them
-in the game's **Customize -> Mods** menu; unpackaged Lua mods live-reload on
-Linux via file watching.
+- `build-release` verifies that the build and all tests pass
 
 ## API reference
 
