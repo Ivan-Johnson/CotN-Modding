@@ -10,8 +10,6 @@
 
 * Cleanup tests
 
-  * Verify that `build-release` is actually running all the tests
-
   * Delete `check-docs.bash`'s `docs`' parameter? Shouldn't be necessary now
     that `docs` is a `nativeBuildInputs`?
 

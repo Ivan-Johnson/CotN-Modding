@@ -39,12 +39,7 @@
                         # a rebuilt `result` or a fresh crawl does not invalidate the tests.
                         scripts = pkgs.lib.fileset.toSource {
                                 root = ./DocDownloader;
-                                fileset = pkgs.lib.fileset.unions [
-                                        ./DocDownloader/check-docs.bash
-                                        ./DocDownloader/crawl-and-push.bash
-                                        ./DocDownloader/html-to-docs.bash
-                                        ./DocDownloader/test-html-to-docs.bash
-                                ];
+                                fileset = pkgs.lib.fileset.fileFilter (file: file.hasExt "bash") ./DocDownloader;
                         };
 
                         # The conversion's own tests, which build throwaway crawls of their
@@ -149,5 +144,7 @@
                         checks.x86_64-linux.tests = tests;
 
                         checks.x86_64-linux.corpus = corpus;
+
+                        checks.x86_64-linux.hello-world-mod = helloWorldModZip;
                 };
 }
