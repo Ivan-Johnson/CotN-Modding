@@ -12,6 +12,16 @@ the repo-root `AGENTS.md` for shared commands and conventions.
 * Look modules and events up there rather than guessing at signatures; the API
   is large and undocumented outside these pages.
 
+## Dev loop
+
+* With CotN running and an unpacked mod already loaded, `build-install` (see
+  repo-root `AGENTS.md`) is enough to see a change take effect: the ModLoader
+  unmounts and remounts the mod on its own, no game restart needed.
+* Verify a change actually reloaded by tailing
+  `NecroDancer64/NecroDancer.log` for a `Mounting unpacked mod <name>` line
+  followed by your new output, e.g. a `print()` shows up as a
+  `[Debug] [info]` line.
+
 ## Architecture
 
 * The flake is the entire build system. A `runCommand` zips `HelloWorldMod/` so

@@ -16,6 +16,9 @@ This repo has two halves, each with its own `AGENTS.md` covering the details:
 * `my-nix-format-all` formats all `.nix` files; `my-nix-format --check FILE`
   verifies a single one.
 * `build-release` runs `nix flake check` and the nix formatting check.
+* `build-install` rsyncs the mod into the game's local mods directory. CotN
+  hot-reloads unpacked mods, so this is the inner dev loop: edit, run
+  `build-install`, and the running game reloads the mod without a restart.
 
 ## Conventions
 

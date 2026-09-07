@@ -121,6 +121,11 @@
                                 buildInputs = conversionTools ++ [
                                         dev-tools.packages.${pkgs.stdenv.hostPlatform.system}.default
 
+                                        (pkgs.writeShellApplication {
+                                                name = "build-install";
+                                                text = ''${pkgs.rsync}/bin/rsync -rlt --delete "$ITJ_FLAKE_ROOT/Mods/HelloWorldMod" "$COTN_LOCAL_MODS_DIR"'';
+                                        })
+
                                         # For packaging mods
                                         pkgs.zip
                                         pkgs.unzip
@@ -132,10 +137,11 @@
                                 shellHook = ''
                                         # This path is platform specific. e.g. if you're running the native steam runtime vs proton
                                         # todo: commonize?
-                                        COTN_LOCAL_MODS_DIR="$HOME/.local/share/Steam/steamapps/compatdata/247080/pfx/drive_c/users/steamuser/AppData/Local/NecroDancer/mods/"
+                                        export COTN_LOCAL_MODS_DIR="$HOME/.local/share/Steam/steamapps/compatdata/247080/pfx/drive_c/users/steamuser/AppData/Local/NecroDancer/mods/"
 
                                         export ITJ_GIT_PREPUSH_ENABLE_NIX_CHECKS=
-                                        export EXTRA_RO_BINDS="''${EXTRA_RW_BINDS:+''$EXTRA_RW_BINDS:}$COTN_LOCAL_MODS_DIR:/home/i/.local/share/Steam/steamapps/common/Crypt of the NecroDancer/NecroDancer64/NecroDancer.log"
+                                        export EXTRA_RO_BINDS="''${EXTRA_RO_BINDS:+''$EXTRA_RO_BINDS:}/home/i/.local/share/Steam/steamapps/common/Crypt of the NecroDancer/NecroDancer64/NecroDancer.log"
+                                        export EXTRA_RW_BINDS="''${EXTRA_RW_BINDS:+''$EXTRA_RW_BINDS:}$COTN_LOCAL_MODS_DIR"
 
                                         # Rebuild the documentation, then read a page from it.
                                         man-crypt() {
@@ -143,9 +149,6 @@
                                                 MANPATH="$out/share/man" man "$@"
                                         }
                                         export -f man-crypt
-
-                                        # At present this doesn't actually "build" anything; I just want to avoid confusion with the regular `install` command
-                                        alias 'build-install=${pkgs.rsync}/bin/rsync -rlt --delete "$ITJ_FLAKE_ROOT/Mods/HelloWorldMod" "$COTN_LOCAL_MODS_DIR"'
                                 '';
                         };
 
