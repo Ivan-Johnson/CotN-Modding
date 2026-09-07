@@ -24,17 +24,15 @@ and conventions.
 ## Dev loop
 
 * Assume by default that CotN is already running with an unpacked mod
-  loaded; don't ask the user to confirm this or to run `build-install`
-  themselves before trying it. `build-install` (see repo-root `AGENTS.md`)
-  is enough to see a change take effect: the ModLoader unmounts and remounts
-  the mod on its own, no game restart needed.
-* Verify a change actually reloaded by tailing
-  `NecroDancer64/NecroDancer.log` for a `Mounting unpacked mod <name>` line
-  followed by your new output, e.g. a `print()` shows up as a
-  `[Debug] [info]` line.
+  loaded; don't ask the user to confirm this or to run `run-tests`
+  themselves before trying it. `run-tests` (see repo-root `AGENTS.md`) is
+  the whole inner dev loop: it rsyncs both mods, forces a fresh test run,
+  waits for it to finish, and prints only the new log output — no manual
+  reload or log-tailing needed.
 * The game runs outside this sandbox, so `pgrep`/`ps` won't see its process
-  even while it's running and hot-reloading normally. Judge liveness by log
-  growth (e.g. `wc -l` on `NecroDancer.log` before/after a change) and fresh
+  even while it's running and hot-reloading normally. If you need to check
+  liveness by hand (rather than via `run-tests`), judge it by log growth
+  (e.g. `wc -l` on `NecroDancer.log` before/after a change) and fresh
   `Mounting`/output lines, never by process listing.
 
 ## Architecture
@@ -82,6 +80,11 @@ and conventions.
   same order/sequence, the opposite of a literal reading of the "mods sorted
   by load order" doc wording. Don't assume; confirm actual firing order with
   temporary debug `print()`s before relying on it.
+* The ModLoader detects a reload by a mod's file *content*, not mtime: a bare
+  `touch` on an unchanged file does not trigger a remount. `run-tests` relies
+  on this — it always changes `HelloWorldModTests`' entry script's content
+  (a trailing timestamp comment) so its test run always re-fires, even when
+  only `HelloWorldMod` changed.
 
 ## Automated testing
 

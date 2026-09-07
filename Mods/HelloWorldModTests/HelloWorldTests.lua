@@ -26,6 +26,8 @@ pass("dependency")
 -- unattended from mod (re)load to log output.
 -- luacheck: globals HelloWorldTests_startGameSession
 HelloWorldTests_startGameSession = Tick.delay(function()
+	print("[HelloWorldTests] Starting test suite")
+
 	-- Force every extra mode off, since e.g. All Characters Mode replaces
 	-- the level's exit with one staircase per remaining character, which
 	-- would break the stairs/apple assertion below.
@@ -62,4 +64,5 @@ event.levelLoad.add("AppleOnStairsCheck", { order = "extraEntities", sequence = 
 		fail("appleSpawnsOnStairs", string.format(
 			"no Food1 entity at any of %d stairs marker(s)", #stairs))
 	end
+	print("[HelloWorldTests] Test suite completed")
 end)

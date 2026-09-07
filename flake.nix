@@ -125,6 +125,10 @@
                                                 luacheck --config ${./Mods/.luacheckrc} ${./Mods}
                                                 touch "$out"
                                         '';
+
+                        # Only correct while CotN runs natively on this machine, under this
+                        # user, via this specific Proton prefix (id 247080).
+                        cotnLogPath = "/home/i/.local/share/Steam/steamapps/common/Crypt of the NecroDancer/NecroDancer64/NecroDancer.log";
                 in
                 {
                         devShells.x86_64-linux.default = pkgs.mkShell {
@@ -132,10 +136,36 @@
                                         dev-tools.packages.${pkgs.stdenv.hostPlatform.system}.default
 
                                         (pkgs.writeShellApplication {
-                                                name = "build-install";
+                                                name = "run-tests";
+                                                runtimeInputs = [ pkgs.coreutils ];
                                                 text = ''
                                                         ${pkgs.rsync}/bin/rsync -rlt --delete --delay-updates "$ITJ_FLAKE_ROOT/Mods/HelloWorldMod" "$COTN_LOCAL_MODS_DIR"
-                                                        ${pkgs.rsync}/bin/rsync -rlt --delete --delay-updates "$ITJ_FLAKE_ROOT/Mods/HelloWorldModTests" "$COTN_LOCAL_MODS_DIR"
+
+                                                        # ModLoader reloads only on content changes, not mtime, so the
+                                                        # tests mod's entry script is rewritten with a unique trailing
+                                                        # comment every run to force its test suite to re-fire.
+                                                        entryScript="HelloWorldTests.lua"
+                                                        ${pkgs.rsync}/bin/rsync -rlt --delete --delay-updates --exclude "/$entryScript" \
+                                                                "$ITJ_FLAKE_ROOT/Mods/HelloWorldModTests/" "$COTN_LOCAL_MODS_DIR/HelloWorldModTests/"
+                                                        {
+                                                                cat "$ITJ_FLAKE_ROOT/Mods/HelloWorldModTests/$entryScript"
+                                                                echo "-- run-tests trigger $(date +%s%N)"
+                                                        } >"$COTN_LOCAL_MODS_DIR/HelloWorldModTests/$entryScript"
+
+                                                        # Wait for the tests mod's completion sentinel, rather than a
+                                                        # hardcoded sleep or a quiet-period guess.
+                                                        timeoutSeconds=60
+                                                        baseline=$(wc -l <"$COTN_LOG")
+                                                        start=$(date +%s)
+                                                        while ! tail -n "+$((baseline + 1))" "$COTN_LOG" | grep -qF "[HelloWorldTests] Test suite completed"; do
+                                                                sleep 0.1
+                                                                if ((($(date +%s) - start) >= timeoutSeconds)); then
+                                                                        echo "run-tests: timed out waiting for test suite completion" >&2
+                                                                        break
+                                                                fi
+                                                        done
+
+                                                        tail -n "+$((baseline + 1))" "$COTN_LOG"
                                                 '';
                                         })
 
@@ -153,7 +183,8 @@
                                         export COTN_LOCAL_MODS_DIR="$HOME/.local/share/Steam/steamapps/compatdata/247080/pfx/drive_c/users/steamuser/AppData/Local/NecroDancer/mods/"
 
                                         export ITJ_GIT_PREPUSH_ENABLE_NIX_CHECKS=
-                                        export EXTRA_RO_BINDS="''${EXTRA_RO_BINDS:+''$EXTRA_RO_BINDS:}/home/i/.local/share/Steam/steamapps/common/Crypt of the NecroDancer/NecroDancer64/NecroDancer.log"
+                                        export COTN_LOG="${cotnLogPath}"
+                                        export EXTRA_RO_BINDS="''${EXTRA_RO_BINDS:+''$EXTRA_RO_BINDS:}$COTN_LOG"
                                         export EXTRA_RW_BINDS="''${EXTRA_RW_BINDS:+''$EXTRA_RW_BINDS:}$COTN_LOCAL_MODS_DIR"
 
                                         # Rebuild the documentation, then read a page from it.
