@@ -223,6 +223,7 @@
                         apps.x86_64-linux.itj-impure-tests = {
                                 type = "app";
                                 program = "${impureTests}/bin/itj-impure-tests";
+                                meta.description = "Rsync mods into the game's local mods directory and run its automated test suite";
                         };
                 };
 }
