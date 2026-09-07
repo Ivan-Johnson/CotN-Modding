@@ -85,6 +85,3 @@ and conventions.
   (`necro.client.Input.add`) and asserts on game state. Results are logged as
   `PASS`/`FAIL`/`SKIP` lines via `print()`, the same channel the dev loop
   already tails in `NecroDancer.log`.
-* Nothing here has driven a live game session yet; treat `HelloWorldTests.lua`
-  as a scaffold, verify its API calls in-game, and fill in the TODOs before
-  trusting its output.
