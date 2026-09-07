@@ -1,8 +1,8 @@
 # Agent instructions
 
-Crypt of the NecroDancer is a rhythm-based roguelike where movement, combat, and
-survival happen to the beat. Its Synchrony version adds full Lua modding
-support.
+Crypt of the NecroDancer (CotN / cotn) is a rhythm-based roguelike where
+movement, combat, and survival happen to the beat. Its Synchrony version adds
+full Lua modding support.
 
 This repo has two halves, each with its own `AGENTS.md` covering the details:
 
