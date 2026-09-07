@@ -46,12 +46,12 @@ HelloWorldTests_startGameSession = Tick.delay(function()
 end)
 HelloWorldTests_startGameSession()
 
-event.levelLoad.add("AppleOnStairsCheck", { order = "extraEntities" }, function()
+event.levelLoad.add("AppleOnStairsCheck", { order = "extraEntities", sequence = 1 }, function()
 	local stairs = Marker.lookUpAll(Marker.Type.STAIRS)
 	local foundApple = false
 	for _, pos in ipairs(stairs) do
 		for _, entityID in ipairs(Map.getAll(pos[1], pos[2])) do
-			if Entities.getEntityTypeName(entityID) == "Food1" then
+			if Entities.getEntityTypeName(Entities.getEntityByID(entityID)) == "Food1" then
 				foundApple = true
 			end
 		end
