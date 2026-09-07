@@ -24,16 +24,16 @@ and conventions.
 ## Dev loop
 
 * Assume by default that CotN is already running with an unpacked mod
-  loaded; don't ask the user to confirm this or to run `run-tests`
-  themselves before trying it. `run-tests` (see repo-root `AGENTS.md`) is
-  the whole inner dev loop: it rsyncs both mods, forces a fresh test run,
-  waits for it to finish, and prints only the new log output — no manual
-  reload or log-tailing needed.
+  loaded; don't ask the user to confirm this or to run
+  `nix run .#itj-impure-tests` themselves before trying it. It (see
+  repo-root `AGENTS.md`) is the whole inner dev loop: it rsyncs both mods,
+  forces a fresh test run, waits for it to finish, and prints only the new
+  log output — no manual reload or log-tailing needed.
 * The game runs outside this sandbox, so `pgrep`/`ps` won't see its process
   even while it's running and hot-reloading normally. If you need to check
-  liveness by hand (rather than via `run-tests`), judge it by log growth
-  (e.g. `wc -l` on `NecroDancer.log` before/after a change) and fresh
-  `Mounting`/output lines, never by process listing.
+  liveness by hand (rather than via `nix run .#itj-impure-tests`), judge it
+  by log growth (e.g. `wc -l` on `NecroDancer.log` before/after a change)
+  and fresh `Mounting`/output lines, never by process listing.
 
 ## Architecture
 
@@ -81,10 +81,10 @@ and conventions.
   by load order" doc wording. Don't assume; confirm actual firing order with
   temporary debug `print()`s before relying on it.
 * The ModLoader detects a reload by a mod's file *content*, not mtime: a bare
-  `touch` on an unchanged file does not trigger a remount. `run-tests` relies
-  on this — it always changes `HelloWorldModTests`' entry script's content
-  (a trailing timestamp comment) so its test run always re-fires, even when
-  only `HelloWorldMod` changed.
+  `touch` on an unchanged file does not trigger a remount.
+  `nix run .#itj-impure-tests` relies on this — it always changes
+  `HelloWorldModTests`' entry script's content (a trailing timestamp comment)
+  so its test run always re-fires, even when only `HelloWorldMod` changed.
 
 ## Automated testing
 

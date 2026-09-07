@@ -129,45 +129,49 @@
                         # Only correct while CotN runs natively on this machine, under this
                         # user, via this specific Proton prefix (id 247080).
                         cotnLogPath = "/home/i/.local/share/Steam/steamapps/common/Crypt of the NecroDancer/NecroDancer64/NecroDancer.log";
+
+                        # Drives the game's hot-reload and asserts on the resulting log
+                        # output. Impure (needs a running, native Steam/Proton CotN
+                        # instance and a live mods directory), so it lives in `apps`
+                        # rather than `checks`: exposed as `nix run .#itj-impure-tests`.
+                        impureTests = pkgs.writeShellApplication {
+                                name = "itj-impure-tests";
+                                runtimeInputs = [ pkgs.coreutils ];
+                                text = ''
+                                        ${pkgs.rsync}/bin/rsync -rlt --delete --delay-updates "$ITJ_FLAKE_ROOT/Mods/HelloWorldMod" "$COTN_LOCAL_MODS_DIR"
+
+                                        # ModLoader reloads only on content changes, not mtime, so the
+                                        # tests mod's entry script is rewritten with a unique trailing
+                                        # comment every run to force its test suite to re-fire.
+                                        entryScript="HelloWorldTests.lua"
+                                        ${pkgs.rsync}/bin/rsync -rlt --delete --delay-updates --exclude "/$entryScript" \
+                                                "$ITJ_FLAKE_ROOT/Mods/HelloWorldModTests/" "$COTN_LOCAL_MODS_DIR/HelloWorldModTests/"
+                                        {
+                                                cat "$ITJ_FLAKE_ROOT/Mods/HelloWorldModTests/$entryScript"
+                                                echo "-- itj-impure-tests trigger $(date +%s%N)"
+                                        } >"$COTN_LOCAL_MODS_DIR/HelloWorldModTests/$entryScript"
+
+                                        # Wait for the tests mod's completion sentinel, rather than a
+                                        # hardcoded sleep or a quiet-period guess.
+                                        timeoutSeconds=60
+                                        baseline=$(wc -l <"$COTN_LOG")
+                                        start=$(date +%s)
+                                        while ! tail -n "+$((baseline + 1))" "$COTN_LOG" | grep -qF "[HelloWorldTests] Test suite completed"; do
+                                                sleep 0.1
+                                                if ((($(date +%s) - start) >= timeoutSeconds)); then
+                                                        echo "itj-impure-tests: timed out waiting for test suite completion" >&2
+                                                        break
+                                                fi
+                                        done
+
+                                        tail -n "+$((baseline + 1))" "$COTN_LOG"
+                                '';
+                        };
                 in
                 {
                         devShells.x86_64-linux.default = pkgs.mkShell {
                                 buildInputs = conversionTools ++ [
                                         dev-tools.packages.${pkgs.stdenv.hostPlatform.system}.default
-
-                                        (pkgs.writeShellApplication {
-                                                name = "run-tests";
-                                                runtimeInputs = [ pkgs.coreutils ];
-                                                text = ''
-                                                        ${pkgs.rsync}/bin/rsync -rlt --delete --delay-updates "$ITJ_FLAKE_ROOT/Mods/HelloWorldMod" "$COTN_LOCAL_MODS_DIR"
-
-                                                        # ModLoader reloads only on content changes, not mtime, so the
-                                                        # tests mod's entry script is rewritten with a unique trailing
-                                                        # comment every run to force its test suite to re-fire.
-                                                        entryScript="HelloWorldTests.lua"
-                                                        ${pkgs.rsync}/bin/rsync -rlt --delete --delay-updates --exclude "/$entryScript" \
-                                                                "$ITJ_FLAKE_ROOT/Mods/HelloWorldModTests/" "$COTN_LOCAL_MODS_DIR/HelloWorldModTests/"
-                                                        {
-                                                                cat "$ITJ_FLAKE_ROOT/Mods/HelloWorldModTests/$entryScript"
-                                                                echo "-- run-tests trigger $(date +%s%N)"
-                                                        } >"$COTN_LOCAL_MODS_DIR/HelloWorldModTests/$entryScript"
-
-                                                        # Wait for the tests mod's completion sentinel, rather than a
-                                                        # hardcoded sleep or a quiet-period guess.
-                                                        timeoutSeconds=60
-                                                        baseline=$(wc -l <"$COTN_LOG")
-                                                        start=$(date +%s)
-                                                        while ! tail -n "+$((baseline + 1))" "$COTN_LOG" | grep -qF "[HelloWorldTests] Test suite completed"; do
-                                                                sleep 0.1
-                                                                if ((($(date +%s) - start) >= timeoutSeconds)); then
-                                                                        echo "run-tests: timed out waiting for test suite completion" >&2
-                                                                        break
-                                                                fi
-                                                        done
-
-                                                        tail -n "+$((baseline + 1))" "$COTN_LOG"
-                                                '';
-                                        })
 
                                         # For packaging mods
                                         pkgs.zip
@@ -214,6 +218,11 @@
                                 hello-world-mod = helloWorldModZip;
                                 hello-world-mod-tests = helloWorldModTestsZip;
                                 mods-lua-lint = modsLuaLint;
+                        };
+
+                        apps.x86_64-linux.itj-impure-tests = {
+                                type = "app";
+                                program = "${impureTests}/bin/itj-impure-tests";
                         };
                 };
 }

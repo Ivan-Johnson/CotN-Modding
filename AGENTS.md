@@ -15,12 +15,15 @@ This repo has two halves, each with its own `AGENTS.md` covering the details:
 
 * `my-nix-format-all` formats all `.nix` files; `my-nix-format --check FILE`
   verifies a single one.
-* `build-release` runs `nix flake check` and the nix formatting check.
-* `run-tests` rsyncs the mods into the game's local mods directory, forces
-  `HelloWorldModTests` to reload so its automated test run fires, and prints
-  only the new `NecroDancer.log` lines produced by that run. CotN hot-reloads
-  unpacked mods, so this is the whole inner dev loop: edit, run `run-tests`,
-  read the result.
+* `build-release` runs `nix flake check` and the nix formatting check, and
+  also runs `nix run .#itj-impure-tests` since this flake provides it.
+* `nix run .#itj-impure-tests` rsyncs the mods into the game's local mods
+  directory, forces `HelloWorldModTests` to reload so its automated test run
+  fires, and prints only the new `NecroDancer.log` lines produced by that run.
+  CotN hot-reloads unpacked mods, so this is the whole inner dev loop: edit,
+  run `nix run .#itj-impure-tests`, read the result. It's an `app`, not a
+  `check`, because it's impure: it needs a running, native Steam/Proton CotN
+  instance.
 
 ## Conventions
 
