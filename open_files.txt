@@ -4,7 +4,6 @@ DocDownloader/crawl-and-push.bash
 DocDownloader/html-to-docs.bash
 DocDownloader/README.md
 DocDownloader/test-html-to-docs.bash
-Mods/CotN-modding-notes.md
 Mods/HelloWorldMod/HelloWorld.lua
 Mods/HelloWorldMod/mod.json
 Mods/HelloWorldModTests/HelloWorldTests.lua

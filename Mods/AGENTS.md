@@ -46,10 +46,32 @@ and conventions.
 * Load-time Lua registers handlers — `event.<name>.add(id, phase, fn)`, as in
   `HelloWorld.lua` — and run-time code handles gameplay. Load order and event
   sequence numbers resolve priority when mods touch the same event.
-* `CotN-modding-notes.md` is the distilled research on the modding model and on
-  patterns observed in published mods, e.g. `ModEvent.addUnloadHandler()` to
-  undo settings overrides when a mod is disabled. Extend it rather than
-  re-deriving findings.
+* Published mods commonly use `ModEvent.addUnloadHandler()` to undo settings
+  overrides and other state when a mod is disabled, and lean on shared
+  settings / snapshot variables / event overrides for their gameplay logic.
+  Packaged mods (a `.zip` with `mod.json` at the archive root or under
+  `scriptPath`, e.g. `scripts/`) may also bundle non-Lua assets (icons,
+  banners, sprites, audio, nested folders like `gfx/`) and occasionally
+  editor leftovers such as `.bak` files.
+
+## Known gotchas
+
+* Calling anything that fires an event (e.g. `GameSession.start`,
+  `ExtraMode.setActive`, `NetRNG.setSeed`) directly at a script's top level,
+  instead of from inside an event handler, throws "Cyclic dependency
+  involving ... 'system.mod.ModLoader'" and aborts the whole script load.
+  Defer such calls to inside a handler instead.
+* For deferred calls, use `Tick.delay(func)` like so:
+  ```lua
+  -- luacheck: globals myDelayedCall
+  myDelayedCall = Tick.delay(function() ... end)
+  myDelayedCall()
+  ```
+* `Marker.Type.STAIRS` markers aren't unique to a level's exit: "All
+  Characters Mode" reuses them for its post-run character-select room (one
+  staircase per remaining character), and the game lobby reuses them for its
+  mode-select room. Logic that keys off stairs markers must account for this
+  or disable Extra Modes first (`ExtraMode.setActive`).
 
 ## Automated testing
 
