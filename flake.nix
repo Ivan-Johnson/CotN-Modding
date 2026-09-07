@@ -134,8 +134,8 @@
                                         (pkgs.writeShellApplication {
                                                 name = "build-install";
                                                 text = ''
-                                                        ${pkgs.rsync}/bin/rsync -rlt --delete "$ITJ_FLAKE_ROOT/Mods/HelloWorldMod" "$COTN_LOCAL_MODS_DIR"
-                                                        ${pkgs.rsync}/bin/rsync -rlt --delete "$ITJ_FLAKE_ROOT/Mods/HelloWorldModTests" "$COTN_LOCAL_MODS_DIR"
+                                                        ${pkgs.rsync}/bin/rsync -rlt --delete --delay-updates "$ITJ_FLAKE_ROOT/Mods/HelloWorldMod" "$COTN_LOCAL_MODS_DIR"
+                                                        ${pkgs.rsync}/bin/rsync -rlt --delete --delay-updates "$ITJ_FLAKE_ROOT/Mods/HelloWorldModTests" "$COTN_LOCAL_MODS_DIR"
                                                 '';
                                         })
 

@@ -30,10 +30,25 @@
   file watching; macOS needs a manual Shift+F7 reload.
 * Load-time code can register events and initialize state, while run-time
   code handles gameplay logic after loading finishes.
+* Confirmed live: calling anything that fires an event (e.g.
+  `GameSession.start`, `ExtraMode.setActive`, `NetRNG.setSeed`) directly at
+  a script's top level, instead of from inside an event handler, throws
+  "Cyclic dependency involving ... 'system.mod.ModLoader'" and aborts the
+  whole script load. Defer such calls with `Tick.invokeLater(func)`.
+  `Tick.registerDelay(func)`, the non-deprecated function the game's own
+  deprecation warning recommends instead, was tried live (with and without
+  a `name` argument) and never actually ran its callback; stick with the
+  deprecated `Tick.invokeLater` until that's understood.
 * Mod load order and event sequence numbers are used to resolve handler
   priority when multiple mods touch the same event.
 * For support and troubleshooting, the docs recommend the Discord
   `#mod-help` channel.
+* `Marker.Type.STAIRS` markers aren't unique to a level's exit: the "All
+  Characters Mode" extra mode reuses them for its post-run character-select
+  room (one staircase per remaining character), and the game lobby reuses
+  them for its mode-select room. Any test/logic that keys off stairs
+  markers must account for this or disable Extra Modes first (see
+  `ExtraMode.setActive` above).
 
 ## Installed mod patterns
 
