@@ -32,6 +32,10 @@ and conventions.
   `NecroDancer64/NecroDancer.log` for a `Mounting unpacked mod <name>` line
   followed by your new output, e.g. a `print()` shows up as a
   `[Debug] [info]` line.
+* The game runs outside this sandbox, so `pgrep`/`ps` won't see its process
+  even while it's running and hot-reloading normally. Judge liveness by log
+  growth (e.g. `wc -l` on `NecroDancer.log` before/after a change) and fresh
+  `Mounting`/output lines, never by process listing.
 
 ## Architecture
 
@@ -72,6 +76,12 @@ and conventions.
   staircase per remaining character), and the game lobby reuses them for its
   mode-select room. Logic that keys off stairs markers must account for this
   or disable Extra Modes first (`ExtraMode.setActive`).
+* When two handlers share an order key and neither specifies `sequence`, the
+  tie does not necessarily break in dependency-load order: empirically, a
+  dependent mod's handler ran before the mod it depends on's handler at the
+  same order/sequence, the opposite of a literal reading of the "mods sorted
+  by load order" doc wording. Don't assume; confirm actual firing order with
+  temporary debug `print()`s before relying on it.
 
 ## Automated testing
 
@@ -85,3 +95,7 @@ and conventions.
   (`necro.client.Input.add`) and asserts on game state. Results are logged as
   `PASS`/`FAIL`/`SKIP` lines via `print()`, the same channel the dev loop
   already tails in `NecroDancer.log`.
+* If an assertion needs a handler to run before or after the mod-under-test's
+  handler within the same event/order key, set `sequence` on the *test's*
+  handler, not the mod's. Timing needs that exist only to make an assertion
+  observable belong in the test, not in the production mod.
