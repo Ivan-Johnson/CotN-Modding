@@ -19,6 +19,11 @@ local Entities = require "system.game.Entities"
 local Map = require "necro.game.object.Map"
 local Marker = require "necro.game.tile.Marker"
 
+-- Tick.delay's docs require storing its returned wrapper in a global so the
+-- delayed invocation survives mod reloads; declare it for luacheck since
+-- that's a real Synchrony API requirement, not an accidental global.
+-- luacheck: globals HelloWorldTests_startGameSession
+
 -- Arbitrary fixed value; any constant integer here pins the run for
 -- regression testing, since GameSession.SeedMode.MANUAL by itself only
 -- disables re-randomization without specifying what to use instead.
@@ -52,9 +57,15 @@ pass("dependency")
 -- Tried Tick.registerDelay(func, name) first per the deprecation warning,
 -- both with and without a name argument: neither ever ran the callback
 -- (confirmed live -- "PASS dependency" logs, then nothing further, even
--- after 60+ seconds). Falling back to the deprecated Tick.invokeLater,
--- which does run reliably on the next tick.
-Tick.invokeLater(function()
+-- after 60+ seconds). Tick.invokeLater ran the callback but crashed the
+-- game the next time Menu.lua's eventHandlersChanged handler processed the
+-- deferred-call queue (Tick.lua:210, "attempt to index local 'entry' (a
+-- function value)"): invokeLater pushes a bare function into a queue that
+-- other code expects to hold table entries. Tick.delay is the documented,
+-- non-deprecated replacement and doesn't share that bug; per its docs, the
+-- wrapper it returns must be stored in a global so delayed invocations
+-- survive mod reloads.
+HelloWorldTests_startGameSession = Tick.delay(function()
 	-- Any Extra Mode left active from the lobby (e.g. All Characters Mode)
 	-- changes level generation independently of the `mode` argument below:
 	-- All Characters Mode replaces the level's exit with one staircase per
@@ -75,6 +86,7 @@ Tick.invokeLater(function()
 		generatorOptions = { seed = FIXED_SEED },
 	})
 end)
+HelloWorldTests_startGameSession()
 
 -- Runs alongside HelloWorldMod's own "extraEntities" handler, which is
 -- supposed to spawn apples on the exit stairs (see HelloWorldMod's own

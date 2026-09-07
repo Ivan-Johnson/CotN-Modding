@@ -34,11 +34,22 @@
   `GameSession.start`, `ExtraMode.setActive`, `NetRNG.setSeed`) directly at
   a script's top level, instead of from inside an event handler, throws
   "Cyclic dependency involving ... 'system.mod.ModLoader'" and aborts the
-  whole script load. Defer such calls with `Tick.invokeLater(func)`.
-  `Tick.registerDelay(func)`, the non-deprecated function the game's own
-  deprecation warning recommends instead, was tried live (with and without
-  a `name` argument) and never actually ran its callback; stick with the
-  deprecated `Tick.invokeLater` until that's understood.
+  whole script load. Defer such calls instead.
+  `Tick.registerDelay(func)`, the function the game's own deprecation
+  warning recommends, was tried live (with and without a `name` argument)
+  and never actually ran its callback. `Tick.invokeLater(func)` did run its
+  callback, but confirmed live to crash the game the next time
+  `Menu.lua`'s `eventHandlersChanged` handler processed the deferred-call
+  queue (`Tick.lua:210`, "attempt to index local 'entry' (a function
+  value)"): `invokeLater` pushes a bare function into a queue that other
+  code expects to hold table entries. `Tick.delay(func)` is the documented,
+  non-deprecated replacement and doesn't share that bug; its docs require
+  storing the returned wrapper in a global variable (so delayed invocations
+  survive mod reloads), then calling the wrapper to schedule the deferred
+  call. That required global trips luacheck ("setting non-standard global
+  variable" / "accessing undefined variable"); fix it with a per-file
+  `-- luacheck: globals <name>` directive next to the declaration, not a
+  `.luacheckrc` entry, since the global's name is mod-specific.
 * Mod load order and event sequence numbers are used to resolve handler
   priority when multiple mods touch the same event.
 * For support and troubleshooting, the docs recommend the Discord
