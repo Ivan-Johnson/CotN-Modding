@@ -3,14 +3,26 @@
 -- behavior, logging PASS/FAIL/SKIP lines that an external script can tail
 -- from NecroDancer.log.
 --
--- The dependency check, GameSession.start, and the shared "extraEntities"
--- event.levelLoad hook have been confirmed live: enabling this mod alongside
--- HelloWorldMod produces "PASS dependency", a "Starting Single Zone run" log
--- line, and the SKIP line below, with no script errors. The apple/stairs
--- assertion itself (marked TODO) is still unimplemented.
+-- The dependency check, the deferred GameSession.start (with all Extra
+-- Modes forced off), and the shared "extraEntities" event.levelLoad hook
+-- have been confirmed live: enabling this mod alongside HelloWorldMod
+-- produces "PASS dependency" and a "Starting Single Zone run" log line,
+-- with no script errors, and the apple/stairs check runs against exactly
+-- one stairs marker. It currently logs FAIL, matching HelloWorldMod's own
+-- known bug (apples spawn at level start instead of the exit stairs).
 
 local GameMod = require "necro.game.data.resource.GameMod"
 local GameSession = require "necro.client.GameSession"
+local ExtraMode = require "necro.game.data.modifier.ExtraMode"
+local Tick = require "necro.cycles.Tick"
+local Entities = require "system.game.Entities"
+local Map = require "necro.game.object.Map"
+local Marker = require "necro.game.tile.Marker"
+
+-- Arbitrary fixed value; any constant integer here pins the run for
+-- regression testing, since GameSession.SeedMode.MANUAL by itself only
+-- disables re-randomization without specifying what to use instead.
+local FIXED_SEED = 20240101
 
 local function pass(name)
 	print(string.format("[HelloWorldTests] PASS %s", name))
@@ -18,10 +30,6 @@ end
 
 local function fail(name, reason)
 	print(string.format("[HelloWorldTests] FAIL %s: %s", name, reason))
-end
-
-local function skip(name, reason)
-	print(string.format("[HelloWorldTests] SKIP %s: %s", name, reason))
 end
 
 if not GameMod.isModLoaded("HelloWorld") then
@@ -34,20 +42,57 @@ pass("dependency")
 -- unattended from mod (re)load to log output. Confirmed live: this starts a
 -- "Single Zone" run without errors.
 --
--- TODO: `seedMode = MANUAL` alone did not make the run reproducible (the
--- logged seed was random each time); find and set whatever field actually
--- pins the seed before relying on this for regression testing.
-GameSession.start({
-	mode = GameSession.Mode.SingleZone,
-	seedMode = GameSession.SeedMode.MANUAL,
-})
+-- Per the API overview's load-time/run-time distinction, load-time script
+-- code (i.e. this script's top-level scope) may not call anything that
+-- fires an event -- which includes both ExtraMode.setActive and
+-- GameSession.start. Calling them directly here throws "Cyclic dependency
+-- involving 'system.events.Events'/'system.config.SettingsStorage' and
+-- 'system.mod.ModLoader'" and crashes the whole script load.
+--
+-- Tried Tick.registerDelay(func, name) first per the deprecation warning,
+-- both with and without a name argument: neither ever ran the callback
+-- (confirmed live -- "PASS dependency" logs, then nothing further, even
+-- after 60+ seconds). Falling back to the deprecated Tick.invokeLater,
+-- which does run reliably on the next tick.
+Tick.invokeLater(function()
+	-- Any Extra Mode left active from the lobby (e.g. All Characters Mode)
+	-- changes level generation independently of the `mode` argument below:
+	-- All Characters Mode replaces the level's exit with one staircase per
+	-- remaining character, which broke the stairs/apple assertion further
+	-- down. Force every extra mode off first so this test always runs a
+	-- plain, single-staircase Single Zone level.
+	for _, mode in pairs(ExtraMode.Type) do
+		if mode ~= ExtraMode.Type.NONE then
+			ExtraMode.setActive(mode, false)
+		end
+	end
+
+	-- Seed reproducibility across the full run is still open;
+	-- generatorOptions.seed only pins level 1's generation.
+	GameSession.start({
+		mode = GameSession.Mode.SingleZone,
+		seedMode = GameSession.SeedMode.MANUAL,
+		generatorOptions = { seed = FIXED_SEED },
+	})
+end)
 
 -- Runs alongside HelloWorldMod's own "extraEntities" handler, which is
 -- supposed to spawn apples on the exit stairs (see HelloWorldMod's own
 -- TODO: it currently spawns them at the level start instead).
 event.levelLoad.add("AppleOnStairsCheck", { order = "extraEntities" }, function()
-	-- TODO: replace with a real assertion, e.g. querying the objects at the
-	-- stairs marker position for a "Food1" entity, once the right lookup
-	-- API has been confirmed in-game.
-	skip("appleSpawnsOnStairs", "assertion not yet implemented")
+	local stairs = Marker.lookUpAll(Marker.Type.STAIRS)
+	local foundApple = false
+	for _, pos in ipairs(stairs) do
+		for _, entityID in ipairs(Map.getAll(pos[1], pos[2])) do
+			if Entities.getEntityTypeName(entityID) == "Food1" then
+				foundApple = true
+			end
+		end
+	end
+	if foundApple then
+		pass("appleSpawnsOnStairs")
+	else
+		fail("appleSpawnsOnStairs", string.format(
+			"no Food1 entity at any of %d stairs marker(s)", #stairs))
+	end
 end)
