@@ -105,6 +105,16 @@
                                 zip -qr "$out/HelloWorldMod.zip" .
                         '';
 
+                        # Not shipped to players; drives a deterministic run of HelloWorldMod
+                        # and asserts on its behavior. See `Mods/HelloWorldModTests`.
+                        helloWorldModTestsZip =
+                                pkgs.runCommand "hello-world-mod-tests-zip" { nativeBuildInputs = [ pkgs.zip ]; }
+                                        ''
+                                                mkdir -p "$out"
+                                                cd ${./Mods/HelloWorldModTests}
+                                                zip -qr "$out/HelloWorldModTests.zip" .
+                                        '';
+
                         # Static analysis of every mod's Lua, catching syntax errors and
                         # undefined globals (e.g. a typo'd event name) without needing the
                         # game itself. `Mods/.luacheckrc` declares the globals Synchrony
@@ -123,7 +133,10 @@
 
                                         (pkgs.writeShellApplication {
                                                 name = "build-install";
-                                                text = ''${pkgs.rsync}/bin/rsync -rlt --delete "$ITJ_FLAKE_ROOT/Mods/HelloWorldMod" "$COTN_LOCAL_MODS_DIR"'';
+                                                text = ''
+                                                        ${pkgs.rsync}/bin/rsync -rlt --delete "$ITJ_FLAKE_ROOT/Mods/HelloWorldMod" "$COTN_LOCAL_MODS_DIR"
+                                                        ${pkgs.rsync}/bin/rsync -rlt --delete "$ITJ_FLAKE_ROOT/Mods/HelloWorldModTests" "$COTN_LOCAL_MODS_DIR"
+                                                '';
                                         })
 
                                         # For packaging mods
@@ -156,16 +169,19 @@
                                 default = pkgs.linkFarm "cotn-modding" {
                                         docs = docs;
                                         hello-world-mod = helloWorldModZip;
+                                        hello-world-mod-tests = helloWorldModTestsZip;
                                 };
                                 docs = docs;
                                 pages = pages;
                                 hello-world-mod = helloWorldModZip;
+                                hello-world-mod-tests = helloWorldModTestsZip;
                         };
 
                         checks.x86_64-linux = {
                                 tests = tests;
                                 corpus = corpus;
                                 hello-world-mod = helloWorldModZip;
+                                hello-world-mod-tests = helloWorldModTestsZip;
                                 mods-lua-lint = modsLuaLint;
                         };
                 };

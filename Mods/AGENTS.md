@@ -1,7 +1,8 @@
 # Mods
 
-The Synchrony mods themselves, currently one minimal mod, `HelloWorldMod`. See
-the repo-root `AGENTS.md` for shared commands and conventions.
+The Synchrony mods themselves: `HelloWorldMod`, and `HelloWorldModTests`, an
+automated test mod for it. See the repo-root `AGENTS.md` for shared commands
+and conventions.
 
 ## API reference
 
@@ -39,3 +40,19 @@ the repo-root `AGENTS.md` for shared commands and conventions.
   patterns observed in published mods, e.g. `ModEvent.addUnloadHandler()` to
   undo settings overrides when a mod is disabled. Extend it rather than
   re-deriving findings.
+
+## Automated testing
+
+* Each mod that needs behavioral tests gets a sibling `<Mod>Tests` mod (e.g.
+  `HelloWorldModTests` for `HelloWorldMod`) rather than test code bundled into
+  the mod it tests. This keeps test-only code out of what players install and
+  lets the tests mod declare a `dependencies` entry on the mod it exercises in
+  `mod.json`, so the ModLoader loads them together in the right order.
+* A tests mod drives itself: on load it starts a fixed-seed `GameSession.start`
+  run and, via `event.<name>.add` handlers, feeds scripted input
+  (`necro.client.Input.add`) and asserts on game state. Results are logged as
+  `PASS`/`FAIL`/`SKIP` lines via `print()`, the same channel the dev loop
+  already tails in `NecroDancer.log`.
+* Nothing here has driven a live game session yet; treat `HelloWorldTests.lua`
+  as a scaffold, verify its API calls in-game, and fill in the TODOs before
+  trusting its output.
