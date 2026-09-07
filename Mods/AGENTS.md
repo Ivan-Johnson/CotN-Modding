@@ -6,18 +6,28 @@ and conventions.
 
 ## API reference
 
-* The docs built from the sibling `DocDownloader/` put the whole Synchrony API
-  on the dev shell's MANPATH as flat section 3 pages named after the module:
-  `man 3 necro.game.object.Map`, `apropos -s 3 <term>`. The same content is
-  under the package's `markdown/`.
+* The docs built from the sibling `DocDownloader/` cover the whole Synchrony
+  API. Pick whichever entry point fits the situation:
+  * `man-crypt 3 necro.game.object.Map` (defined in the dev shell's
+    `shellHook`) builds the docs on demand and points MANPATH at the result;
+    use this for a single known module.
+  * `grep -ri <term> -r result/docs/markdown/` (or the `docs` package's
+    output path from `nix build .#docs`) for free-text search across every
+    module and component page at once, e.g. when you don't know the exact
+    module name.
 * Look modules and events up there rather than guessing at signatures; the API
-  is large and undocumented outside these pages.
+  is large and undocumented outside these pages. Where the docs are silent
+  on a detail (return shapes, field names, actual runtime behavior), prefer
+  a debug `print()` in a live game session over guessing — a guess that's
+  wrong costs a full install/reload/log-tail cycle to discover.
 
 ## Dev loop
 
-* With CotN running and an unpacked mod already loaded, `build-install` (see
-  repo-root `AGENTS.md`) is enough to see a change take effect: the ModLoader
-  unmounts and remounts the mod on its own, no game restart needed.
+* Assume by default that CotN is already running with an unpacked mod
+  loaded; don't ask the user to confirm this or to run `build-install`
+  themselves before trying it. `build-install` (see repo-root `AGENTS.md`)
+  is enough to see a change take effect: the ModLoader unmounts and remounts
+  the mod on its own, no game restart needed.
 * Verify a change actually reloaded by tailing
   `NecroDancer64/NecroDancer.log` for a `Mounting unpacked mod <name>` line
   followed by your new output, e.g. a `print()` shows up as a
