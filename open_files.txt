@@ -6,5 +6,6 @@ DocDownloader/README.md
 DocDownloader/test-html-to-docs.bash
 Mods/HelloWorldMod/HelloWorld.lua
 Mods/HelloWorldMod/mod.json
+Mods/HelloWorldModTests/HelloWorldTests.lua
 open_files.txt
 TODO.txt
