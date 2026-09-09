@@ -1,6 +1,7 @@
 local GameMod = require "necro.game.data.resource.GameMod"
 local GameSession = require "necro.client.GameSession"
 local ExtraMode = require "necro.game.data.modifier.ExtraMode"
+local CurrentLevel = require "necro.game.level.CurrentLevel"
 local Tick = require "necro.cycles.Tick"
 local Entities = require "system.game.Entities"
 local Map = require "necro.game.object.Map"
@@ -37,18 +38,28 @@ HelloWorldTests_startGameSession = Tick.delay(function()
 		end
 	end
 
-	-- generatorOptions.seed only pins level 1's generation; later levels
-	-- are still generated with a random seed, so this run isn't fully
-	-- reproducible run-to-run.
 	GameSession.start({
 		mode = GameSession.Mode.SingleZone,
-		seedMode = GameSession.SeedMode.MANUAL,
-		generatorOptions = { seed = FIXED_SEED },
 	})
 end)
 HelloWorldTests_startGameSession()
 
+-- Pins the seed each level is actually generated with, which is what
+-- CurrentLevel.getSeed() reports and what determines level layout.
+event.levelGenerate.add("ForceFixedSeed", {}, function(ev)
+	if ev.options then
+		ev.options.seed = FIXED_SEED
+	end
+end)
+
 event.levelLoad.add("AppleOnStairsCheck", { order = "extraEntities", sequence = 1 }, function()
+	if CurrentLevel.getSeed() == FIXED_SEED then
+		pass("fixedSeed")
+	else
+		fail("fixedSeed", string.format(
+			"expected level seed %d, got %s", FIXED_SEED, tostring(CurrentLevel.getSeed())))
+	end
+
 	local stairs = Marker.lookUpAll(Marker.Type.STAIRS)
 	local foundApple = false
 	for _, pos in ipairs(stairs) do
