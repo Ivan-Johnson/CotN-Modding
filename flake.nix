@@ -135,21 +135,21 @@
                         # instance and a live mods directory), so it lives in `apps`
                         # rather than `checks`: exposed as `nix run .#itj-impure-tests`.
                         impureTests = pkgs.writeShellApplication {
-                                name = "itj-impure-tests";
+                                name = "run-tests";
                                 runtimeInputs = [ pkgs.coreutils ];
                                 text = ''
                                         ${pkgs.rsync}/bin/rsync -rlt --delete --delay-updates "$ITJ_FLAKE_ROOT/Mods/HelloWorldMod" "$COTN_LOCAL_MODS_DIR"
 
-                                        # ModLoader reloads only on content changes, not mtime, so the
-                                        # tests mod's entry script is rewritten with a unique trailing
-                                        # comment every run to force its test suite to re-fire.
                                         entryScript="HelloWorldTests.lua"
-                                        ${pkgs.rsync}/bin/rsync -rlt --delete --delay-updates --exclude "/$entryScript" \
-                                                "$ITJ_FLAKE_ROOT/Mods/HelloWorldModTests/" "$COTN_LOCAL_MODS_DIR/HelloWorldModTests/"
-                                        {
-                                                cat "$ITJ_FLAKE_ROOT/Mods/HelloWorldModTests/$entryScript"
-                                                echo "-- itj-impure-tests trigger $(date +%s%N)"
-                                        } >"$COTN_LOCAL_MODS_DIR/HelloWorldModTests/$entryScript"
+                                        trap 'rm -rf "$scratchModsDir"' EXIT
+                                        scratchModsDir="$(mktemp -d)"
+
+                                        # We mutate the entry point before copying it into the final location.
+                                        # This forces the mod to reload, and ensures that the tests will always run even
+                                        # if there are no new chagnes.
+                                        ${pkgs.rsync}/bin/rsync -rlt --delete "$ITJ_FLAKE_ROOT/Mods/HelloWorldModTests/" "$scratchModsDir/"
+                                        echo "-- itj-impure-tests trigger $(date +%s%N)" >> "$scratchModsDir/$entryScript"
+                                        ${pkgs.rsync}/bin/rsync -rlt --delete "$scratchModsDir/" "$COTN_LOCAL_MODS_DIR/HelloWorldModTests/"
 
                                         # Wait for the tests mod's completion sentinel, rather than a
                                         # hardcoded sleep or a quiet-period guess.
@@ -172,6 +172,8 @@
                         devShells.x86_64-linux.default = pkgs.mkShell {
                                 buildInputs = conversionTools ++ [
                                         dev-tools.packages.${pkgs.stdenv.hostPlatform.system}.default
+
+                                        impureTests
 
                                         # For packaging mods
                                         pkgs.zip
@@ -222,7 +224,7 @@
 
                         apps.x86_64-linux.itj-impure-tests = {
                                 type = "app";
-                                program = "${impureTests}/bin/itj-impure-tests";
+                                program = "${impureTests}/bin/run-tests";
                                 meta.description = "Rsync mods into the game's local mods directory and run its automated test suite";
                         };
                 };
