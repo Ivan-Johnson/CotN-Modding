@@ -1,5 +1,48 @@
+* Having to manually override `ITJ_FLAKE_ROOT` feels like a foot gun; find a
+  proper long-term fix
+
+  (and partially revert `g -C ~/Workspaces/5/DotFiles/Common show a744983f`?)
+
+* Make docs more ergonomic. (I'm not really sure what that would look like...
+  Maybe `grep -i seed -r $DOCS` instead of `grep -i seed -r /nix/store/.../`?
+  idk.
+
+* The current tests don't scale well. Create a proper framework.
+
+  1. Basic POC, in `HelloWorldTests.lua`
+
+      ```lua
+      -- Create a register test function
+      function registerTest(...)
+          ...
+      end
+
+      -- use it
+      registerTest({
+          level = empty_10_by_10_room
+          character = Cadence,
+          onLoad = callback_function() {
+	      -- check if apple exists
+          }
+      })
+      ```
+
+  2. Move the tests to `HelloWorld.lua`
+
+     ```lua
+     if Test Mod is loaded:
+         registerTest({
+	     ...
+	 })
+     end
+     ```
+
 * Recover key docs:
 
+              -- ???
+              -- Something like:
+              -- spawn a slime
+              -- simulated player input
   [X] https://vortexbuffer.com/synchrony/docs/index.html
   [ ] https://docs.google.com/document/d/1xTo-_QDvhZRL0ov7uTy_-ay8QLK2yT3b0wIaf5EU6AM/edit?tab=t.0#heading=h.k42rleh78ol3
   [ ] https://mod.io/g/crypt/r/introduction-to-crypt-of-the-necrodancer-synchrony-modding
