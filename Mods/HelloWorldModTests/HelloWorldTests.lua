@@ -143,16 +143,17 @@ registerTest({
 			"expected level seed %d, got %s", FIXED_SEED, tostring(CurrentLevel.getSeed())))
 
 		local stairs = Marker.lookUpAll(Marker.Type.STAIRS)
+		check(#stairs == 1, "singleStairs", string.format(
+			"expected exactly 1 stairs marker, got %d", #stairs))
+
+		local entityIDs = Map.getAll(stairs[1][1], stairs[1][2])
 		local foundApple = false
-		for _, pos in ipairs(stairs) do
-			for _, entityID in ipairs(Map.getAll(pos[1], pos[2])) do
-				if Entities.getEntityTypeName(Entities.getEntityByID(entityID)) == "Food1" then
-					foundApple = true
-				end
+		for _, entityID in ipairs(entityIDs) do
+			if Entities.getEntityTypeName(Entities.getEntityByID(entityID)) == "Food1" then
+				check(not foundApple, "singletonApple", "Expected exactly one apple")
+				foundApple = true
 			end
 		end
-		check(foundApple, "appleOnStairs", string.format(
-			"no Food1 entity at any of %d stairs marker(s)", #stairs))
 	end,
 })
 
