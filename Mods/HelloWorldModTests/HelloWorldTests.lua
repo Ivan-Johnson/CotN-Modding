@@ -120,6 +120,25 @@ event.levelLoad.add("TestHarnessRunOnLoad", { order = "extraEntities", sequence 
 end)
 
 registerTest({
+	name = "checkFailureExpected",
+	expectFail = true,
+	onLoad = function()
+		assert(false, "deliberately failing to exercise expectFail")
+	end,
+})
+
+registerTest({
+	name = "crashExpected",
+	expectFail = true,
+	onLoad = function()
+		-- Deliberately calls a Synchrony API with invalid arguments, to
+		-- exercise the harness recovering from an onLoad that crashes
+		-- outright rather than failing an explicit assert().
+		Map.getAll(nil, nil)
+	end,
+})
+
+registerTest({
 	name = "appleSpawnsOnStairs",
 	onLoad = function()
 		assert(CurrentLevel.getSeed() == FIXED_SEED, string.format(
@@ -140,24 +159,6 @@ registerTest({
 	end,
 })
 
-registerTest({
-	name = "checkFailureExpected",
-	expectFail = true,
-	onLoad = function()
-		assert(false, "deliberately failing to exercise expectFail")
-	end,
-})
-
-registerTest({
-	name = "crashExpected",
-	expectFail = true,
-	onLoad = function()
-		-- Deliberately calls a Synchrony API with invalid arguments, to
-		-- exercise the harness recovering from an onLoad that crashes
-		-- outright rather than failing an explicit assert().
-		Map.getAll(nil, nil)
-	end,
-})
 
 -- Kick off the suite as soon as this mod loads, so it runs unattended from
 -- mod (re)load to log output.
