@@ -35,13 +35,13 @@ table:
     overall suite success), and an onLoad that runs to completion without
     failing is logged as XPASS (an anomaly worth investigating: either the
     bug this test guards against got fixed, or the test itself broke)
-  onLoad (function(check), required)
-    - runs once the level has loaded; call check(condition, name, reason) once
-      per assertion. A passing check logs immediately; a failing one logs and
-      aborts the rest of this test's onLoad (later checks in the same test
-      are skipped, since they may rely on the failed one having held). Any
-      other Lua error raised from onLoad (e.g. a bad API call) is caught and
-      treated the same as a failing check
+  onLoad (function(), required)
+    - runs once the level has loaded; call the builtin assert(condition,
+      reason) once per assertion. A failing assert aborts the rest of this
+      test's onLoad (later assertions in the same test are skipped, since
+      they may rely on the failed one having held). Any other Lua error
+      raised from onLoad (e.g. a bad API call) is caught and treated the
+      same as a failing assert
 ]]
 local tests = {}
 local currentTest = nil
@@ -97,36 +97,19 @@ event.levelGenerate.add("TestHarnessConfigureLevel", {}, function(ev)
 	end
 end)
 
--- Runs one test's onLoad, giving it a check(condition, name, reason)
--- assertion function. A failing check (or any other Lua error, e.g. a bad
--- API call) throws to abort the rest of this test's onLoad; that error is
--- caught here and logged as FAIL, or XFAIL if the test declares expectFail.
+-- Runs one test's onLoad, which asserts its expectations with the builtin
+-- assert(condition, reason). Any Lua error it raises (a failing assert, or
+-- any other error, e.g. a bad API call) is caught here and logged as FAIL,
+-- or XFAIL if the test declares expectFail; otherwise the test passed.
 local function runTest(test)
-	local function check(condition, name, reason)
-		if condition then
-			log("PASS", test.name .. "." .. name)
-		else
-			error({ name = name, reason = reason }, 0)
-		end
-	end
-
-	local ok, err = pcall(test.onLoad, check)
+	local ok, err = pcall(test.onLoad)
 	if ok then
-		if test.expectFail then
-			log("XPASS", test.name, "expected this test to fail, but it passed")
-		end
+		log(test.expectFail and "XPASS" or "PASS", test.name,
+			test.expectFail and "expected this test to fail, but it passed" or nil)
 		return
 	end
 
-	local name, reason
-	if type(err) == "table" then
-		name = test.name .. "." .. err.name
-		reason = err.reason
-	else
-		name = test.name
-		reason = tostring(err)
-	end
-	log(test.expectFail and "XFAIL" or "FAIL", name, reason)
+	log(test.expectFail and "XFAIL" or "FAIL", test.name, tostring(err))
 end
 
 event.levelLoad.add("TestHarnessRunOnLoad", { order = "extraEntities", sequence = 1 }, function()
@@ -138,19 +121,19 @@ end)
 
 registerTest({
 	name = "appleSpawnsOnStairs",
-	onLoad = function(check)
-		check(CurrentLevel.getSeed() == FIXED_SEED, "fixedSeed", string.format(
+	onLoad = function()
+		assert(CurrentLevel.getSeed() == FIXED_SEED, string.format(
 			"expected level seed %d, got %s", FIXED_SEED, tostring(CurrentLevel.getSeed())))
 
 		local stairs = Marker.lookUpAll(Marker.Type.STAIRS)
-		check(#stairs == 1, "singleStairs", string.format(
+		assert(#stairs == 1, string.format(
 			"expected exactly 1 stairs marker, got %d", #stairs))
 
 		local entityIDs = Map.getAll(stairs[1][1], stairs[1][2])
 		local foundApple = false
 		for _, entityID in ipairs(entityIDs) do
 			if Entities.getEntityTypeName(Entities.getEntityByID(entityID)) == "Food1" then
-				check(not foundApple, "singletonApple", "Expected exactly one apple")
+				assert(not foundApple, "Expected exactly one apple")
 				foundApple = true
 			end
 		end
@@ -160,8 +143,8 @@ registerTest({
 registerTest({
 	name = "checkFailureExpected",
 	expectFail = true,
-	onLoad = function(check)
-		check(false, "alwaysFails", "deliberately failing to exercise expectFail")
+	onLoad = function()
+		assert(false, "deliberately failing to exercise expectFail")
 	end,
 })
 
@@ -171,7 +154,7 @@ registerTest({
 	onLoad = function()
 		-- Deliberately calls a Synchrony API with invalid arguments, to
 		-- exercise the harness recovering from an onLoad that crashes
-		-- outright rather than failing an explicit check().
+		-- outright rather than failing an explicit assert().
 		Map.getAll(nil, nil)
 	end,
 })
