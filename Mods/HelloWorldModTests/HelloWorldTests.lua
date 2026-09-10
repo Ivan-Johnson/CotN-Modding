@@ -127,6 +127,15 @@ registerTest({
 	end,
 })
 
+-- TODO delete this
+registerTest({
+	name = "realFailure",
+	expectFail = false,
+	onLoad = function()
+		assert(false, "deliberately failing to exercise an unexpected failure")
+	end,
+})
+
 registerTest({
 	name = "crashExpected",
 	expectFail = true,
