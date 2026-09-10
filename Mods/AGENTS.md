@@ -69,6 +69,12 @@ and conventions.
   myDelayedCall = Tick.delay(function() ... end)
   myDelayedCall()
   ```
+  Define the wrapper once and reuse the same global for every deferred call
+  (e.g. one per test in a suite): the sandbox rejects dynamically creating new
+  globals (`_G[name] = ...` throws "Attempt to write to non-existent global
+  variable"), and re-`Tick.delay`-ing a fresh wrapper under the same global
+  name each time breaks its "must be bound to a global variable" binding
+  check instead.
 * `Marker.Type.STAIRS` markers aren't unique to a level's exit: "All
   Characters Mode" reuses them for its post-run character-select room (one
   staircase per remaining character), and the game lobby reuses them for its
