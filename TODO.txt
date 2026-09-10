@@ -46,6 +46,18 @@
   [X] https://vortexbuffer.com/synchrony/docs/index.html
   [ ] https://docs.google.com/document/d/1xTo-_QDvhZRL0ov7uTy_-ay8QLK2yT3b0wIaf5EU6AM/edit?tab=t.0#heading=h.k42rleh78ol3
   [ ] https://mod.io/g/crypt/r/introduction-to-crypt-of-the-necrodancer-synchrony-modding
+  [ ] Find docs for `mod.json`. e.g. what do these lines from the HarderBosses mod mean:
+
+      ```
+      "dependencies": {"ChLibs_io_3638569":true},`
+      "pendingVersion": "20.26.0",
+      "visibility": 0,
+      "api": {"scriptPath":""},
+      ```
+
+      Maybe ask around on discord, then reverse-engineer if necessary?
+
+
 
 * Cleanup tests
 
