@@ -46,6 +46,9 @@ table:
 local tests = {}
 local currentTest = nil
 
+-- Counts both regular failures and unexpected passes (XPASS)
+local failureCount = 0
+
 local function registerTest(test)
 	assert(type(test.name) == "string", "registerTest requires a name")
 	assert(type(test.onLoad) == "function", "registerTest requires an onLoad callback")
@@ -74,7 +77,9 @@ end)
 local function runNextTest()
 	currentTest = table.remove(tests, 1)
 	if not currentTest then
-		print("[HelloWorldTests] Test suite completed")
+		-- `run-tests` greps this exact "N failure(s)" phrasing to decide
+		-- its own exit code, so keep the wording in sync with it.
+		print(string.format("[HelloWorldTests] Test suite completed: %d failure(s)", failureCount))
 		return
 	end
 	print(string.format("[HelloWorldTests] Running %s", currentTest.name))
@@ -104,12 +109,21 @@ end)
 local function runTest(test)
 	local ok, err = pcall(test.onLoad)
 	if ok then
-		log(test.expectFail and "XPASS" or "PASS", test.name,
-			test.expectFail and "expected this test to fail, but it passed" or nil)
+		if test.expectFail then
+			failureCount = failureCount + 1
+			log("XPASS", test.name, "expected this test to fail, but it passed")
+		else
+			log("PASS", test.name)
+		end
 		return
 	end
 
-	log(test.expectFail and "XFAIL" or "FAIL", test.name, tostring(err))
+	if test.expectFail then
+		log("XFAIL", test.name, tostring(err))
+	else
+		failureCount = failureCount + 1
+		log("FAIL", test.name, tostring(err))
+	end
 end
 
 event.levelLoad.add("TestHarnessRunOnLoad", { order = "extraEntities", sequence = 1 }, function()
@@ -124,15 +138,6 @@ registerTest({
 	expectFail = true,
 	onLoad = function()
 		assert(false, "deliberately failing to exercise expectFail")
-	end,
-})
-
--- TODO delete this
-registerTest({
-	name = "realFailure",
-	expectFail = false,
-	onLoad = function()
-		assert(false, "deliberately failing to exercise an unexpected failure")
 	end,
 })
 

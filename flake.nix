@@ -156,15 +156,30 @@
                                         timeoutSeconds=60
                                         baseline=$(wc -l <"$COTN_LOG")
                                         start=$(date +%s)
+                                        timedOut=0
                                         while ! tail -n "+$((baseline + 1))" "$COTN_LOG" | grep -qF "[HelloWorldTests] Test suite completed"; do
                                                 sleep 0.1
                                                 if ((($(date +%s) - start) >= timeoutSeconds)); then
                                                         echo "itj-impure-tests: timed out waiting for test suite completion" >&2
+                                                        timedOut=1
                                                         break
                                                 fi
                                         done
 
-                                        tail -n "+$((baseline + 1))" "$COTN_LOG"
+                                        newOutput="$(tail -n "+$((baseline + 1))" "$COTN_LOG")"
+                                        echo "$newOutput"
+
+                                        if ((timedOut)); then
+                                        	echo "Test suite timed out"
+                                                exit 1
+                                        fi
+
+                                        if grep -qE '\[HelloWorldTests\] Test suite completed: 0 failure\(s\)' <<<"$newOutput"; then
+                                                echo All tests pass
+                                        else
+                                                echo "itj-impure-tests: test suite reported failures" >&2
+                                                exit 1
+                                        fi
                                 '';
                         };
                 in
