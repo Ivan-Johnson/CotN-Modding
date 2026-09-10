@@ -30,9 +30,18 @@ table:
   name (string, required) - unique id, prefixes this test's PASS/FAIL lines
   zone (integer?)         - procedural zone number to generate the level in
   character (string?)     - entity type name to play as, e.g. "Cadence"
-  onLoad (function(pass, fail), required)
-    - runs once the level has loaded; call pass(assertion) / fail(assertion, reason)
-      once per check
+  expectFail (boolean?)   - marks this test as expected to fail (default: false).
+    A failing/crashing onLoad is then logged as XFAIL instead of FAIL (still an
+    overall suite success), and an onLoad that runs to completion without
+    failing is logged as XPASS (an anomaly worth investigating: either the
+    bug this test guards against got fixed, or the test itself broke)
+  onLoad (function(check), required)
+    - runs once the level has loaded; call check(condition, name, reason) once
+      per assertion. A passing check logs immediately; a failing one logs and
+      aborts the rest of this test's onLoad (later checks in the same test
+      are skipped, since they may rely on the failed one having held). Any
+      other Lua error raised from onLoad (e.g. a bad API call) is caught and
+      treated the same as a failing check
 ]]
 local tests = {}
 local currentTest = nil
@@ -88,29 +97,50 @@ event.levelGenerate.add("TestHarnessConfigureLevel", {}, function(ev)
 	end
 end)
 
+-- Runs one test's onLoad, giving it a check(condition, name, reason)
+-- assertion function. A failing check (or any other Lua error, e.g. a bad
+-- API call) throws to abort the rest of this test's onLoad; that error is
+-- caught here and logged as FAIL, or XFAIL if the test declares expectFail.
+local function runTest(test)
+	local function check(condition, name, reason)
+		if condition then
+			log("PASS", test.name .. "." .. name)
+		else
+			error({ name = name, reason = reason }, 0)
+		end
+	end
+
+	local ok, err = pcall(test.onLoad, check)
+	if ok then
+		if test.expectFail then
+			log("XPASS", test.name, "expected this test to fail, but it passed")
+		end
+		return
+	end
+
+	local name, reason
+	if type(err) == "table" then
+		name = test.name .. "." .. err.name
+		reason = err.reason
+	else
+		name = test.name
+		reason = tostring(err)
+	end
+	log(test.expectFail and "XFAIL" or "FAIL", name, reason)
+end
+
 event.levelLoad.add("TestHarnessRunOnLoad", { order = "extraEntities", sequence = 1 }, function()
-	local test = currentTest
-	if test then
-		local function pass(assertion)
-			log("PASS", test.name .. "." .. assertion)
-		end
-		local function fail(assertion, reason)
-			log("FAIL", test.name .. "." .. assertion, reason)
-		end
-		test.onLoad(pass, fail)
+	if currentTest then
+		runTest(currentTest)
 	end
 	runNextTest()
 end)
 
 registerTest({
 	name = "appleSpawnsOnStairs",
-	onLoad = function(pass, fail)
-		if CurrentLevel.getSeed() == FIXED_SEED then
-			pass("fixedSeed")
-		else
-			fail("fixedSeed", string.format(
-				"expected level seed %d, got %s", FIXED_SEED, tostring(CurrentLevel.getSeed())))
-		end
+	onLoad = function(check)
+		check(CurrentLevel.getSeed() == FIXED_SEED, "fixedSeed", string.format(
+			"expected level seed %d, got %s", FIXED_SEED, tostring(CurrentLevel.getSeed())))
 
 		local stairs = Marker.lookUpAll(Marker.Type.STAIRS)
 		local foundApple = false
@@ -121,12 +151,27 @@ registerTest({
 				end
 			end
 		end
-		if foundApple then
-			pass("appleOnStairs")
-		else
-			fail("appleOnStairs", string.format(
-				"no Food1 entity at any of %d stairs marker(s)", #stairs))
-		end
+		check(foundApple, "appleOnStairs", string.format(
+			"no Food1 entity at any of %d stairs marker(s)", #stairs))
+	end,
+})
+
+registerTest({
+	name = "checkFailureExpected",
+	expectFail = true,
+	onLoad = function(check)
+		check(false, "alwaysFails", "deliberately failing to exercise expectFail")
+	end,
+})
+
+registerTest({
+	name = "crashExpected",
+	expectFail = true,
+	onLoad = function()
+		-- Deliberately calls a Synchrony API with invalid arguments, to
+		-- exercise the harness recovering from an onLoad that crashes
+		-- outright rather than failing an explicit check().
+		Map.getAll(nil, nil)
 	end,
 })
 
