@@ -3,9 +3,9 @@
 	"displayName": "Hello World Tests",
 	"version": "0.1.0",
 	"synchronyVersion": "4.2.1",
-	"description": "Automated smoke tests for HelloWorldMod. Not intended for players.",
+	"description": "Generic automated test-running framework, consumed by mods that optionally require its api.lua. Not intended for players.",
 	"author": "error 255",
-	"dependencies": {"HelloWorld": "*"},
+	"dependencies": {},
 	"api": {"scriptPath":""},
 	"tags": [],
 	"name": "HelloWorldTests"

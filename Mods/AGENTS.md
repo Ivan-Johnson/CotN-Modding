@@ -1,8 +1,9 @@
 # Mods
 
-The Synchrony mods themselves: `HelloWorldMod`, and `HelloWorldModTests`, an
-automated test mod for it. See the repo-root `AGENTS.md` for shared commands
-and conventions.
+The Synchrony mods themselves: `HelloWorldMod`, and `HelloWorldModTests`, a
+generic, reusable test-running framework any mod can optionally contribute
+test cases to. See the repo-root `AGENTS.md` for shared commands and
+conventions.
 
 ## API reference
 
@@ -89,21 +90,49 @@ and conventions.
 * The ModLoader detects a reload by a mod's file *content*, not mtime: a bare
   `touch` on an unchanged file does not trigger a remount.
   `nix run .#itj-impure-tests` relies on this — it always changes
-  `HelloWorldModTests`' entry script's content (a trailing timestamp comment)
-  so its test run always re-fires, even when only `HelloWorldMod` changed.
+  `HelloWorldModTests/api.lua`'s content (a trailing timestamp comment) so
+  its test run always re-fires. Since `api.lua` (not the entry script) is
+  what mods under test `require` at load-time to register their tests,
+  touching it - rather than the entry script - also cascades a reload of
+  every mod that successfully required it (e.g. `HelloWorldMod`),
+  re-running their `registerTest()` calls: reloading a module always
+  triggers a reload of every other script with a load-time dependency on
+  it.
+* A mod under test's `require()` of `HelloWorldModTests.api` can fail on the
+  very first time the two mods ever load together, if `HelloWorldModTests`
+  hasn't loaded yet at that point - this only self-heals once
+  `HelloWorldModTests` (specifically `api.lua`) reloads again afterwards, per
+  the above. In practice, `nix run .#itj-impure-tests` always forces that
+  reload, so this only matters for a mod under test's very first-ever
+  install alongside the test mod.
 
 ## Automated testing
 
-* Each mod that needs behavioral tests gets a sibling `<Mod>Tests` mod (e.g.
-  `HelloWorldModTests` for `HelloWorldMod`) rather than test code bundled into
-  the mod it tests. This keeps test-only code out of what players install and
-  lets the tests mod declare a `dependencies` entry on the mod it exercises in
-  `mod.json`, so the ModLoader loads them together in the right order.
-* A tests mod drives itself: on load it starts a fixed-seed `GameSession.start`
-  run and, via `event.<name>.add` handlers, feeds scripted input
-  (`necro.client.Input.add`) and asserts on game state. Results are logged as
-  `PASS`/`FAIL`/`SKIP` lines via `print()`, the same channel the dev loop
-  already tails in `NecroDancer.log`.
+* `HelloWorldModTests` is a single, generic test-running framework, not
+  specific to any one mod. It never `require`s (or otherwise depends on) any
+  particular mod under test - the dependency direction runs the other way:
+  a mod under test optionally `require`s `HelloWorldModTests.api` and calls
+  `registerTest()` on it. This keeps the framework reusable across mods, and
+  crucially means a mod under test never needs a `dependencies` entry on
+  this test-only mod in its `mod.json`, so players installing it don't need
+  the test mod installed too.
+* A mod under test contributes cases from its own `tests.lua` (e.g.
+  `HelloWorldMod/tests.lua`), guarding the cross-mod `require()` in a
+  `pcall()`: if `HelloWorldModTests` isn't installed, or hasn't loaded yet
+  this cycle, `tests.lua` quietly registers nothing rather than erroring.
+* `HelloWorldModTests`'s own entry script (`HelloWorldTests.lua`) registers
+  the framework's self-tests (which exercise `api.lua`'s expectFail/crash
+  recovery machinery itself, not any mod under test), then starts the suite
+  via a `Tick.delay`-deferred call. Deferring by one tick gives every other
+  mod under test's own load-time `registerTest()` call - triggered by the
+  same reload batch - a chance to run first, since a reload always finishes
+  an entire batch of scripts before the next tick, but does not guarantee
+  the entry script runs last within that batch.
+* The framework drives itself: on load it starts a fixed-seed
+  `GameSession.start` run and, via `event.<name>.add` handlers, feeds
+  scripted input (`necro.client.Input.add`) and asserts on game state.
+  Results are logged as `PASS`/`FAIL`/`SKIP` lines via `print()`, the same
+  channel the dev loop already tails in `NecroDancer.log`.
 * If an assertion needs a handler to run before or after the mod-under-test's
   handler within the same event/order key, set `sequence` on the *test's*
   handler, not the mod's. Timing needs that exist only to make an assertion

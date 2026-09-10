@@ -105,8 +105,10 @@
                                 zip -qr "$out/HelloWorldMod.zip" .
                         '';
 
-                        # Not shipped to players; drives a deterministic run of HelloWorldMod
-                        # and asserts on its behavior. See `Mods/HelloWorldModTests`.
+                        # Not shipped to players; a generic test-running framework that
+                        # HelloWorldMod (and any other mod under test) optionally requires at
+                        # load-time to register and run its behavioral tests. See
+                        # `Mods/HelloWorldModTests`.
                         helloWorldModTestsZip =
                                 pkgs.runCommand "hello-world-mod-tests-zip" { nativeBuildInputs = [ pkgs.zip ]; }
                                         ''
@@ -140,13 +142,17 @@
                                 text = ''
                                         ${pkgs.rsync}/bin/rsync -rlt --delete --delay-updates "$ITJ_FLAKE_ROOT/Mods/HelloWorldMod" "$COTN_LOCAL_MODS_DIR"
 
-                                        entryScript="HelloWorldTests.lua"
+                                        entryScript="api.lua"
                                         trap 'rm -rf "$scratchModsDir"' EXIT
                                         scratchModsDir="$(mktemp -d)"
 
-                                        # We mutate the entry point before copying it into the final location.
-                                        # This forces the mod to reload, and ensures that the tests will always run even
-                                        # if there are no new chagnes.
+                                        # We mutate api.lua, rather than the entry script, before copying it
+                                        # into the final location. api.lua is the module every mod under test
+                                        # requires at load-time to register its tests, so touching it (forcing
+                                        # a reload) cascades a reload of every mod that successfully required
+                                        # it - including HelloWorldMod - re-running their registerTest() calls.
+                                        # This also ensures the suite always reruns even if there are no new
+                                        # changes.
                                         ${pkgs.rsync}/bin/rsync -rlt --delete "$ITJ_FLAKE_ROOT/Mods/HelloWorldModTests/" "$scratchModsDir/"
                                         echo "-- itj-impure-tests trigger $(date +%s%N)" >> "$scratchModsDir/$entryScript"
                                         ${pkgs.rsync}/bin/rsync -rlt --delete "$scratchModsDir/" "$COTN_LOCAL_MODS_DIR/HelloWorldModTests/"
