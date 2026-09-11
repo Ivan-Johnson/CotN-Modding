@@ -61,6 +61,26 @@ conventions.
   banners, sprites, audio, nested folders like `gfx/`) and occasionally
   editor leftovers such as `.bak` files.
 
+## Common patterns
+
+### Reverse-engineering
+
+To find which components/fields drive an existing entity's behavior, temporarily
+register:
+
+```
+event.entitySchemaLoadEntity.add("dump", {order = "finalize", sequence = 1}, function(ev) print(ev) end)
+```
+
+When run, every entity in the base game (and any other loaded mods) gets logged
+to `NecroDancer.log` with its full component/field table. Search it by the
+entity's `friendlyName` or internal `name` to see exactly which component
+provides a given behavior (e.g.  `consumableHeal` on `Food1`/Apple).
+
+The same `print(ev)` trick works inside any other event handler to inspect an
+unfamiliar event's fields (e.g. `ev.caster`, `ev.spell` inside `spellcast`) when
+the API docs don't spell out its payload.
+
 ## Known gotchas
 
 * Calling anything that fires an event (e.g. `GameSession.start`,
