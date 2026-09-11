@@ -21,6 +21,10 @@ conventions.
   on a detail (return shapes, field names, actual runtime behavior), prefer
   a debug `print()` in a live game session over guessing — a guess that's
   wrong costs a full install/reload/log-tail cycle to discover.
+* These mirrored docs cover only the in-game Lua API, not `mod.json`'s
+  manifest/dependency schema (e.g. what `"dependencies": {"X": true}` means).
+  For that, there's no authoritative doc source; rely on empirical testing
+  (live reload experiments) or real-world example mods.
 
 ## Dev loop
 

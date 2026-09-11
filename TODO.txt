@@ -1,18 +1,3 @@
-ai-containerized --resume=fcf7d15e-278b-47c6-937c-8e9e06a53fbe
-
-┃ #1 - eh, I'm not so sure about this fix. In this case, it was a simple miscommunication. Maybe "Ivan's Personal Preferences.md" should recommend something like:
-┃    * "make sure that you understand the request, and that the user understands what you plan on doing"
-┃    * "consider possible interpretation for what the user might have meant, and ask them to confirm"
-┃    * "suggest a specific change to the contradictory documentation, and confirm with the user"
-┃ #2 - sounds good
-┃ #3 - I think the underlying source of friction here is that you bit off more
-than you could chew - complicated tasks should be split up into smaller
-┃ more achievable goals. In theory this should go in "Ivan's Personal
-Preferences.md", but in practice by far most likely to be relevant in
-`CotN-Modding`. So for the moment please place it in `CotN-Modding/AGENTS.md`
-and tailor it to this specific project.
-
-
 * Having to manually override `ITJ_FLAKE_ROOT` feels like a foot gun; find a
   proper long-term fix
 

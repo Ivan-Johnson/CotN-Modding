@@ -34,3 +34,10 @@ This repo has two halves, each with its own `AGENTS.md` covering the details:
   than per-input nixpkgs versions.
 * `open_files.txt` records the editor session's open files; it is not a build
   input.
+* Documentation and example code for this modding API are sparse. Before
+  designing a change that leans on an API you haven't used before in this
+  repo (a new event, a cross-mod mechanism, a manifest field, etc.), build a
+  small standalone POC first and verify it live (see each half's dev loop)
+  rather than designing the full change on assumptions. Treat a task that
+  requires this as multiple steps — POC first, then the real change — not
+  one.
