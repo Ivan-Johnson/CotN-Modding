@@ -2,24 +2,28 @@
 
 Mirrors the official Synchrony API documentation and renders it to Markdown and
 man pages. See the repo-root `AGENTS.md` for shared commands and conventions.
+Why the crawl is mirrored rather than built, and why `mandb` is indexed in a
+second derivation: `docs/adr/0001-*` and `0002-*` at the repo root.
 
 ## Commands
 
-* Do **not** run `crawl-and-push.bash` to build or validate anything. It always
-  re-crawls the website, and its final stage performs a real Git push.
+* Validate with `nix flake check`, which runs `test-html-to-docs.bash` and
+  `check-docs.bash`. `crawl-and-push.bash` always re-crawls the website and its
+  final stage performs a real Git push, so reserve it for publishing a mirror.
+* `man-crypt` (dev shell) rebuilds the docs and runs `man` against them; it is
+  for humans.
 
 ## Architecture
 
 1. `crawl-and-push.bash` crawls the official docs into
-   `output/1-original-html.tar.gz` and pushes it, with provenance files, to the
-   private `Ivan-Johnson/CotN-docs` mirror. `BUILD_MODE=debug` (the default)
-   takes a small subset and pushes the `debug` branch; `production` takes
-   everything, runs about an hour, and pushes `mainline`.
+   `output/1-original-html.tar.gz` and pushes it to the `CotN-docs` mirror.
+   `BUILD_MODE=debug` (the default) takes a small subset and pushes the `debug`
+   branch; `production` takes everything, runs about an hour, and pushes
+   `mainline`.
 2. `html-to-docs.bash SRC_DIR DST_DIR` extracts each page's `<article>` into
    `DST_DIR/minimal-html/`, then converts that into `DST_DIR/markdown/` and
    `DST_DIR/share/man/man3/`.
-3. The flake pins the mirror as a non-flake input and packages stage 2. The dev
-   shell's `man-crypt` builds it on demand and runs `man` against it.
+3. The flake packages stage 2 over the pinned mirror.
 
 ## Conventions
 
@@ -58,23 +62,13 @@ man pages. See the repo-root `AGENTS.md` for shared commands and conventions.
   comes from the page's first `<h1>`, via Pandoc's `header-includes`.
   `page_summary` hard-fails on a page with no heading, so the tests'
   `write_page` supplies one and `write_raw_page` opts out.
-* The flake builds the `mandb` index, because the pages are read-only once they
-  reach the store. It needs a `MANDB_MAP` line; given only a
-  `MANDATORY_MANPATH`, `mandb` reports an empty search path and silently
-  creates nothing. Indexing is a second derivation over the first's output
-  rather than a final step of the conversion, because `mandb` records each
-  page's mtime in `index.db` and Nix normalizes mtimes only after a builder
-  exits. Reading the pages back out of the store, already normalized, is what
-  keeps the index reproducible; indexing in place would rebuild it differently
-  every time.
 * `PANDOC_TO` is the single Markdown dialect knob. Man pages are converted from
   `minimal-html` rather than the Markdown, so it does not affect them.
 * Preserve the explicitly rejected malformed events URL in `REJECT_REGEX`
   unless the upstream link is known to be fixed.
-* The publishing clone is deliberately left behind so surprising pushes can be
-  inspected.
-* The `CotN-docs` mirror input is fetched over GitHub SSH, so a build can need
-  a key with access when the pinned input is not already local.
+
+## Tests
+
 * `test-html-to-docs.bash` generates its fixtures rather than committing them.
   When adding a behavior, add a case that fails without it.
 * `htmlq --pretty` reflows the `minimal-html` tree onto its own lines, so an

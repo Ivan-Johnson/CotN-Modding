@@ -7,5 +7,5 @@
   * Enemy mechanics (e.g. most enemies are cardinal & every-other beat)
 
 * Make docs more ergonomic. (I'm not really sure what that would look like...
-  Maybe `grep -i seed -r $DOCS` instead of `grep -i seed -r /nix/store/.../`?
-  idk.
+  Partly done: `nix build .#docs` leaves the Markdown at
+  `result/docs/markdown/`, which agents search with `grep`/`view`.
