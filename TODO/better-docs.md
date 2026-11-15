@@ -28,3 +28,24 @@
 * Make docs more ergonomic. (I'm not really sure what that would look like...
   Partly done: `nix build .#docs` leaves the Markdown at
   `result/docs/markdown/`, which agents search with `grep`/`view`.
+
+* Next steps:
+
+  1. One last pass of ~/Workspaces/4/CotN-Modding/result/docs/markdown/ looking
+     for any remaining undiscovered nuggets of wisdom
+
+  2. Mine the game's own data: make a mod that'll dump out all available game
+     data. e.g. enemy definitions, character starting items, list of all
+     items/gear with metadata (e.g. how much health each type of food heals)
+
+  3. Self discovery. Make a mod that allow AI agents to actually interact with
+     a CotN game.
+
+  4. As an absolute last resort, allow agents to de-compile CotN.
+
+     This almost certainly won't be necessary -- anything that can't be
+     discovered via in-game tests isn't worth knowing?
+
+  Integrate all discovered info into
+  CotN-Modding/result/docs/markdown/unofficial/. e.g
+  unofficial/{raw-game-data/items.json,docs/foo.md}
