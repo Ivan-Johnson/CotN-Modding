@@ -2,8 +2,9 @@
 
 Vocabulary for Synchrony, the Lua modding API of Crypt of the NecroDancer
 (CotN), and for the tooling in this repo. Definitions are drawn from the
-rendered Synchrony docs (`result/docs/markdown/`). Game-mechanics terms
-(characters, enemies, items, bosses) are not covered yet.
+rendered Synchrony docs (`result/docs/markdown/`). Game-mechanics coverage is
+partial and limited to what the docs state; `TODO/better-docs.md` lists the
+known gaps.
 
 ## Mods and scripts
 
@@ -143,7 +144,8 @@ A saved copy of the full game state, which a client restores to resimulate.
 **Snapshot variable**:
 A global declared via `snapshot.variable`, `levelVariable`, or `runVariable`
 so that it is saved and restored with snapshots. Required for gameplay state
-held outside entities.
+held outside entities. `levelVariable` also resets on each new level,
+`runVariable` on each new run, and `variable` never resets.
 
 **Rollback**:
 Restoring a snapshot and resimulating after an action arrives with an earlier
@@ -152,6 +154,164 @@ or equal turn ID than the current one.
 **Rollback artifact**:
 A brief visual or audio inconsistency caused by speculative actions that
 rollback later overrules.
+
+## Run structure
+
+**Run**:
+One attempt, from when a mode's gameplay starts (`GameSession.start` or
+`restart`) until it ends; completing the run-final level counts as a victory.
+It has a run ID and may contain several loops. `runVariable`s and run
+attributes (e.g. `RunState.Attribute`) last exactly one run. Source:
+`GameSession`, `CurrentLevel.isRunFinal`.
+_Avoid_: Game, session, loop
+
+**Game session**:
+The API's name for a mode in progress: `GameSession` starts a run in a mode,
+`restart` begins a new run, and the mode (`GameSession.Mode`) configures it.
+It is not an umbrella over several runs: the docs name no such term. The
+lobby is itself a mode, with `isLobby` set. Source: `GameSession`.
+
+**Level**:
+One generated play space in a run's sequence. Its run-wide level number, visit
+sequence number, and unique ID are distinct values. Source: `CurrentLevel`,
+`LevelGenerator`.
+_Avoid_: Floor (a floor is a level's position within a zone)
+
+**Zone**:
+A progression grouping, typically advancing every 4 levels. Counts down from
+4 or 5 for certain characters. Source: `CurrentLevel.getZone`.
+
+**Floor**:
+A level's position within its zone, typically 1 to 4; resets to 1 on entering
+a new zone. Source: `CurrentLevel.getFloor`.
+
+**Depth**:
+Starts at 1 for every character and typically increments every 4 levels, so
+it differs from zone for characters whose zones count down. Source:
+`CurrentLevel.getDepth`.
+
+**Level sequence**:
+The per-run ordered list of generator options, one per level. Source:
+`LevelSequence`.
+
+**Loop**:
+A sub-run within a looping or multi-character run (Deathless, All-Chars),
+identified by a loop ID. Source: `CurrentLevel.getLoopID`.
+_Avoid_: Run
+
+**Lobby**:
+A level flagged by `CurrentLevel.isLobby`; also counts as safe. Source:
+`CurrentLevel`.
+
+**Extra mode**:
+A game-mode identifier from the `ExtraMode` module, covering built-in, seeded,
+and custom modes. The docs list the identifiers and query functions, not what
+each mode does. Source: `ExtraMode`.
+_Avoid_: Mod (a mod is loaded content, see `GameMod`)
+
+## Players and characters
+
+**Player**:
+A participant in the game, identified by a player ID. Covers local and remote
+participants (and spectators), whether human or an agent. The player ID is not
+the player's entity ID, and spectators have no entity at all. Source:
+`overview.md`, `Player`.
+_Avoid_: Human (unless contrasting with an agent), character
+
+**Player entity**:
+The entity a player currently controls, found via `Player.getPlayerEntity`.
+Conversion or replacement can swap it mid-run. Source: `Player`.
+
+**Character type**:
+The entity type a player plays as (Cadence, Melody, Aria, ...), found via
+`Player.getCharacterType(playerID)`. Chosen in the lobby from entities with
+`playableCharacter`. Source: `Player`, `CharacterComponents`.
+_Avoid_: Class
+
+**Character**:
+In the API, any entity with the `character` component, which lets it perform
+actions. That includes enemies, so "character" alone does not mean a
+player's. Source: `CharacterComponents`.
+_Avoid_: Using it for a player or a character type
+
+## Items and inventory
+
+**Item**:
+An entity carrying the `item` component. `itemSlot` assigns it a slot; holder
+and equipped state track who carries it. Use the `Inventory` module to add,
+equip, unequip, or drop; do not edit inventory fields directly. Source:
+`ItemComponents`, `Inventory`.
+
+**Item slot**:
+A named inventory category with its own capacity, such as `action` (default
+capacity 1) or `spell` (default 2). Some slots are internal and absent from
+the HUD: `follower`, `shrine`, `innate`. Source: `ItemSlot`.
+
+**Carried vs. equipped**:
+Carrying an item in the inventory does not mean it is equipped. Source:
+`ItemComponents`.
+
+## Damage
+
+**Damage type**:
+A bitmask of flags, so one hit can combine several (e.g. bypass armor, scale
+with strength, explosive). Source: `Damage.Type`.
+
+**Hit pipeline**:
+`objectDealDamage` handlers modify, suppress, or apply a hit. By the time
+`objectTakeDamage` fires, armor, shield, and invincibility handling may already
+have changed the amount. `objectDeath` fires when health reaches zero and
+names the attacker and credited killer. The docs do not give one fixed
+end-to-end order. Source: `events/object.md`, `overview.md`.
+
+**Health**:
+For players 1 heart = 2 health; for enemies 1 heart = 1 health. Source:
+`Health`.
+
+**Knockback**:
+A damage parameter: tiles the victim is pushed along the hit's direction. It
+can be suppressed separately from the damage. Source: `Damage.Parameters`.
+
+## Rhythm and AI
+
+**Groove chain**:
+Per-entity kill streak that raises a multiplier (default maximum 3). It
+increases on kills credited as `GROOVE_CHAIN`, and resets on non-self damage.
+Source: `GrooveChainComponents`.
+_Avoid_: Combo
+
+**Coin multiplier**:
+The `coinMultiplier` component multiplies gold dropped when the entity kills
+something. It is separate from the groove chain's multiplier. Source:
+`GrooveChainComponents`.
+
+**Rhythm ignored**:
+`rhythmIgnored` lets an entity act regardless of the beatmap. Source:
+`RhythmComponents`.
+
+**Missed beat**:
+An event for a superfluous input within a single beat; standing still causes
+IDLE instead. Source: `ObjectEvents`.
+
+**Beat delay**:
+While nonzero, an entity may only perform IDLE (with exceptions). Any non-FAIL
+action ticks it down. Source: `BeatDelayComponents`.
+
+**Beat counter**:
+Counts turns in which an entity has been active since the floor began. Source:
+`BeatDelayComponents`.
+
+**AI type**:
+The `ai` component's `id` picks a behavior, e.g. idle, seek, flee, or pattern;
+other types are enemy-specific. Source: `AIComponents`, `necro.game.enemy.ai.AI`.
+
+**Target**:
+The entity an AI acts on. AI-controlled entities require the `target`
+component. Source: `TargetingComponents`.
+
+**Provoked**:
+A `provokable` entity's triggered state, which can swap in a different AI.
+Source: `ProvokableComponents`.
 
 ## Repo tooling
 
