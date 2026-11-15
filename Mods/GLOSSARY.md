@@ -1,12 +1,11 @@
 # CotN Modding
 
 Vocabulary for Synchrony, the Lua modding API of Crypt of the NecroDancer
-(CotN), and for the tooling in this repo.
+(CotN), as used when writing the mods in `Mods/`.
 
 This file is likely to contain errors; it is entirely AI generated from the
-rendered mirror of the official Synchrony docs (`result/docs/markdown/`). If
-this file defines terms differently than how they are used in that directory,
-then that is a bug.
+rendered docs (`result/docs/markdown/`). If this file defines terms differently
+than how they are used in that directory, then that is a bug.
 
 ## Mods and scripts
 
@@ -314,9 +313,3 @@ component. Source: `TargetingComponents`.
 **Provoked**:
 A `provokable` entity's triggered state, which can swap in a different AI.
 Source: `ProvokableComponents`.
-
-## Repo tooling
-
-**Rendered docs**:
-The Synchrony API documentation mirrored by `DocDownloader/` and built into
-Markdown at `result/docs/markdown/`.

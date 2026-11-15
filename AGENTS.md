@@ -11,6 +11,10 @@ This repo has two halves, each with its own `AGENTS.md` covering the details:
 * `Mods/` builds the Synchrony mods themselves, and consumes those rendered
   docs as its API reference.
 
+Read `GLOSSARY-MAP.md` at the start of every task, then the glossary of each
+context the task touches. Use their terms, and avoid the ones they list under
+`_Avoid_`.
+
 ## Commands
 
 * `my-nix-format-all` formats all `.nix` files; `my-nix-format --check FILE`

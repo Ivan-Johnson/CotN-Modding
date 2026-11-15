@@ -7,7 +7,7 @@
   * Enemy mechanics (e.g. most enemies are cardinal & every-other beat)
 
 * Core mechanics that the rendered docs do not explain. Find the answer in
-  game or by tracer bullet, then add to `GLOSSARY.md`:
+  game or by tracer bullet, then add to `Mods/GLOSSARY.md`:
 
   * Player turn: the order in which a move resolves into attack, dig, or
     interact.
