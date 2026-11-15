@@ -31,7 +31,7 @@ conventions.
   forces a fresh test run, waits for it to finish, and prints only the new
   log output — no manual reload or log-tailing needed.
 * The game runs outside this sandbox, so `pgrep`/`ps` won't see its process
-  even while it's running and hot-reloading normally. If you need to check
+  even while it's running and live-reloading normally. If you need to check
   liveness by hand (rather than via `nix run .#itj-impure-tests`), judge it
   by log growth (e.g. `wc -l` on `NecroDancer.log` before/after a change)
   and fresh `Mounting`/output lines, never by process listing.

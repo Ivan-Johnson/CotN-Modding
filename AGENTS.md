@@ -20,7 +20,7 @@ This repo has two halves, each with its own `AGENTS.md` covering the details:
 * `nix run .#itj-impure-tests` rsyncs the mods into the game's local mods
   directory, forces `HelloWorldModTests` to reload so its automated test run
   fires, and prints only the new `NecroDancer.log` lines produced by that run.
-  CotN hot-reloads unpacked mods, so this is the whole inner dev loop: edit,
+  CotN live-reloads unpacked mods, so this is the whole inner dev loop: edit,
   run `nix run .#itj-impure-tests`, read the result. It's an `app`, not a
   `check`, because it's impure: it needs a running, native Steam/Proton CotN
   instance.

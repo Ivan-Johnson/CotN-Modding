@@ -132,7 +132,7 @@
                         # user, via this specific Proton prefix (id 247080).
                         cotnLogPath = "/home/i/.local/share/Steam/steamapps/common/Crypt of the NecroDancer/NecroDancer64/NecroDancer.log";
 
-                        # Drives the game's hot-reload and asserts on the resulting log
+                        # Drives the game's live-reload and asserts on the resulting log
                         # output. Impure (needs a running, native Steam/Proton CotN
                         # instance and a live mods directory), so it lives in `apps`
                         # rather than `checks`: exposed as `nix run .#itj-impure-tests`.
