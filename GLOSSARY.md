@@ -1,10 +1,12 @@
 # CotN Modding
 
 Vocabulary for Synchrony, the Lua modding API of Crypt of the NecroDancer
-(CotN), and for the tooling in this repo. Definitions are drawn from the
-rendered Synchrony docs (`result/docs/markdown/`). Game-mechanics coverage is
-partial and limited to what the docs state; `TODO/better-docs.md` lists the
-known gaps.
+(CotN), and for the tooling in this repo.
+
+This file is likely to contain errors; it is entirely AI generated from the
+rendered mirror of the official Synchrony docs (`result/docs/markdown/`). If
+this file defines terms differently than how they are used in that directory,
+then that is a bug.
 
 ## Mods and scripts
 
