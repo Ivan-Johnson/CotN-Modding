@@ -1,13 +1,4 @@
-* Have LLM identify fill in major gaps in the docs. e.g. the docs probably
-  assume that the reader already knows stuff such as:
-
-  * Basic character mechanics: equipment slots, how glass gear works, etc
-  * How all the different characters work (cadence vs melody vs aria ...)
-  * Boss mechanics (esp story mode bosses?)
-  * Enemy mechanics (e.g. most enemies are cardinal & every-other beat)
-
-* Core mechanics that the rendered docs do not explain. Find the answer in
-  game or by tracer bullet, then add to `Mods/GLOSSARY.md`:
+* Core mechanics that the rendered docs do not explain:
 
   * Player turn: the order in which a move resolves into attack, dig, or
     interact.
@@ -24,15 +15,43 @@
   * Groove chain and coin multiplier as players experience them.
   * Whether enemies share a general movement cadence (cardinal, every-other-beat)
     or whether it is per-enemy.
-
-* Make docs more ergonomic. (I'm not really sure what that would look like...
-  Partly done: `nix build .#docs` leaves the Markdown at
-  `result/docs/markdown/`, which agents search with `grep`/`view`.
+  * Basic character mechanics: equipment slots, how glass gear works, etc
+  * How all the different characters work (cadence vs melody vs aria ...)
+  * Boss mechanics (esp story mode bosses?)
+  * Enemy mechanics (e.g. most enemies are cardinal & every-other beat)
 
 * Next steps:
 
-  1. One last pass of ~/Workspaces/4/CotN-Modding/result/docs/markdown/ looking
-     for any remaining undiscovered nuggets of wisdom
+  1. Big picture doc cleanup/reorg. Forget about the fact that most of the docs
+     originate from https://vortexbuffer.com/synchrony/docs/index.html instead
+     suppose that we had a authoring the docs ourselves as a green-field
+     project. How would we want to structure the docs?
+
+	 * Use: /writing-for-agents /itj-writing-for-humans /domain-modeling
+
+	 * Most of Mods/GLOSSARY.md gets migrated to a GLOSSARY.md in the new
+       green-field docs
+
+	 * Better file structure & filenames: more directories, with a README.md
+       file in each
+
+	 Basically:
+
+	 * man-pages should use the green-field version
+
+	 * produce two versions of markdown:
+
+	   * existing `/markdown/` gets renamed to `/markdown-stream/` or some such.
+
+	   * new `result/docs/markdown/` is the greenfield version containing:
+
+	     * Any new docs (e.g. `Mods/GLOSSARY.md`)
+
+	     * All the good parts of the official docs
+           (e.g. `result/docs/markdown/vortexbuffer.com/synchrony/docs.md`) but
+           none of the useless / near-useless stuff
+           (e.g. `result/docs/markdown/vortexbuffer.com/synchrony/docs/modules/necro.game.item.Currency.md`
+           is an API spec; it doesn't belong in the docs)
 
   2. Mine the game's own data: make a mod that'll dump out all available game
      data. e.g. enemy definitions, character starting items, list of all
