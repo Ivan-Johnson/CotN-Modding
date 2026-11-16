@@ -57,6 +57,7 @@
                         pages = pkgs.runCommand "cotn-docs-pages" { nativeBuildInputs = conversionTools; } ''
                                 export LC_ALL=C.UTF-8
                                 bash ${./DocDownloader/html-to-docs.bash} ${cotn-docs} "$out"
+                                bash ${./DocDownloader/useful-docs.bash} "$out/markdown" "$out/markdown-useful"
 
                                 cp -r ${cotn-docs} "$out/html-original"
                         '';
