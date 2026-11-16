@@ -3,9 +3,6 @@
 # Push a scrape of the game's data to the `game-data` branch of the CotN-docs
 # mirror.
 #
-# The scrape comes from `nix run .#scrape-game-data`, which needs a running
-# game. This script only publishes one and always does a real Git push.
-#
 # Usage:
 #   ./push-game-data.bash [SCRAPE_DIR]   # default: the newest under Tmp/scrape-game-data/
 #
@@ -76,7 +73,13 @@ main() {
 
 	local dataset
 	for dataset in "${DATASETS[@]}"; do
-		cp "$scrape/$dataset" "$stage/$dataset"
+		if [[ "$dataset" == *.json ]]; then
+			# The mod emits each JSON dataset as a single line, which Git
+			# handles poorly when it gets this long.
+			jq . "$scrape/$dataset" > "$stage/$dataset"
+		else
+			cp "$scrape/$dataset" "$stage/$dataset"
+		fi
 	done
 	cp "$script_dir/game-data-README.md" "$stage/README.md"
 	basename "$scrape" > "$stage/scrape-dir.txt"

@@ -3,11 +3,7 @@
 # Tests for push-game-data.bash and push-to-mirror.bash.
 #
 # Every push goes to a bare repo in a temporary directory, via `MIRROR_REMOTE`,
-# so nothing touches the network or the real mirror. Needs only git:
-#
-#   nix develop -c ./test-push.bash
-#
-# `nix flake check` runs it too, as a derivation.
+# so nothing touches the network or the real mirror.
 
 set -euo pipefail
 
@@ -56,7 +52,11 @@ write_scrape() {
 	mkdir -p "$dir"
 	local dataset
 	for dataset in necrodancer.xml component-defaults.json entity-prototypes.json script-files.json versions.json; do
-		echo "$1 $dataset" > "$dir/$dataset"
+		if [[ "$dataset" == *.json ]]; then
+			echo "{\"scrape\":\"$1\",\"dataset\":\"$dataset\"}" > "$dir/$dataset"
+		else
+			echo "$1 $dataset" > "$dir/$dataset"
+		fi
 	done
 	echo "derived" > "$dir/necrodancer-xml.json"
 	echo "noise" > "$dir/NecroDancer.log"
@@ -103,6 +103,24 @@ if push; then
 	remote_file game-data README.md | grep -qi proprietary || fail "README.md doesn't mention the licensing risk"
 else
 	fail "push failed: $(cat "$work/push.log")"
+fi
+
+begin pretty-prints-json-datasets
+echo '{"a":[1,2],"b":{"c":"d"}}' > "$repo/Tmp/scrape-game-data/2026-01-01_00-00-00/component-defaults.json"
+if push; then
+	[[ "$(remote_file game-data component-defaults.json | wc -l)" -gt 1 ]] || fail "component-defaults.json is still one line"
+	[[ "$(remote_file game-data component-defaults.json | tr -d ' \n')" == '{"a":[1,2],"b":{"c":"d"}}' ]] || fail "formatting changed the content or key order"
+else
+	fail "push failed: $(cat "$work/push.log")"
+fi
+
+begin refuses-invalid-json
+echo '{"truncated":' > "$repo/Tmp/scrape-game-data/2026-01-01_00-00-00/entity-prototypes.json"
+if push; then
+	fail "pushed a scrape with invalid JSON"
+fi
+if remote_git rev-parse --verify --quiet game-data > /dev/null; then
+	fail "something was pushed anyway"
 fi
 
 begin defaults-to-the-newest-scrape

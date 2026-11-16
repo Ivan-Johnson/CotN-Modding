@@ -31,6 +31,7 @@
                                 pkgs.coreutils
                                 pkgs.findutils
                                 pkgs.htmlq
+                                pkgs.jq
                                 pkgs.pandoc
                                 pkgs.man-db
                         ];
