@@ -22,6 +22,37 @@
 
 * Next steps:
 
+  1. ~~Scope how much of the official docs are useful~~ Done.
+
+     Very little is useful, judging by this POC: DocDownloader/useful-docs.bash
+
+	 ./result/docs/markdown-useful:
+
+	 * docs.md - not useful; this is intended for the general playerbase
+       (humans who lack programming experience).
+
+	   Some bits could be useful, but not much; it isn't worth patching out the
+       useful bits. It'd be far easier to just rewrite from scratch.
+
+	 * components/* - not useful. This entire directory is just documentation
+       for the modding APIs. Some nuggets of info would be useful when writing
+       our own docs, but these files aren't useful in and of themselves.
+
+	 * overview/{01..05}*.md
+
+	   01 is useless.
+
+	   02..05 are potentially useful
+
+	 result/docs/markdown/vortexbuffer.com/synchrony/docs/{modules,events}:
+     similar to markdown-useful/components, but even less reusable.
+
+  1. Mine the game's own data: make a mod that'll dump out all available game
+     data. e.g. enemy definitions, character starting items, list of all
+     items/gear with metadata (e.g. how much health each type of food heals).
+
+	 Status: POC - Mods/ScrapeGameData/ScrapeGameData.lua
+
   1. Big picture doc cleanup/reorg. Forget about the fact that most of the docs
      originate from https://vortexbuffer.com/synchrony/docs/index.html instead
      suppose that we had a authoring the docs ourselves as a green-field
@@ -52,10 +83,6 @@
            none of the useless / near-useless stuff
            (e.g. `result/docs/markdown/vortexbuffer.com/synchrony/docs/modules/necro.game.item.Currency.md`
            is an API spec; it doesn't belong in the docs)
-
-  2. Mine the game's own data: make a mod that'll dump out all available game
-     data. e.g. enemy definitions, character starting items, list of all
-     items/gear with metadata (e.g. how much health each type of food heals)
 
   3. Self discovery. Make a mod that allow AI agents to actually interact with
      a CotN game.

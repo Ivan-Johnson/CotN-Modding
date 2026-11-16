@@ -1,0 +1,12 @@
+{
+	"namespace": "ScrapeGameData",
+	"displayName": "Scrape Game Data",
+	"version": "0.1.0",
+	"synchronyVersion": "4.2.1",
+	"description": "Dumps the game's own data to NecroDancer.log. Not intended for players.",
+	"author": "error 255",
+	"dependencies": {},
+	"api": {"scriptPath":""},
+	"tags": [],
+	"name": "ScrapeGameData"
+}
