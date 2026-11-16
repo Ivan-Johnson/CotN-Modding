@@ -269,16 +269,18 @@
                                 mods-layout = modsLayout;
                         };
 
-                        apps.x86_64-linux.install-mods = {
-                                type = "app";
-                                program = "${installMods}/bin/install-mods";
-                                meta.description = "Install the named mods into the game as one bundle mod: nix run .#install-mods -- Foo Bar";
-                        };
+                        apps.x86_64-linux = {
+                                install-mods = {
+                                        type = "app";
+                                        program = "${installMods}/bin/install-mods";
+                                        meta.description = "Install the named mods into the game as one bundle mod: nix run .#install-mods -- Foo Bar";
+                                };
 
-                        apps.x86_64-linux.itj-impure-tests = {
-                                type = "app";
-                                program = "${impureTests}/bin/run-tests";
-                                meta.description = "Rsync mods into the game's local mods directory and run its automated test suite";
+                                itj-impure-tests = {
+                                        type = "app";
+                                        program = "${impureTests}/bin/run-tests";
+                                        meta.description = "Rsync mods into the game's local mods directory and run its automated test suite";
+                                };
                         };
                 };
 }
