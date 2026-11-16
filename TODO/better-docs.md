@@ -84,10 +84,10 @@
            (e.g. `result/docs/markdown/vortexbuffer.com/synchrony/docs/modules/necro.game.item.Currency.md`
            is an API spec; it doesn't belong in the docs)
 
-  3. Self discovery. Make a mod that allow AI agents to actually interact with
+  1. Self discovery. Make a mod that allow AI agents to actually interact with
      a CotN game.
 
-  4. As an absolute last resort, allow agents to de-compile CotN.
+  1. As an absolute last resort, allow agents to de-compile CotN.
 
      This almost certainly won't be necessary -- anything that can't be
      discovered via in-game tests isn't worth knowing?
