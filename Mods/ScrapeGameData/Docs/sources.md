@@ -86,6 +86,6 @@ these options.
 * **Enum tables** (damage types, item slots, extra modes, and so on): the
   docs list these, but reading the live values would confirm them. Their
   members may not be iterable (see the `pairs()` result above).
-* **Log volume**: the log is the only output channel, and 250 KB of XML
-  probably won't survive one line. Chunking and a sentinel format need a
-  small test before a full dump.
+* **Log volume**: resolved. 4,000-character base64 chunk lines carried the
+  250 KB XML and the other dumps through the log intact (byte counts matched
+  the mod's `emitted` lines). `nix run .#scrape-game-data` reassembles them.

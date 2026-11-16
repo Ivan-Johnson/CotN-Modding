@@ -218,7 +218,12 @@
                         # `impureTests`.
                         scrapeGameData = pkgs.writeShellApplication {
                                 name = "scrape-game-data";
-                                runtimeInputs = [ pkgs.coreutils ];
+                                runtimeInputs = [
+                                        pkgs.coreutils
+                                        pkgs.gawk
+                                        pkgs.gnugrep
+                                        pkgs.yq-go
+                                ];
                                 text = ''
                                         outDir="$ITJ_FLAKE_ROOT/Tmp/scrape-game-data/$(date +%Y-%m-%d_%H-%M-%S)"
                                         mkdir -p "$outDir"
@@ -238,7 +243,31 @@
                                         done
 
                                         tail -n "+$((baseline + 1))" "$COTN_LOG" >"$outDir/NecroDancer.log"
+
+                                        # Reassemble each dataset from its DATA chunk lines.
+                                        grep -oE '\[ScrapeGameData\] DATA [^ ]+ [0-9]+/[0-9]+ [A-Za-z0-9+/=]*' "$outDir/NecroDancer.log" >"$outDir/chunks.txt" || true
+                                        status=0
+                                        while read -r name; do
+                                                total=$(awk -v n="$name" '$3 == n {split($4, p, "/"); print p[2]; exit}' "$outDir/chunks.txt")
+                                                count=$(awk -v n="$name" '$3 == n' "$outDir/chunks.txt" | wc -l)
+                                                if ((count != total)); then
+                                                        echo "scrape-game-data: $name has $count of $total chunks" >&2
+                                                        status=1
+                                                        continue
+                                                fi
+                                                awk -v n="$name" '$3 == n {split($4, p, "/"); print p[1], $5}' "$outDir/chunks.txt" | sort -n | cut -d' ' -f2 | tr -d '\n' | base64 -d >"$outDir/$name"
+                                        done < <(awk '{print $3}' "$outDir/chunks.txt" | sort -u)
+                                        rm "$outDir/chunks.txt"
+
+                                        if grep -F "[ScrapeGameData] ERROR" "$outDir/NecroDancer.log"; then
+                                                status=1
+                                        fi
+
+                                        # The game's XML, in a queryable form.
+                                        yq -p xml -o json "$outDir/necrodancer.xml" >"$outDir/necrodancer-xml.json"
+
                                         echo "$outDir"
+                                        exit "$status"
                                 '';
                         };
                 in
