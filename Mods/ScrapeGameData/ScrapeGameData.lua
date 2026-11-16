@@ -4,7 +4,9 @@
 local Components = require "necro.game.data.Components"
 local Entities = require "system.game.Entities"
 local FileIO = require "system.game.FileIO"
+local GameSession = require "necro.client.GameSession"
 local GameXML = require "necro.game.data.GameXML"
+local Tick = require "necro.cycles.Tick"
 
 local function out(fmt, ...)
 	print("[ScrapeGameData] " .. string.format(fmt, ...))
@@ -65,3 +67,13 @@ event.levelLoad.add("ScrapeProbes", { order = "extraEntities", sequence = 100 },
 
 	out("end")
 end)
+
+-- Each (re)load of this script starts a fresh single-zone run, so the probes
+-- above fire without anyone starting a level by hand. Tick.delay's result must
+-- be bound to a global variable.
+-- luacheck: globals ScrapeGameData_startGameSession
+ScrapeGameData_startGameSession = Tick.delay(function()
+	GameSession.start({ mode = GameSession.Mode.SingleZone })
+end)
+
+ScrapeGameData_startGameSession()

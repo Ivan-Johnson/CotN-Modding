@@ -212,6 +212,35 @@
                                         fi
                                 '';
                         };
+
+                        # Installs ScrapeGameData, waits for its "end" sentinel, and saves
+                        # the new log lines into a fresh per-run directory. Impure, like
+                        # `impureTests`.
+                        scrapeGameData = pkgs.writeShellApplication {
+                                name = "scrape-game-data";
+                                runtimeInputs = [ pkgs.coreutils ];
+                                text = ''
+                                        outDir="$ITJ_FLAKE_ROOT/Tmp/scrape-game-data/$(date +%Y-%m-%d_%H-%M-%S)"
+                                        mkdir -p "$outDir"
+
+                                        baseline=$(wc -l <"$COTN_LOG")
+
+                                        ITJ_BUNDLE_RELOAD_TRIGGER="ScrapeGameData/ScrapeGameData.lua" ${installMods}/bin/install-mods ScrapeGameData
+
+                                        timeoutSeconds=60
+                                        start=$(date +%s)
+                                        while ! tail -n "+$((baseline + 1))" "$COTN_LOG" | grep -qF "[ScrapeGameData] end"; do
+                                                sleep 0.1
+                                                if ((($(date +%s) - start) >= timeoutSeconds)); then
+                                                        echo "scrape-game-data: timed out waiting for the end sentinel" >&2
+                                                        exit 1
+                                                fi
+                                        done
+
+                                        tail -n "+$((baseline + 1))" "$COTN_LOG" >"$outDir/NecroDancer.log"
+                                        echo "$outDir"
+                                '';
+                        };
                 in
                 {
                         devShells.x86_64-linux.default = pkgs.mkShell {
@@ -274,6 +303,12 @@
                                         type = "app";
                                         program = "${installMods}/bin/install-mods";
                                         meta.description = "Install the named mods into the game as one bundle mod: nix run .#install-mods -- Foo Bar";
+                                };
+
+                                scrape-game-data = {
+                                        type = "app";
+                                        program = "${scrapeGameData}/bin/scrape-game-data";
+                                        meta.description = "Run the ScrapeGameData mod in the live game and save its log output to Tmp/scrape-game-data/<date-slug>/";
                                 };
 
                                 itj-impure-tests = {
