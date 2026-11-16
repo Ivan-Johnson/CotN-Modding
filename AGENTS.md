@@ -21,8 +21,9 @@ context the task touches. Use their terms, and avoid the ones they list under
   verifies a single one.
 * `build-release` runs `nix flake check` and the nix formatting check, and
   also runs `nix run .#itj-impure-tests` since this flake provides it.
-* `nix run .#itj-impure-tests` rsyncs the mods into the game's local mods
-  directory, forces `HelloWorldModTests` to reload so its automated test run
+* `nix run .#itj-impure-tests` installs `HelloWorld` and `HelloWorldTests` via
+  `install-mods` (see `Mods/AGENTS.md`), forces `HelloWorldTests` to reload so
+  its automated test run
   fires, and prints only the new `NecroDancer.log` lines produced by that run.
   CotN live-reloads unpacked mods, so this is the whole inner dev loop: edit,
   run `nix run .#itj-impure-tests`, read the result. It's an `app`, not a

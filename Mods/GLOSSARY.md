@@ -18,12 +18,23 @@ A mod loaded from a plain directory rather than a packaged archive. Only
 unpacked mods are live-reloaded.
 _Avoid_: Unzipped mod
 
+**Enabled mod**:
+A mod the game remembers, by name, as one to load. The game does not load a mod
+merely because it appears in the mods directory.
+_Avoid_: Installed mod (a mod can be on disk without being enabled)
+
+**Bundle mod**:
+A generated mod, enabled once, whose subfolders are the mods currently being
+developed. It exists only in the game's mods directory, never in `Mods/`.
+_Avoid_: Install target, dev mod
+
 **Script**:
 A single Lua file belonging to a mod.
 
 **Module**:
-A script as imported via `require()`, identified by its dotted name. The base
-game's modules are grouped into packages.
+A script as imported via `require()`, identified by its dotted name
+`<mod name>.<path from the mod root>`. The base game's modules are grouped into
+packages.
 _Avoid_: Library
 
 **Load-time**:

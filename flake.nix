@@ -102,20 +102,20 @@
 
                         helloWorldModZip = pkgs.runCommand "hello-world-mod-zip" { nativeBuildInputs = [ pkgs.zip ]; } ''
                                 mkdir -p "$out"
-                                cd ${./Mods/HelloWorldMod}
-                                zip -qr "$out/HelloWorldMod.zip" .
+                                cd ${./Mods/HelloWorld}
+                                zip -qr "$out/HelloWorld.zip" .
                         '';
 
                         # Not shipped to players; a generic test-running framework that
-                        # HelloWorldMod (and any other mod under test) optionally requires at
+                        # HelloWorld (and any other mod under test) optionally requires at
                         # load-time to register and run its behavioral tests. See
-                        # `Mods/HelloWorldModTests`.
+                        # `Mods/HelloWorldTests`.
                         helloWorldModTestsZip =
                                 pkgs.runCommand "hello-world-mod-tests-zip" { nativeBuildInputs = [ pkgs.zip ]; }
                                         ''
                                                 mkdir -p "$out"
-                                                cd ${./Mods/HelloWorldModTests}
-                                                zip -qr "$out/HelloWorldModTests.zip" .
+                                                cd ${./Mods/HelloWorldTests}
+                                                zip -qr "$out/HelloWorldTests.zip" .
                                         '';
 
                         # Static analysis of every mod's Lua, catching syntax errors and
@@ -129,6 +129,36 @@
                                                 touch "$out"
                                         '';
 
+                        # The conventions `install-mods` relies on, e.g. that each mod's
+                        # directory is named after its namespace.
+                        modsLayout =
+                                pkgs.runCommand "cotn-mods-layout"
+                                        {
+                                                nativeBuildInputs = [
+                                                        pkgs.jq
+                                                        pkgs.gnugrep
+                                                ];
+                                        }
+                                        ''
+                                                bash ${./Mods/check-layout.bash} ${./Mods}
+                                                touch "$out"
+                                        '';
+
+                        # Installs mods from the source tree (not the store, which only
+                        # sees git-tracked files) into the game as one bundle mod. See
+                        # `Mods/install-mods.bash`.
+                        installMods = pkgs.writeShellApplication {
+                                name = "install-mods";
+                                runtimeInputs = [
+                                        pkgs.coreutils
+                                        pkgs.findutils
+                                        pkgs.gnused
+                                        pkgs.jq
+                                        pkgs.rsync
+                                ];
+                                text = builtins.readFile ./Mods/install-mods.bash;
+                        };
+
                         # Only correct while CotN runs natively on this machine, under this
                         # user, via this specific Proton prefix (id 247080).
                         cotnLogPath = "/home/i/.local/share/Steam/steamapps/common/Crypt of the NecroDancer/NecroDancer64/NecroDancer.log";
@@ -141,27 +171,20 @@
                                 name = "run-tests";
                                 runtimeInputs = [ pkgs.coreutils ];
                                 text = ''
-                                        ${pkgs.rsync}/bin/rsync -rlt --delete --delay-updates "$ITJ_FLAKE_ROOT/Mods/HelloWorldMod" "$COTN_LOCAL_MODS_DIR"
+                                        baseline=$(wc -l <"$COTN_LOG")
 
-                                        entryScript="api.lua"
-                                        trap 'rm -rf "$scratchModsDir"' EXIT
-                                        scratchModsDir="$(mktemp -d)"
-
-                                        # We mutate api.lua, rather than the entry script, before copying it
-                                        # into the final location. api.lua is the module every mod under test
-                                        # requires at load-time to register its tests, so touching it (forcing
-                                        # a reload) cascades a reload of every mod that successfully required
-                                        # it - including HelloWorldMod - re-running their registerTest() calls.
-                                        # This also ensures the suite always reruns even if there are no new
-                                        # changes.
-                                        ${pkgs.rsync}/bin/rsync -rlt --delete "$ITJ_FLAKE_ROOT/Mods/HelloWorldModTests/" "$scratchModsDir/"
-                                        echo "-- itj-impure-tests trigger $(date +%s%N)" >> "$scratchModsDir/$entryScript"
-                                        ${pkgs.rsync}/bin/rsync -rlt --delete "$scratchModsDir/" "$COTN_LOCAL_MODS_DIR/HelloWorldModTests/"
+                                        # Installing appends a timestamp comment to api.lua, rather than
+                                        # to the entry script. api.lua is the module every mod under test
+                                        # requires at load-time to register its tests, so changing it
+                                        # (forcing a reload) cascades a reload of every mod that
+                                        # successfully required it - including HelloWorld - re-running
+                                        # their registerTest() calls. This also ensures the suite always
+                                        # reruns even if there are no new changes.
+                                        ITJ_BUNDLE_RELOAD_TRIGGER="HelloWorldTests/api.lua" ${installMods}/bin/install-mods HelloWorld HelloWorldTests
 
                                         # Wait for the tests mod's completion sentinel, rather than a
                                         # hardcoded sleep or a quiet-period guess.
                                         timeoutSeconds=60
-                                        baseline=$(wc -l <"$COTN_LOG")
                                         start=$(date +%s)
                                         timedOut=0
                                         while ! tail -n "+$((baseline + 1))" "$COTN_LOG" | grep -qF "[HelloWorldTests] Test suite completed"; do
@@ -196,6 +219,7 @@
                                         dev-tools.packages.${pkgs.stdenv.hostPlatform.system}.default
 
                                         impureTests
+                                        installMods
 
                                         # For packaging mods
                                         pkgs.zip
@@ -242,6 +266,13 @@
                                 hello-world-mod = helloWorldModZip;
                                 hello-world-mod-tests = helloWorldModTestsZip;
                                 mods-lua-lint = modsLuaLint;
+                                mods-layout = modsLayout;
+                        };
+
+                        apps.x86_64-linux.install-mods = {
+                                type = "app";
+                                program = "${installMods}/bin/install-mods";
+                                meta.description = "Install the named mods into the game as one bundle mod: nix run .#install-mods -- Foo Bar";
                         };
 
                         apps.x86_64-linux.itj-impure-tests = {

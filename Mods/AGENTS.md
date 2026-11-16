@@ -1,9 +1,9 @@
 # Mods
 
-The Synchrony mods themselves: `HelloWorldMod`, and `HelloWorldModTests`, a
-generic, reusable test-running framework any mod can optionally contribute
-test cases to. See the repo-root `AGENTS.md` for shared commands and
-conventions.
+The Synchrony mods themselves: `HelloWorld`, `ScrapeGameData`, and
+`HelloWorldTests`, a generic, reusable test-running framework any mod can
+optionally contribute test cases to. See the repo-root `AGENTS.md` for shared
+commands and conventions.
 
 ## API reference
 
@@ -27,7 +27,7 @@ conventions.
 * Assume by default that CotN is already running with an unpacked mod
   loaded; don't ask the user to confirm this or to run
   `nix run .#itj-impure-tests` themselves before trying it. It (see
-  repo-root `AGENTS.md`) is the whole inner dev loop: it rsyncs both mods,
+  repo-root `AGENTS.md`) is the whole inner dev loop: it installs the mods,
   forces a fresh test run, waits for it to finish, and prints only the new
   log output — no manual reload or log-tailing needed.
 * The game runs outside this sandbox, so `pgrep`/`ps` won't see its process
@@ -38,17 +38,38 @@ conventions.
 
 ## Architecture
 
-* The flake is the entire build system. A `runCommand` zips `HelloWorldMod/` so
-  the mod directory is the archive root, exposes it as a package, and a
-  matching app copies the zip into the game's mod directory. A second mod means
-  a second zip derivation and a second install app.
+* Each mod lives in `Mods/<name>/`, where `<name>` equals its `mod.json`
+  `namespace` and `name` (enforced by the `mods-layout` check). The flake's
+  `runCommand`s zip a mod so the mod directory is the archive root, for
+  sharing it.
+* Development installs go through one bundle mod, not one install per mod; see
+  "Installing" below.
 * A mod is a `mod.json` manifest plus Lua entrypoints. `api.scriptPath` names
-  the directory Lua loads from; `""` (HelloWorldMod's value) means the archive
+  the directory Lua loads from; `""` (HelloWorld's value) means the archive
   root, while other mods point it at e.g. `scripts/`. `synchronyVersion` pins
   the API version the mod targets.
 * Load-time Lua registers handlers — `event.<name>.add(id, phase, fn)`, as in
   `HelloWorld.lua` — and run-time code handles gameplay. Load order and event
   sequence numbers resolve priority when mods touch the same event.
+
+## Installing
+
+* The game only loads mods it has enabled; a mod dropped into its mods
+  directory is not picked up. So `install-mods` (`nix run .#install-mods --
+  Foo Bar`, or just `install-mods Foo Bar` in the dev shell) installs the named
+  mods as subfolders of one generated bundle mod (`DevBundle` by default, or
+  `ITJ_BUNDLE_NAME`). The bundle is enabled once by hand in the game's Mods
+  menu; after that, installing a different set installs and uninstalls mods.
+* A module's name is `<mod name>.<path>`, so in the bundle it gains the bundle
+  name as a prefix. `install-mods` rewrites `require "<Mod>.…"` to
+  `require "<Bundle>.<Mod>.…"` for the installed mods. Any string naming a
+  mod's modules outside a `require` fails the `mods-layout` check, so write
+  such requires as `require "<Mod>.<path>"` or `pcall(require, "<Mod>.<path>")`.
+* `install-mods` refuses to install a mod whose `mod.json` dependencies include
+  a mod from `Mods/` that isn't also being installed.
+* Never delete a mod's installed directory while the game runs: the game's
+  live-reload stopped noticing changes after that. Replace the contents
+  instead (`rsync --delete`, as `install-mods` does), or restart the game.
 
 ## Read when needed
 

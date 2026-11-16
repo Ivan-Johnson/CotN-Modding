@@ -3,9 +3,9 @@ local Entities = require "system.game.Entities"
 local Map = require "necro.game.object.Map"
 local Marker = require "necro.game.tile.Marker"
 
--- Optional dependency on HelloWorldModTests' generic test framework.
+-- Optional dependency on HelloWorldTests' generic test framework.
 -- Deliberately not declared in mod.json: this mod must not require players
--- to install the test-only mod. If HelloWorldModTests isn't installed (or
+-- to install the test-only mod. If HelloWorldTests isn't installed (or
 -- hasn't loaded yet this cycle), the require fails and this script quietly
 -- registers nothing.
 local ok, testsApi = pcall(require, "HelloWorldTests.api")
