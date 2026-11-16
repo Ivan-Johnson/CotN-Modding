@@ -17,7 +17,9 @@ readonly OUTPUT_DIR="$REPO_ROOT/output"
 readonly HTML_TARBALL="$OUTPUT_DIR/1-original-html.tar.gz"
 
 readonly START_URL='https://vortexbuffer.com/synchrony/docs/index.html'
-readonly MIRROR_REMOTE='git@github.com:Ivan-Johnson/CotN-docs.git'
+
+# shellcheck source=push-to-mirror.bash
+source "$REPO_ROOT/push-to-mirror.bash"
 
 readonly ACCEPT_REGEX_DEBUG='^.*/docs/(index.html|modules/|modules/necro.client.ClientEvents/|components/|components/necro.game.data.component.character.AutoCastComponents/)$'
 readonly ACCEPT_REGEX_PRODUCTION='.*'
@@ -78,26 +80,9 @@ push() {
 	tmp="$(mktemp -d)"
 	echo "$tmp"
 
-	# Record metadata about this repo before we cd into the temporary clone
-	git -C "$REPO_ROOT" rev-parse HEAD > "$tmp/git_HEAD.txt"
-	git -C "$REPO_ROOT" diff HEAD > "$tmp/git_diff.txt"
-	git -C "$REPO_ROOT" status > "$tmp/git_status.txt"
-	date > "$tmp/timestamp.txt"
-
 	tar -zxf "$HTML_TARBALL" -C "$tmp"
 
-	# The temporary directory is deliberately left in place so that a failed or
-	# surprising push can be inspected after the fact.
-	cd "$tmp"
-	git init
-	git remote add origin "$MIRROR_REMOTE"
-	git fetch origin "$branch"
-	git switch --create "$branch"
-	git reset --soft "origin/$branch"
-
-	git add .
-	git commit -m "Update $(cat timestamp.txt)"
-	git push origin "$branch"
+	push_to_mirror "$branch" "$REPO_ROOT" "$tmp"
 }
 
 # Make the directory first, otherwise the logs won't be saved

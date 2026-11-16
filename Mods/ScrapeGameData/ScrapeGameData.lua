@@ -129,6 +129,12 @@ event.levelLoad.add("ScrapeProbes", { order = "extraEntities", sequence = 100 },
 		return json(FileIO.listFiles("scripts", FileIO.List.FILES + FileIO.List.RECURSIVE + FileIO.List.SORTED))
 	end)
 
+	dump("versions.json", function()
+		return json({
+			patch = require("necro.game.data.resource.GameMod").getPatchVersion(),
+		})
+	end)
+
 	out("end")
 end)
 

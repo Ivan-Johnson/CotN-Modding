@@ -36,6 +36,10 @@ entry was tried in CotN with Synchrony API 4.2.1 at run-time (inside an
 * **`entitySchemaLoadEntity` event**: already documented in
   `Mods/docs/gotchas.md`. Printing `ev` dumps every entity type with its full
   component table to the log.
+* **`GameMod.getPatchVersion()`**: returns the game's patch version (`"4.2.1"`
+  here). It is the only version a mod can read: `Session.getVersion()` and
+  `necro.mod.Mods` can't be required (Permission denied), `_VERSION` is
+  absent, and `Netplay` has no `getVersion`. There is no build number.
 
 ## Confirmed not to work or not be useful
 
