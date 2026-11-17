@@ -1,6 +1,23 @@
 {
   "nodes": {
-    "cotn-docs": {
+    "cotn-docs-game-data": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1794806125,
+        "narHash": "sha256-uW5pRRwNh8JX51yMRvNpLcWG47C34cUSHyB9hl4gpTA=",
+        "ref": "game-data",
+        "rev": "a5ffbb896bca30b23cf69dc7418e0650c801a08a",
+        "revCount": 2,
+        "type": "git",
+        "url": "ssh://git@github.com/Ivan-Johnson/CotN-docs.git"
+      },
+      "original": {
+        "ref": "game-data",
+        "type": "git",
+        "url": "ssh://git@github.com/Ivan-Johnson/CotN-docs.git"
+      }
+    },
+    "cotn-docs-official": {
       "flake": false,
       "locked": {
         "lastModified": 1788567705,
@@ -54,7 +71,8 @@
     },
     "root": {
       "inputs": {
-        "cotn-docs": "cotn-docs",
+        "cotn-docs-game-data": "cotn-docs-game-data",
+        "cotn-docs-official": "cotn-docs-official",
         "dev-tools": "dev-tools",
         "nixpkgs": "nixpkgs"
       }

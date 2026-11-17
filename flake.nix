@@ -9,8 +9,13 @@
                         inputs.nixpkgs.follows = "nixpkgs";
                 };
 
-                cotn-docs = {
+                cotn-docs-official = {
                         url = "git+ssh://git@github.com/Ivan-Johnson/CotN-docs.git?ref=mainline";
+                        flake = false;
+                };
+
+                cotn-docs-game-data = {
+                        url = "git+ssh://git@github.com/Ivan-Johnson/CotN-docs.git?ref=game-data";
                         flake = false;
                 };
         };
@@ -20,7 +25,8 @@
                         self,
                         nixpkgs,
                         dev-tools,
-                        cotn-docs,
+                        cotn-docs-official,
+                        cotn-docs-game-data,
                 }:
                 let
                         pkgs = import nixpkgs { system = "x86_64-linux"; };
@@ -63,10 +69,10 @@
                         # CotN-docs repo, before they are indexed.
                         pages = pkgs.runCommand "cotn-docs-pages" { nativeBuildInputs = conversionTools; } ''
                                 export LC_ALL=C.UTF-8
-                                bash ${./DocDownloader/html-to-docs.bash} ${cotn-docs} "$out"
+                                bash ${./DocDownloader/html-to-docs.bash} ${cotn-docs-official} "$out"
                                 bash ${./DocDownloader/useful-docs.bash} "$out/markdown" "$out/markdown-useful"
 
-                                cp -r ${cotn-docs} "$out/html-original"
+                                cp -r ${cotn-docs-official} "$out/html-original"
                         '';
 
                         # The same renderings, with a `mandb` index over them. `man -k` and
@@ -318,6 +324,7 @@
                                         docs = docs;
                                         hello-world-mod = helloWorldModZip;
                                         hello-world-mod-tests = helloWorldModTestsZip;
+                                        game-data = cotn-docs-game-data;
                                 };
                                 docs = docs;
                                 pages = pages;
