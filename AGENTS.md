@@ -4,16 +4,36 @@ Crypt of the NecroDancer (CotN / cotn) is a rhythm-based roguelike where
 movement, combat, and survival happen to the beat. Its Synchrony version adds
 full Lua modding support.
 
-This repo has two halves, each with its own `AGENTS.md` covering the details:
+## Contexts
 
-* `DocDownloader/` mirrors the official Synchrony API documentation and renders
-  it to Markdown and man pages.
-* `Mods/` builds the Synchrony mods themselves, and consumes those rendered
-  docs as its API reference.
+This repo has multiple contexts and no `GLOSSARY-MAP.md`; this section is the
+map. Each context has its own `AGENTS.md` and `GLOSSARY.md`. Before touching a
+context, read both, and use the glossary's terms rather than the ones it lists
+under `_Avoid_`.
 
-Read `GLOSSARY-MAP.md` at the start of every task, then the glossary of each
-context the task touches. Use their terms, and avoid the ones they list under
-`_Avoid_`.
+* `Mods/`: the Synchrony API and game concepts that mods are written against;
+  builds the mods themselves.
+* `DocDownloader/`: mirrors the official Synchrony docs and renders them.
+* `GameData/`: scrapes data out of the live game and publishes it to the docs
+  mirror.
+* `AuthoredDocs/`: the docs written by hand, and the docs tree that publishes
+  them beside the official docs and the game data.
+
+Relationships between contexts:
+
+* **GameData → Mods**: the `ScrapeGameData` mod in `Mods/` is the source of
+  the data.
+* **GameData → DocDownloader**: GameData publishes to DocDownloader's mirror,
+  sharing its push mechanism.
+* **DocDownloader → AuthoredDocs**: DocDownloader's converted official docs go
+  into the docs tree that AuthoredDocs builds.
+* **GameData → AuthoredDocs**: the game data goes into the docs tree too.
+* **AuthoredDocs → Mods**: the docs tree is the API reference that the Mods
+  glossary is derived from, and the authored docs are guides for writing mods.
+
+ADRs for every context live in `Docs/Adr/`. Read those touching the area you
+are about to change. When your output contradicts one, say so explicitly rather
+than silently overriding it.
 
 ## Commands
 
@@ -34,8 +54,6 @@ context the task touches. Use their terms, and avoid the ones they list under
 
 * Flake inputs `follows` nixpkgs, so pin bumps go through `flake.lock` rather
   than per-input nixpkgs versions.
-* Decisions with their reasons live in `Docs/Adr/`; read the relevant one
-  before changing the shape it records.
 * File & directory names all start with a letter. Where possibly directories are
   upper case (A-Z), files are lower case (a-z). This is not always possible
   though; e.g. `README.md` files and the nix `result` symlink.
@@ -52,16 +70,11 @@ Issues live in GitHub Issues for `Ivan-Johnson/CotN-Modding`, via `gh`. See
 Default five-role vocabulary, plus a `priority:now` label. See
 `Docs/Agents/triage-labels.md`.
 
-### Domain docs
-
-Multi-context: `GLOSSARY-MAP.md` at the root, ADRs in `Docs/Adr/`. See
-`Docs/Agents/domain.md`.
-
 ## Tracer bullet first
 
 Documentation and example code for this modding API are sparse. Before
 designing a change that leans on an API you haven't used before in this repo (a
 new event, a cross-mod mechanism, a manifest field, etc.), fire a tracer bullet:
-build a small standalone POC and verify it live (see each half's dev loop). Treat
+build a small standalone POC and verify it live (see each context's dev loop). Treat
 such a task as two steps, POC then the real change, and finish the POC before
 designing the real change.
