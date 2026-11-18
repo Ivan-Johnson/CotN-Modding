@@ -37,8 +37,25 @@ context the task touches. Use their terms, and avoid the ones they list under
 * Markdown uses `*` for bullets.
 * Flake inputs `follows` nixpkgs, so pin bumps go through `flake.lock` rather
   than per-input nixpkgs versions.
-* Decisions with their reasons live in `docs/adr/`; read the relevant one
+* Decisions with their reasons live in `Docs/Adr/`; read the relevant one
   before changing the shape it records.
+
+## Agent skills
+
+### Issue tracker
+
+Issues live in GitHub Issues for `Ivan-Johnson/CotN-Modding`, via `gh`. See
+`Docs/Agents/issue-tracker.md`.
+
+### Triage labels
+
+Default five-role vocabulary, plus a `priority:now` label. See
+`Docs/Agents/triage-labels.md`.
+
+### Domain docs
+
+Multi-context: `GLOSSARY-MAP.md` at the root, ADRs in `Docs/Adr/`. See
+`Docs/Agents/domain.md`.
 
 ## Tracer bullet first
 

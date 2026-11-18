@@ -1,7 +1,7 @@
 # Automated testing
 
 The framework's dependency direction is recorded in
-`docs/adr/0003-test-framework-never-depends-on-mods.md` at the repo root.
+`Docs/Adr/0003-test-framework-never-depends-on-mods.md` at the repo root.
 
 ## Writing tests
 

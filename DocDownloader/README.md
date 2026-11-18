@@ -32,7 +32,7 @@ There are two scripts:
 
 * `./push-game-data.bash [SCRAPE_DIR]` pushes a scrape made by `nix run
   .#scrape-game-data` (the newest one by default) to the mirror's `game-data`
-  branch. It needs no `BUILD_MODE`. See `docs/adr/0005-*`.
+  branch. It needs no `BUILD_MODE`. See `Docs/Adr/0005-*`.
 
 ## Building the docs with Nix
 

@@ -3,7 +3,7 @@
 Mirrors the official Synchrony API documentation and renders it to Markdown and
 man pages. See the repo-root `AGENTS.md` for shared commands and conventions.
 Why the crawl is mirrored rather than built, and why `mandb` is indexed in a
-second derivation: `docs/adr/0001-*` and `0002-*` at the repo root.
+second derivation: `Docs/Adr/0001-*` and `0002-*` at the repo root.
 
 ## Commands
 
@@ -11,7 +11,7 @@ second derivation: `docs/adr/0001-*` and `0002-*` at the repo root.
   `test-push.bash` and `check-docs.bash`. `crawl-and-push.bash` always
   re-crawls the website and its final stage performs a real Git push, so
   reserve it for publishing a mirror. `push-game-data.bash` likewise really
-  pushes, to the `game-data` branch; see `docs/adr/0005-*`.
+  pushes, to the `game-data` branch; see `Docs/Adr/0005-*`.
 * `man-crypt` (dev shell) rebuilds the docs and runs `man` against them; it is
   for humans.
 
