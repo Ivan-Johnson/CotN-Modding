@@ -17,8 +17,6 @@ context the task touches. Use their terms, and avoid the ones they list under
 
 ## Commands
 
-* `my-nix-format-all` formats all `.nix` files; `my-nix-format --check FILE`
-  verifies a single one.
 * `build-release` runs `nix flake check` and the nix formatting check, and
   also runs `nix run .#itj-impure-tests` since this flake provides it.
 * `nix run .#itj-impure-tests` installs `HelloWorld` and `HelloWorldTests` via
@@ -29,12 +27,11 @@ context the task touches. Use their terms, and avoid the ones they list under
   run `nix run .#itj-impure-tests`, read the result. It's an `app`, not a
   `check`, because it's impure: it needs a running, native Steam/Proton CotN
   instance.
+* `build-format` formats all code. Typically this does not need to be used; it
+  is done automatically as part of a pre-commit hook.
 
 ## Conventions
 
-* Nix is indented with eight spaces, applied by `my-nix-format-all`; do not
-  hand-manage it. Lua and `mod.json` are tab-indented.
-* Markdown uses `*` for bullets.
 * Flake inputs `follows` nixpkgs, so pin bumps go through `flake.lock` rather
   than per-input nixpkgs versions.
 * Decisions with their reasons live in `Docs/Adr/`; read the relevant one
