@@ -4,7 +4,7 @@ Vocabulary for Synchrony, the Lua modding API of Crypt of the NecroDancer
 (CotN), as used when writing the mods in `Mods/`.
 
 This file is likely to contain errors; it is entirely AI generated from the
-rendered docs (`result/docs/markdown/`). If this file defines terms differently
+official docs (`result/docs/official/markdown/`). If this file defines terms differently
 than how they are used in that directory, then that is a bug.
 
 ## Mods and scripts

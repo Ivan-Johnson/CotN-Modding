@@ -12,7 +12,9 @@ public without the other, while still sharing one repo and one push mechanism.
 * A branch is not a licensing guarantee. The branch's `README.md`, written on
   every push from `DocDownloader/game-data-README.md`, says the risk is
   unchecked.
-* The flake never sees the game data, because it pins `mainline`.
+* The flake pins the `game-data` branch as an input of its own and places it in
+  the docs tree as `game-data/`. It stays a separate input so that it can still
+  be split off from the docs later.
 * `crawl-and-push.bash` and `push-game-data.bash` share `push-to-mirror.bash`,
   which makes a directory the whole contents of a branch.
 * Like the crawl push, `push-game-data.bash` is a real Git push and is never a

@@ -65,50 +65,17 @@
                                                 touch "$out"
                                         '';
 
-                        # The markdown and man page renderings of the HTML mirrored in the
-                        # CotN-docs repo, before they are indexed.
-                        pages = pkgs.runCommand "cotn-docs-pages" { nativeBuildInputs = conversionTools; } ''
-                                export LC_ALL=C.UTF-8
-                                bash ${./DocDownloader/html-to-docs.bash} ${cotn-docs-official} "$out"
-                                bash ${./DocDownloader/useful-docs.bash} "$out/markdown" "$out/markdown-useful"
-
-                                cp -r ${cotn-docs-official} "$out/html-original"
-                        '';
-
-                        # The same renderings, with a `mandb` index over them. `man -k` and
-                        # `whatis` search that index rather than the pages themselves, and
-                        # nothing can build one later, because by then the pages live in the
-                        # read only store.
-                        #
-                        # Indexing is a stage of its own because `mandb` records each page's
-                        # mtime, and Nix normalizes mtimes only once a builder has exited.
-                        # Reading the pages back out of `pages`, where Nix has already
-                        # normalized them, is what keeps the index reproducible.
-                        docs = pkgs.runCommand "cotn-docs-rendered" { nativeBuildInputs = [ pkgs.man-db ]; } ''
-                                cp -a ${pages} "$out"
-                                chmod -R u+w "$out"
-
-                                # MANDB_MAP is what tells `mandb` where a manpath's index
-                                # belongs; without it there is nowhere to put one, and it
-                                # quietly builds nothing.
-                                echo "MANDATORY_MANPATH $out/share/man" >man.conf
-                                echo "MANDB_MAP $out/share/man $out/share/man" >>man.conf
-                                mandb --config-file man.conf --create
-
-                                # Keep the index, but not the empty directory `mandb` makes to
-                                # cache formatted pages in; the store has no use for it.
-                                rm -rf "$out/share/man/cat"*
-
-                                # It appears as though `MANPATH` is constructed automatically
-                                # from `PATH`: if we don't create this empty `bin` directory,
-                                # then `man` won't be able to find our `share/man` directory.
-                                mkdir -p "$out/bin"
-                        '';
+                        docs = import ./DocDownloader/docs-tree.nix {
+                                inherit pkgs conversionTools;
+                                official = cotn-docs-official;
+                                gameData = cotn-docs-game-data;
+                        };
 
                         # The same conversion, checked over a whole build rather than a
                         # handwritten crawl of two or three pages.
-                        corpus = pkgs.runCommand "cotn-docs-corpus" { nativeBuildInputs = conversionTools ++ [ docs ]; } ''
+                        corpus = pkgs.runCommand "cotn-docs-corpus" { nativeBuildInputs = conversionTools; } ''
                                 export LC_ALL=C.UTF-8
+                                export MANPATH=${docs}/official/man
                                 bash ${./DocDownloader/check-docs.bash} ${docs}
                                 touch "$out"
                         '';
@@ -315,7 +282,7 @@
                                         # Rebuild the documentation, then read a page from it.
                                         man-crypt() {
                                                 local out="$(nix build --no-link --print-out-paths "$ITJ_FLAKE_ROOT#docs")" || return
-                                                MANPATH="$out/share/man" man "$@"
+                                                MANPATH="$out/official/man" man "$@"
                                         }
                                         export -f man-crypt
                                 '';
@@ -326,10 +293,8 @@
                                         docs = docs;
                                         hello-world-mod = helloWorldModZip;
                                         hello-world-mod-tests = helloWorldModTestsZip;
-                                        game-data = cotn-docs-game-data;
                                 };
                                 docs = docs;
-                                pages = pages;
                                 hello-world-mod = helloWorldModZip;
                                 hello-world-mod-tests = helloWorldModTestsZip;
                         };

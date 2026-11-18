@@ -37,7 +37,9 @@ There are two scripts:
 ## Building the docs with Nix
 
 The flake takes the CotN-docs mirror as an input (the `mainline` branch, i.e.
-the output of a `production` crawl) and runs `./html-to-docs.bash` over it:
+the output of a `production` crawl) and `docs-tree.nix` builds the docs tree
+from it: `raw/`, `official/{minimal-html,markdown,man}/`, `authored/` and
+`game-data/`.
 
 ```bash
 nix build

@@ -25,7 +25,11 @@ second derivation: `Docs/Adr/0001-*` and `0002-*` at the repo root.
 2. `html-to-docs.bash SRC_DIR DST_DIR` extracts each page's `<article>` into
    `DST_DIR/minimal-html/`, then converts that into `DST_DIR/markdown/` and
    `DST_DIR/share/man/man3/`.
-3. The flake packages stage 2 over the pinned mirror.
+3. `docs-tree.nix` is the one module that owns the layout of `result/docs/`
+   (the docs tree): `raw/`, `official/{minimal-html,markdown,man}/`,
+   `authored/` and `game-data/`. It runs stage 2 over the pinned mirror and
+   adds the `mandb` index and the game data. Change the layout there, and
+   update the readers of it (`check-docs.bash`, `Mods/AGENTS.md`).
 
 ## Conventions
 

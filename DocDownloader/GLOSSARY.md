@@ -10,9 +10,21 @@ The `CotN-docs` repo holding a crawl of the official docs on its `mainline`
 branch, which the flake pins. Its `game-data` branch holds the game data.
 _Avoid_: Cache, snapshot
 
-**Rendered docs**:
-The Markdown tree and man pages built from the mirror.
-_Avoid_: Docs (alone), output
+**Raw docs**:
+The official HTML exactly as crawled into the mirror.
+_Avoid_: Original docs
+
+**Official docs**:
+The Markdown and man pages cleaned from the raw docs.
+_Avoid_: Rendered docs, Docs (alone), output
+
+**Authored docs**:
+Docs written by hand for this repo, as opposed to derived from the official
+docs or the game.
+
+**Docs tree**:
+The layout of `result/docs/`, which holds the raw docs, official docs, game
+data, and authored docs together.
 
 **Page**:
 One document of the crawl, named by its path.

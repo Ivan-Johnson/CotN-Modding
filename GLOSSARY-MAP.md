@@ -9,5 +9,5 @@
 
 ## Relationships
 
-* **DocDownloader → Mods**: DocDownloader's rendered docs are the API reference
+* **DocDownloader → Mods**: DocDownloader's docs tree is the API reference
   that the Mods glossary is derived from.

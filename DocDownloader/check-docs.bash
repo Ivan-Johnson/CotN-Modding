@@ -13,7 +13,7 @@
 # hand, they fail unless it is supplied:
 #
 #   docs="$(nix build --no-link --print-out-paths .#docs)"
-#   MANPATH="$docs/share/man" nix develop -c ./DocDownloader/check-docs.bash "$docs"
+#   MANPATH="$docs/official/man" nix develop -c ./DocDownloader/check-docs.bash "$docs"
 
 set -euo pipefail
 
@@ -72,12 +72,16 @@ assert_links_resolve() {
 # passes trivially over nothing, so this is what makes them mean anything.
 assert_trees_agree() {
 	local docs="$1"
-	local pages tree count
+	local pages tree count dir
 
-	pages="$(find "$docs/minimal-html" -name '*.html' | wc -l)"
+	for dir in raw official authored game-data; do
+		[[ -d "$docs/$dir" ]] || fail "$docs has no $dir/"
+	done
+
+	pages="$(find "$docs/official/minimal-html" -name '*.html' | wc -l)"
 	[[ "$pages" -gt 0 ]] || fail "$docs: no pages were converted"
 
-	for tree in "markdown:*.md" "share/man/man$MAN_SECTION:*.$MAN_SECTION"; do
+	for tree in "official/markdown:*.md" "official/man/man$MAN_SECTION:*.$MAN_SECTION"; do
 		count="$(find "$docs/${tree%%:*}" -name "${tree##*:}" | wc -l)"
 		[[ "$count" -eq "$pages" ]] ||
 			fail "${tree%%:*} holds $count pages, minimal-html holds $pages"
@@ -89,9 +93,9 @@ assert_trees_agree() {
 assert_navigation_is_published() {
 	local docs="$1"
 	local root="vortexbuffer.com/synchrony/docs"
-	local html="$docs/minimal-html/$root/cotn-docs.html"
-	local markdown="$docs/markdown/$root/cotn-docs.md"
-	local man="$docs/share/man/man$MAN_SECTION/cotn-docs.$MAN_SECTION"
+	local html="$docs/official/minimal-html/$root/cotn-docs.html"
+	local markdown="$docs/official/markdown/$root/cotn-docs.md"
+	local man="$docs/official/man/man$MAN_SECTION/cotn-docs.$MAN_SECTION"
 
 	grep -q 'href="overview/index.html"' "$html" ||
 		fail "$html does not show the recovered navigation"
@@ -114,9 +118,9 @@ assert_navigation_is_published() {
 assert_landing_page_survives() {
 	local docs="$1"
 	local marker='Once Synchrony is installed'
-	local html="$docs/minimal-html/vortexbuffer.com/synchrony/docs/index.html"
-	local markdown="$docs/markdown/vortexbuffer.com/synchrony/docs.md"
-	local man="$docs/share/man/man$MAN_SECTION/docs.$MAN_SECTION"
+	local html="$docs/official/minimal-html/vortexbuffer.com/synchrony/docs/index.html"
+	local markdown="$docs/official/markdown/vortexbuffer.com/synchrony/docs.md"
+	local man="$docs/official/man/man$MAN_SECTION/docs.$MAN_SECTION"
 
 	grep -q "$marker" "$html" ||
 		fail "$html no longer holds the landing page's own content"
@@ -130,17 +134,17 @@ assert_landing_page_survives() {
 assert_no_chrome() {
 	local docs="$1"
 
-	! grep -rl '¶' "$docs" ||
+	! grep -rl '¶' "$docs/official" ||
 		fail "the files above still carry heading permalinks"
 }
 
 # Every page can be found by `apropos`, not just read by name.
 assert_man_pages_are_indexable() {
 	local docs="$1"
-	local man="$docs/share/man/man$MAN_SECTION"
+	local man="$docs/official/man/man$MAN_SECTION"
 	local path
 
-	[[ -e "$docs/share/man/index.db" ]] ||
+	[[ -e "$docs/official/man/index.db" ]] ||
 		fail "$docs: no man index, so nothing is searchable"
 
 	man -k cotn-docs || fail "Could not find cotn-docs"
@@ -162,8 +166,8 @@ main() {
 	assert_navigation_is_published "$docs"
 	assert_landing_page_survives "$docs"
 	assert_no_chrome "$docs"
-	assert_links_resolve "$docs/minimal-html"
-	assert_links_resolve "$docs/markdown"
+	assert_links_resolve "$docs/official/minimal-html"
+	assert_links_resolve "$docs/official/markdown"
 	assert_man_pages_are_indexable "$docs"
 	assert_man_pages_are_reachable "$docs"
 

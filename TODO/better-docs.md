@@ -1,4 +1,4 @@
-* Core mechanics that the rendered docs do not explain:
+* Core mechanics that the official docs do not explain:
 
   * Player turn: the order in which a move resolves into attack, dig, or
     interact.
@@ -24,7 +24,8 @@
 
   1. ~~Scope how much of the official docs are useful~~ Done.
 
-     Very little is useful, judging by this POC: DocDownloader/useful-docs.bash
+     Very little is useful, judging by a since-deleted POC
+     (`DocDownloader/useful-docs.bash`, in git history):
 
      ./result/docs/markdown-useful:
 
