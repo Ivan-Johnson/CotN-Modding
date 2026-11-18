@@ -1,6 +1,6 @@
 # AuthoredDocs
 
-Holds the docs written by hand (`docs/`), and builds the docs tree that
+Holds the docs written by hand (`Src/`), and builds the docs tree that
 publishes them beside the official docs and the game data. See the repo-root
 `AGENTS.md` for shared commands and conventions. Why `mandb` is indexed in a
 second derivation: `Docs/Adr/0002-*` at the repo root.
@@ -19,9 +19,9 @@ second derivation: `Docs/Adr/0002-*` at the repo root.
   (the docs tree): `raw/`, `official/{minimal-html,markdown,man}/`,
   `authored/` and `game-data/`. It takes DocDownloader's `converted` output,
   the mirror and the game data as inputs, adds the `mandb` index, and copies
-  `docs/` verbatim into `authored/`. Change the layout there, and update the
+  `Src/` verbatim into `authored/`. Change the layout there, and update the
   readers of it (`check-docs.bash`, `Mods/AGENTS.md`).
-* Add a new authored doc to `docs/` and link it from `docs/README.md`, the
+* Add a new authored doc to `Src/` and link it from `Src/README.md`, the
   index that `Mods/AGENTS.md` points at.
 
 ## Conventions

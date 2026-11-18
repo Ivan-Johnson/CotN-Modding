@@ -36,6 +36,9 @@ context the task touches. Use their terms, and avoid the ones they list under
   than per-input nixpkgs versions.
 * Decisions with their reasons live in `Docs/Adr/`; read the relevant one
   before changing the shape it records.
+* File & directory names all start with a letter. Where possibly directories are
+  upper case (A-Z), files are lower case (a-z). This is not always possible
+  though; e.g. `README.md` files and the nix `result` symlink.
 
 ## Agent skills
 

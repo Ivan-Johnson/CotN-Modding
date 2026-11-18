@@ -1,6 +1,6 @@
 # Summary
 
-The docs written by hand for this repo (`docs/`, start at its `README.md`), and
+The docs written by hand for this repo (`Src/`, start at its `README.md`), and
 the Nix module that builds the docs tree: `raw/`,
 `official/{minimal-html,markdown,man}/`, `authored/` and `game-data/`.
 

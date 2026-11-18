@@ -73,6 +73,6 @@ commands and conventions.
 
 ## Read when needed
 
-* `AuthoredDocs/docs/README.md`: an index of hand-written guides. Read it
+* `AuthoredDocs/Src/README.md`: an index of hand-written guides. Read it
   first when hitting a Lua error, an event-ordering surprise, a test problem,
   or a mod that will not reload, and follow its links.

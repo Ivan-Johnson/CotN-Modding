@@ -11,7 +11,7 @@
 #
 #   raw/        the raw docs, exactly as mirrored
 #   official/   the official docs: minimal-html/, markdown/ and man/
-#   authored/   the authored docs, `docs/` verbatim
+#   authored/   the authored docs, `Src/` verbatim
 #   game-data/  the game data
 #
 # `man/` is indexed with `mandb`, whose index records each page's mtime. Nix
@@ -21,7 +21,7 @@
 # later, because by then the tree lives in the read only store.
 pkgs.runCommand "cotn-docs-tree" { nativeBuildInputs = [ pkgs.man-db ]; } ''
         mkdir -p "$out/official"
-        cp -r ${./docs} "$out/authored"
+        cp -r ${./Src} "$out/authored"
         cp -r ${official} "$out/raw"
         cp -r ${gameData} "$out/game-data"
         cp -a ${converted}/minimal-html "$out/official/minimal-html"
