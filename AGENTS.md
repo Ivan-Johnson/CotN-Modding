@@ -54,9 +54,11 @@ than silently overriding it.
 
 * Flake inputs `follows` nixpkgs, so pin bumps go through `flake.lock` rather
   than per-input nixpkgs versions.
-* File & directory names all start with a letter. Where possibly directories are
-  upper case (A-Z), files are lower case (a-z). This is not always possible
-  though; e.g. `README.md` files and the nix `result` symlink.
+* File & directory names all start with a letter. Where possible, a directory's
+  first letter is upper case (A-Z) and a file's is lower case (a-z); the rest of
+  the name is unconstrained, so `game-data-README.md` and `Mods/Foo-Bar/` are
+  fine. This is not always possible; e.g. `README.md` files and the nix
+  `result` symlink.
 
 ## Agent skills
 

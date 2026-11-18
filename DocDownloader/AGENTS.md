@@ -7,12 +7,13 @@ second derivation: `Docs/Adr/0001-*` and `0002-*` at the repo root.
 
 ## Commands
 
+* Publish a fresh mirror with `BUILD_MODE=production
+  DocDownloader/crawl-and-push.bash`. `BUILD_MODE` defaults to `debug` to
+  spare the official webserver. `crawl-and-push.bash` always re-crawls and its
+  final stage performs a real Git push, so reserve it for publishing a mirror.
 * Validate with `nix flake check`, which runs `test-html-to-docs.bash`.
-  `crawl-and-push.bash` always
-  re-crawls the website and its final stage performs a real Git push, so
-  reserve it for publishing a mirror. `push-to-mirror.bash` is shared with
-  the GameData context, which pushes the `game-data` branch; see
-  `Docs/Adr/0005-*`.
+  `push-to-mirror.bash` is shared with the GameData context, which pushes the
+  `game-data` branch; see `Docs/Adr/0005-*`.
 
 ## Architecture
 
@@ -31,42 +32,11 @@ second derivation: `Docs/Adr/0001-*` and `0002-*` at the repo root.
 ## Conventions
 
 * Strict Bash, quoted paths, `readonly` config, behavior in functions rather
-  than another task runner. `set -e` does not fire inside the subshell of a
-  command substitution, so `list_pages` propagates failures to `run_pass` by
-  hand.
-* `run_pass` converts pages in parallel, `NIX_BUILD_CORES` at a time, falling
-  back to `nproc` outside a Nix build; Nix resolves its `cores = 0` setting to
-  the machine's core count before exporting it. Workers are forked
-  rather than re-executed so that they inherit `page_set`, and each gets a
-  `work_file` of its own, since every converter stages its page through one.
-  `set -e` does not fire for a failing background job either, so `run_pass`
-  waits on each worker by hand.
-* The crawl mirrors a page reachable at `foo` as both `foo.html` and
-  `foo/index.html`, and `list_pages` keeps only the latter. The two are never
-  byte-identical, since each has its links written from its own directory, so
-  `assert_same_page` compares them with that depth normalized away and
-  hard-fails on any other difference.
-* Markdown collapses `foo/index.html` to `foo.md`, keeping a top-level
-  `index.html` as `index.md`. That and the dedupe both move a page relative to
-  the links pointing at it, so `rewrite_links` resolves each link back to the
-  page it names and respells it for the tree being written; `page_set` is how a
-  link out of the crawl is told apart and left alone.
-* Man pages are flat and unprefixed in section 3, named after the page (e.g.
-  `necro.game.object.Map.3`). `to_man` hard-fails on a name collision rather
-  than clobbering, claiming the name by creating it under `noclobber`; pages
-  convert concurrently, so merely testing for the path would let two collide
-  in the window between the test and the write.
-* The sidebar navigation is harvested from the landing page into a page of its
-  own, `cotn-docs`, published beside the page it came from so that its links
-  still resolve from the directory they were written against. It is a separate
-  page rather than the landing page's replacement, because the landing page has
-  its own content and earns its own `docs.3`.
-* Every man page needs `.SH NAME`, or `whatis` and `apropos` index nothing. It
-  comes from the page's first `<h1>`, via Pandoc's `header-includes`.
-  `page_summary` hard-fails on a page with no heading, so the tests'
-  `write_page` supplies one and `write_raw_page` opts out.
-* `PANDOC_TO` is the single Markdown dialect knob. Man pages are converted from
-  `minimal-html` rather than the Markdown, so it does not affect them.
+  than another task runner. The reasoning behind each converter step lives in
+  comments beside it in `html-to-docs.bash`.
+* Every man page needs `.SH NAME`, or `whatis` and `apropos` index nothing, so
+  a page with no `<h1>` hard-fails. The tests' `write_page` supplies a heading
+  and `write_raw_page` opts out.
 * Preserve the explicitly rejected malformed events URL in `REJECT_REGEX`
   unless the upstream link is known to be fixed.
 

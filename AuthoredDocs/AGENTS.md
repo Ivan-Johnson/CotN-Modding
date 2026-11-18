@@ -10,14 +10,17 @@ second derivation: `Docs/Adr/0002-*` at the repo root.
 * Validate with `nix flake check`, which runs `check-docs.bash` over the built
   tree.
 * `nix build .#docs` builds the docs tree into `result/docs/`.
-* `man-crypt` (dev shell) rebuilds the docs and runs `man` against them; it is
-  for humans.
+* `man-crypt` (dev shell) rebuilds the docs and runs `man` against them, e.g.
+  `man-crypt necro.game.object.Map` or `man-crypt -k map`; the build includes
+  a `mandb` index, so searching works. It is for humans.
 
 ## Architecture
 
 * `docs-tree.nix` is the one module that owns the layout of `result/docs/`
   (the docs tree): `raw/`, `official/{minimal-html,markdown,man}/`,
-  `authored/` and `game-data/`. It takes DocDownloader's `converted` output,
+  `authored/` and `game-data/`. The flake pins the CotN-docs mirror's
+  `mainline` branch (the output of a `production` crawl) and its `game-data`
+  branch as inputs. It takes DocDownloader's `converted` output,
   the mirror and the game data as inputs, adds the `mandb` index, and copies
   `Src/` verbatim into `authored/`. Change the layout there, and update the
   readers of it (`check-docs.bash`, `Mods/AGENTS.md`).
