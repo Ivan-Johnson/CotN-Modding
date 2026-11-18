@@ -1,22 +1,20 @@
 { pkgs }:
 let
-        helloWorldModZip = pkgs.runCommand "hello-world-mod-zip" { nativeBuildInputs = [ pkgs.zip ]; } ''
-                mkdir -p "$out"
-                cd ${./HelloWorld}
-                zip -qr "$out/HelloWorld.zip" .
-        '';
+        mkModZip =
+                name: drvName:
+                pkgs.runCommand drvName { nativeBuildInputs = [ pkgs.zip ]; } ''
+                        mkdir -p "$out"
+                        cd ${./.}/${name}
+                        zip -qr "$out/${name}.zip" .
+                '';
+
+        helloWorldModZip = mkModZip "HelloWorld" "hello-world-mod-zip";
 
         # Not shipped to players; a generic test-running framework that
         # HelloWorld (and any other mod under test) optionally requires at
         # load-time to register and run its behavioral tests. See
         # `Mods/HelloWorldTests`.
-        helloWorldModTestsZip =
-                pkgs.runCommand "hello-world-mod-tests-zip" { nativeBuildInputs = [ pkgs.zip ]; }
-                        ''
-                                mkdir -p "$out"
-                                cd ${./HelloWorldTests}
-                                zip -qr "$out/HelloWorldTests.zip" .
-                        '';
+        helloWorldModTestsZip = mkModZip "HelloWorldTests" "hello-world-mod-tests-zip";
 
         # Static analysis of every mod's Lua, catching syntax errors and
         # undefined globals (e.g. a typo'd event name) without needing the
@@ -63,14 +61,36 @@ let
         # user, via this specific Proton prefix (id 247080).
         cotnLogPath = "/home/i/.local/share/Steam/steamapps/common/Crypt of the NecroDancer/NecroDancer64/NecroDancer.log";
 
+        # Shell function shared by the live-game apps. `wait_for_log BASELINE
+        # SENTINEL` polls the `NecroDancer.log` lines after line BASELINE for
+        # SENTINEL, and returns 1 if it doesn't appear within 60s, so callers
+        # decide how to react.
+        waitForLog = ''
+                wait_for_log() {
+                        local baseline=$1 sentinel=$2 timeoutSeconds=60 start
+                        start=$(date +%s)
+                        while ! tail -n "+$((baseline + 1))" "$COTN_LOG" | grep -qF "$sentinel"; do
+                                sleep 0.1
+                                if ((($(date +%s) - start) >= timeoutSeconds)); then
+                                        return 1
+                                fi
+                        done
+                }
+        '';
+
         # Drives the game's live-reload and asserts on the resulting log
         # output. Impure (needs a running, native Steam/Proton CotN
         # instance and a live mods directory), so it lives in `apps`
         # rather than `checks`: exposed as `nix run .#itj-impure-tests`.
         impureTests = pkgs.writeShellApplication {
                 name = "run-tests";
-                runtimeInputs = [ pkgs.coreutils ];
+                runtimeInputs = [
+                        pkgs.coreutils
+                        pkgs.gnugrep
+                ];
                 text = ''
+                        ${waitForLog}
+
                         baseline=$(wc -l <"$COTN_LOG")
 
                         # Installing appends a timestamp comment to api.lua, rather than
@@ -84,17 +104,11 @@ let
 
                         # Wait for the tests mod's completion sentinel, rather than a
                         # hardcoded sleep or a quiet-period guess.
-                        timeoutSeconds=60
-                        start=$(date +%s)
                         timedOut=0
-                        while ! tail -n "+$((baseline + 1))" "$COTN_LOG" | grep -qF "[HelloWorldTests] Test suite completed"; do
-                                sleep 0.1
-                                if ((($(date +%s) - start) >= timeoutSeconds)); then
-                                        echo "itj-impure-tests: timed out waiting for test suite completion" >&2
-                                        timedOut=1
-                                        break
-                                fi
-                        done
+                        if ! wait_for_log "$baseline" "[HelloWorldTests] Test suite completed"; then
+                                echo "itj-impure-tests: timed out waiting for test suite completion" >&2
+                                timedOut=1
+                        fi
 
                         newOutput="$(tail -n "+$((baseline + 1))" "$COTN_LOG")"
                         echo "$newOutput"
@@ -125,6 +139,8 @@ let
                         pkgs.yq-go
                 ];
                 text = ''
+                        ${waitForLog}
+
                         outDir="$ITJ_FLAKE_ROOT/Tmp/scrape-game-data/$(date +%Y-%m-%d_%H-%M-%S)"
                         mkdir -p "$outDir"
 
@@ -132,15 +148,10 @@ let
 
                         ITJ_BUNDLE_RELOAD_TRIGGER="ScrapeGameData/ScrapeGameData.lua" ${installMods}/bin/install-mods ScrapeGameData
 
-                        timeoutSeconds=60
-                        start=$(date +%s)
-                        while ! tail -n "+$((baseline + 1))" "$COTN_LOG" | grep -qF "[ScrapeGameData] end"; do
-                                sleep 0.1
-                                if ((($(date +%s) - start) >= timeoutSeconds)); then
-                                        echo "scrape-game-data: timed out waiting for the end sentinel" >&2
-                                        exit 1
-                                fi
-                        done
+                        if ! wait_for_log "$baseline" "[ScrapeGameData] end"; then
+                                echo "scrape-game-data: timed out waiting for the end sentinel" >&2
+                                exit 1
+                        fi
 
                         tail -n "+$((baseline + 1))" "$COTN_LOG" >"$outDir/NecroDancer.log"
 
