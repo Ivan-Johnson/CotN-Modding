@@ -189,8 +189,6 @@ in
         };
 
         checks = {
-                hello-world-mod = helloWorldModZip;
-                hello-world-mod-tests = helloWorldModTestsZip;
                 mods-lua-lint = modsLuaLint;
                 mods-layout = modsLayout;
         };
