@@ -13,7 +13,7 @@
 # hand, they fail unless it is supplied:
 #
 #   docs="$(nix build --no-link --print-out-paths .#docs)"
-#   MANPATH="$docs/official/man" nix develop -c ./DocDownloader/check-docs.bash "$docs"
+#   MANPATH="$docs/official/man" nix develop -c ./AuthoredDocs/check-docs.bash "$docs"
 
 set -euo pipefail
 

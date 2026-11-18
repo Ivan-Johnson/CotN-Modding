@@ -7,7 +7,7 @@ commands and conventions.
 
 ## API reference
 
-* The docs built from the sibling `DocDownloader/` cover the whole Synchrony
+* The docs built by `AuthoredDocs/` cover the whole Synchrony
   API. Read them as Markdown under `result/docs/official/markdown/` (run
   `nix build .#docs` if `result` is missing), using the `grep` and `view`
   tools: `grep` for a module or term, `view` for the page. `man-crypt` is a
@@ -73,7 +73,6 @@ commands and conventions.
 
 ## Read when needed
 
-* `docs/gotchas.md`: Lua errors at load time, event ordering, `Tick.delay`,
-  stairs markers, and reverse-engineering an entity's behavior with
-  `print(ev)`.
-* `docs/testing.md`: writing or debugging tests, or a mod not reloading.
+* `AuthoredDocs/docs/README.md`: an index of hand-written guides. Read it
+  first when hitting a Lua error, an event-ordering surprise, a test problem,
+  or a mod that will not reload, and follow its links.

@@ -19,14 +19,6 @@ _Avoid_: Original docs
 The Markdown and man pages cleaned from the raw docs.
 _Avoid_: Rendered docs, Docs (alone), output
 
-**Authored docs**:
-Docs written by hand for this repo, as opposed to derived from the official
-docs or the game.
-
-**Docs tree**:
-The layout of `result/docs/`, which holds the raw docs, official docs, game
-data, and authored docs together.
-
 **Page**:
 One document of the crawl, named by its path.
 _Avoid_: File, document

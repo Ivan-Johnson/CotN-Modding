@@ -30,21 +30,5 @@ There are two scripts:
 * `./html-to-docs.bash SRC_DIR DST_DIR` generates markdown and man-page docs
   from the HTML.
 
-## Building the docs with Nix
-
-The flake takes the CotN-docs mirror as an input (the `mainline` branch, i.e.
-the output of a `production` crawl) and `docs-tree.nix` builds the docs tree
-from it: `raw/`, `official/{minimal-html,markdown,man}/`, `authored/` and
-`game-data/`.
-
-```bash
-nix build
-```
-
-The dev shell provides `man-crypt`, which rebuilds the docs and then runs `man`
-against them. The build includes a `mandb` index, so searching works too:
-
-```bash
-man-crypt necro.game.object.Map
-man-crypt -k map
-```
+The docs tree is built by the AuthoredDocs module from this crawl's converted
+output; see `AuthoredDocs/README.md`.

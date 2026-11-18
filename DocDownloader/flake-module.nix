@@ -1,8 +1,4 @@
-{
-        pkgs,
-        official,
-        gameData,
-}:
+{ pkgs, official }:
 let
         # Everything `html-to-docs.bash` needs to run.
         conversionTools = [
@@ -34,42 +30,20 @@ let
                                 touch "$out"
                         '';
 
-        docs = import ./docs-tree.nix {
-                inherit
-                        pkgs
-                        conversionTools
-                        official
-                        gameData
-                        ;
-        };
-
-        # The same conversion, checked over a whole build rather than a
-        # handwritten crawl of two or three pages.
-        corpus = pkgs.runCommand "cotn-docs-corpus" { nativeBuildInputs = conversionTools; } ''
+        # The markdown and man page renderings of the raw docs, before they
+        # are indexed. `html-to-docs.bash` lays them out as `markdown/`,
+        # `minimal-html/` and `share/man/`.
+        converted = pkgs.runCommand "cotn-docs-converted" { nativeBuildInputs = conversionTools; } ''
                 export LC_ALL=C.UTF-8
-                export MANPATH=${docs}/official/man
-                bash ${./check-docs.bash} ${docs}
-                touch "$out"
+                bash ${./html-to-docs.bash} ${official} "$out"
         '';
 in
 {
-        packages = { inherit docs; };
+        # What the AuthoredDocs module builds the docs tree from; not merged
+        # into the flake's outputs.
+        inherit converted;
 
-        checks = { inherit tests corpus; };
+        checks = { inherit tests; };
 
-        # `docs` is deliberately not an input of this shell. Depending on
-        # it would mean the shell could not be entered whenever the
-        # conversion is broken, which is exactly when it is needed. It is
-        # built on demand instead.
-        devShell = pkgs.mkShell {
-                buildInputs = conversionTools;
-                shellHook = ''
-                        # Rebuild the documentation, then read a page from it.
-                        man-crypt() {
-                                local out="$(nix build --no-link --print-out-paths "$ITJ_FLAKE_ROOT#docs")" || return
-                                MANPATH="$out/official/man" man "$@"
-                        }
-                        export -f man-crypt
-                '';
-        };
+        devShell = pkgs.mkShell { buildInputs = conversionTools; };
 }

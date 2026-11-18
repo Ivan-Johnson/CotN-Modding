@@ -34,7 +34,7 @@ entry was tried in CotN with Synchrony API 4.2.1 at run-time (inside an
   complete module inventory. `listFiles("")` and `listFiles("mods")` also
   return entries. Directories come back as entries when `DIRECTORIES` is set.
 * **`entitySchemaLoadEntity` event**: already documented in
-  `Mods/docs/gotchas.md`. Printing `ev` dumps every entity type with its full
+  `gotchas.md`. Printing `ev` dumps every entity type with its full
   component table to the log.
 * **`GameMod.getPatchVersion()`**: returns the game's patch version (`"4.2.1"`
   here). It is the only version a mod can read: `Session.getVersion()` and

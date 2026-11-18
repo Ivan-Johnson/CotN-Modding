@@ -1,23 +1,17 @@
 {
         pkgs,
-        conversionTools,
         official,
         gameData,
+        # DocDownloader's rendering of `official`, before it is indexed, laid
+        # out as `markdown/`, `minimal-html/` and `share/man/`; the docs tree
+        # re-homes them below.
+        converted,
 }:
-let
-        # The markdown and man page renderings of the raw docs, before they
-        # are indexed. `html-to-docs.bash` lays them out as `markdown/`,
-        # `minimal-html/` and `share/man/`; the docs tree re-homes them below.
-        converted = pkgs.runCommand "cotn-docs-converted" { nativeBuildInputs = conversionTools; } ''
-                export LC_ALL=C.UTF-8
-                bash ${./html-to-docs.bash} ${official} "$out"
-        '';
-in
 # The docs tree:
 #
 #   raw/        the raw docs, exactly as mirrored
 #   official/   the official docs: minimal-html/, markdown/ and man/
-#   authored/   the authored docs, empty until some exist
+#   authored/   the authored docs, `docs/` verbatim
 #   game-data/  the game data
 #
 # `man/` is indexed with `mandb`, whose index records each page's mtime. Nix
@@ -26,7 +20,8 @@ in
 # reproducible. `man` and `man -k` search that index, and nothing can build one
 # later, because by then the tree lives in the read only store.
 pkgs.runCommand "cotn-docs-tree" { nativeBuildInputs = [ pkgs.man-db ]; } ''
-        mkdir -p "$out/official" "$out/authored"
+        mkdir -p "$out/official"
+        cp -r ${./docs} "$out/authored"
         cp -r ${official} "$out/raw"
         cp -r ${gameData} "$out/game-data"
         cp -a ${converted}/minimal-html "$out/official/minimal-html"

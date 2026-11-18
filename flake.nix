@@ -34,12 +34,19 @@
 
                         mods = import ./Mods/flake-module.nix { inherit pkgs; };
 
+                        docDownloader = import ./DocDownloader/flake-module.nix {
+                                inherit pkgs;
+                                official = cotn-docs-official;
+                        };
+
                         # An array of all the different `flake-module.nix`s
                         modules = [
-                                (import ./DocDownloader/flake-module.nix {
+                                docDownloader
+                                (import ./AuthoredDocs/flake-module.nix {
                                         inherit pkgs;
                                         official = cotn-docs-official;
                                         gameData = cotn-docs-game-data;
+                                        inherit (docDownloader) converted;
                                 })
                                 mods
                                 (import ./GameData/flake-module.nix {

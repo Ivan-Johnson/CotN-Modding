@@ -7,14 +7,12 @@ second derivation: `Docs/Adr/0001-*` and `0002-*` at the repo root.
 
 ## Commands
 
-* Validate with `nix flake check`, which runs `test-html-to-docs.bash` and
-  `check-docs.bash`. `crawl-and-push.bash` always
+* Validate with `nix flake check`, which runs `test-html-to-docs.bash`.
+  `crawl-and-push.bash` always
   re-crawls the website and its final stage performs a real Git push, so
   reserve it for publishing a mirror. `push-to-mirror.bash` is shared with
   the GameData context, which pushes the `game-data` branch; see
   `Docs/Adr/0005-*`.
-* `man-crypt` (dev shell) rebuilds the docs and runs `man` against them; it is
-  for humans.
 
 ## Architecture
 
@@ -26,11 +24,9 @@ second derivation: `Docs/Adr/0001-*` and `0002-*` at the repo root.
 2. `html-to-docs.bash SRC_DIR DST_DIR` extracts each page's `<article>` into
    `DST_DIR/minimal-html/`, then converts that into `DST_DIR/markdown/` and
    `DST_DIR/share/man/man3/`.
-3. `docs-tree.nix` is the one module that owns the layout of `result/docs/`
-   (the docs tree): `raw/`, `official/{minimal-html,markdown,man}/`,
-   `authored/` and `game-data/`. It runs stage 2 over the pinned mirror and
-   adds the `mandb` index and the game data. Change the layout there, and
-   update the readers of it (`check-docs.bash`, `Mods/AGENTS.md`).
+3. `flake-module.nix` runs stage 2 over the pinned mirror and exports the
+   result as `converted`, which the AuthoredDocs context assembles into the
+   docs tree.
 
 ## Conventions
 
@@ -78,10 +74,3 @@ second derivation: `Docs/Adr/0001-*` and `0002-*` at the repo root.
 
 * `test-html-to-docs.bash` generates its fixtures rather than committing them.
   When adding a behavior, add a case that fails without it.
-* `htmlq --pretty` reflows the `minimal-html` tree onto its own lines, so an
-  assertion over it must match within a single line: `<h1>Home` matches where
-  `<h1>Home</h1>` does not.
-* `check-docs.bash` asserts over a whole build, catching what two-page fixtures
-  cannot. Each assertion is paired with a guard against passing over nothing,
-  since a check that silently examines no files looks exactly like one that
-  passes.
