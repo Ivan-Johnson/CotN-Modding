@@ -7,11 +7,12 @@ second derivation: `Docs/Adr/0001-*` and `0002-*` at the repo root.
 
 ## Commands
 
-* Validate with `nix flake check`, which runs `test-html-to-docs.bash`,
-  `test-push.bash` and `check-docs.bash`. `crawl-and-push.bash` always
+* Validate with `nix flake check`, which runs `test-html-to-docs.bash` and
+  `check-docs.bash`. `crawl-and-push.bash` always
   re-crawls the website and its final stage performs a real Git push, so
-  reserve it for publishing a mirror. `push-game-data.bash` likewise really
-  pushes, to the `game-data` branch; see `Docs/Adr/0005-*`.
+  reserve it for publishing a mirror. `push-to-mirror.bash` is shared with
+  the GameData context, which pushes the `game-data` branch; see
+  `Docs/Adr/0005-*`.
 * `man-crypt` (dev shell) rebuilds the docs and runs `man` against them; it is
   for humans.
 

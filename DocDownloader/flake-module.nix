@@ -19,10 +19,7 @@ let
         # a rebuilt `result` or a fresh crawl does not invalidate the tests.
         scripts = pkgs.lib.fileset.toSource {
                 root = ./.;
-                fileset = pkgs.lib.fileset.unions [
-                        (pkgs.lib.fileset.fileFilter (file: file.hasExt "bash") ./.)
-                        ./game-data-README.md
-                ];
+                fileset = pkgs.lib.fileset.fileFilter (file: file.hasExt "bash") ./.;
         };
 
         # The conversion's own tests, which build throwaway crawls of their
@@ -34,7 +31,6 @@ let
                                 cd ${scripts}
                                 bash -n *.bash
                                 bash ./test-html-to-docs.bash
-                                bash ./test-push.bash
                                 touch "$out"
                         '';
 

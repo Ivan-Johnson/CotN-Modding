@@ -126,63 +126,12 @@ let
                         fi
                 '';
         };
-
-        # Installs ScrapeGameData, waits for its "end" sentinel, and saves
-        # the new log lines into a fresh per-run directory. Impure, like
-        # `impureTests`.
-        scrapeGameData = pkgs.writeShellApplication {
-                name = "scrape-game-data";
-                runtimeInputs = [
-                        pkgs.coreutils
-                        pkgs.gawk
-                        pkgs.gnugrep
-                        pkgs.yq-go
-                ];
-                text = ''
-                        ${waitForLog}
-
-                        outDir="$ITJ_FLAKE_ROOT/Tmp/scrape-game-data/$(date +%Y-%m-%d_%H-%M-%S)"
-                        mkdir -p "$outDir"
-
-                        baseline=$(wc -l <"$COTN_LOG")
-
-                        ITJ_BUNDLE_RELOAD_TRIGGER="ScrapeGameData/ScrapeGameData.lua" ${installMods}/bin/install-mods ScrapeGameData
-
-                        if ! wait_for_log "$baseline" "[ScrapeGameData] end"; then
-                                echo "scrape-game-data: timed out waiting for the end sentinel" >&2
-                                exit 1
-                        fi
-
-                        tail -n "+$((baseline + 1))" "$COTN_LOG" >"$outDir/NecroDancer.log"
-
-                        # Reassemble each dataset from its DATA chunk lines.
-                        grep -oE '\[ScrapeGameData\] DATA [^ ]+ [0-9]+/[0-9]+ [A-Za-z0-9+/=]*' "$outDir/NecroDancer.log" >"$outDir/chunks.txt" || true
-                        status=0
-                        while read -r name; do
-                                total=$(awk -v n="$name" '$3 == n {split($4, p, "/"); print p[2]; exit}' "$outDir/chunks.txt")
-                                count=$(awk -v n="$name" '$3 == n' "$outDir/chunks.txt" | wc -l)
-                                if ((count != total)); then
-                                        echo "scrape-game-data: $name has $count of $total chunks" >&2
-                                        status=1
-                                        continue
-                                fi
-                                awk -v n="$name" '$3 == n {split($4, p, "/"); print p[1], $5}' "$outDir/chunks.txt" | sort -n | cut -d' ' -f2 | tr -d '\n' | base64 -d >"$outDir/$name"
-                        done < <(awk '{print $3}' "$outDir/chunks.txt" | sort -u)
-                        rm "$outDir/chunks.txt"
-
-                        if grep -F "[ScrapeGameData] ERROR" "$outDir/NecroDancer.log"; then
-                                status=1
-                        fi
-
-                        # The game's XML, in a queryable form.
-                        yq -p xml -o json "$outDir/necrodancer.xml" >"$outDir/necrodancer-xml.json"
-
-                        echo "$outDir"
-                        exit "$status"
-                '';
-        };
 in
 {
+        # What other modules need to drive the live game; not merged into the
+        # flake's outputs.
+        liveGame = { inherit installMods waitForLog; };
+
         packages = {
                 hello-world-mod = helloWorldModZip;
                 hello-world-mod-tests = helloWorldModTestsZip;
@@ -198,12 +147,6 @@ in
                         type = "app";
                         program = "${installMods}/bin/install-mods";
                         meta.description = "Install the named mods into the game as one bundle mod: nix run .#install-mods -- Foo Bar";
-                };
-
-                scrape-game-data = {
-                        type = "app";
-                        program = "${scrapeGameData}/bin/scrape-game-data";
-                        meta.description = "Run the ScrapeGameData mod in the live game and save its log output to Tmp/scrape-game-data/<date-slug>/";
                 };
 
                 itj-impure-tests = {

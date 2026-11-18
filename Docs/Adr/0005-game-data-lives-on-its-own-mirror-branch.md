@@ -10,7 +10,7 @@ public without the other, while still sharing one repo and one push mechanism.
 ## Consequences
 
 * A branch is not a licensing guarantee. The branch's `README.md`, written on
-  every push from `DocDownloader/game-data-README.md`, says the risk is
+  every push from `GameData/game-data-README.md`, says the risk is
   unchecked.
 * The flake pins the `game-data` branch as an input of its own and places it in
   the docs tree as `game-data/`. It stays a separate input so that it can still

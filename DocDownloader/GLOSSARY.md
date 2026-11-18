@@ -7,7 +7,8 @@ rendering it to Markdown and man pages.
 
 **Mirror**:
 The `CotN-docs` repo holding a crawl of the official docs on its `mainline`
-branch, which the flake pins. Its `game-data` branch holds the game data.
+branch, which the flake pins. Its `game-data` branch holds the game data; see
+the GameData glossary.
 _Avoid_: Cache, snapshot
 
 **Raw docs**:
@@ -52,13 +53,3 @@ _Avoid_: Cleaned HTML
 The sidebar navigation harvested from the landing page and published as its own
 page, `cotn-docs`.
 _Avoid_: Sidebar, TOC
-
-**Scrape**:
-One run of the ScrapeGameData mod in the live game, saved as a timestamped
-directory of datasets.
-_Avoid_: Dump, export
-
-**Game data**:
-The datasets a scrape reads out of the game itself, as opposed to the official
-docs. Published to the mirror's `game-data` branch.
-_Avoid_: Scraped docs

@@ -16,8 +16,8 @@ readonly script_dir
 REPO_ROOT="${REPO_ROOT:-$script_dir}"
 readonly REPO_ROOT
 
-# shellcheck source=push-to-mirror.bash
-source "$script_dir/push-to-mirror.bash"
+# shellcheck source=../DocDownloader/push-to-mirror.bash
+source "$script_dir/../DocDownloader/push-to-mirror.bash"
 
 readonly BRANCH='game-data'
 readonly DATASETS=(

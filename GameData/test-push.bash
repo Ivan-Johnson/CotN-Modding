@@ -58,7 +58,6 @@ write_scrape() {
 			echo "$1 $dataset" > "$dir/$dataset"
 		fi
 	done
-	echo "derived" > "$dir/necrodancer-xml.json"
 	echo "noise" > "$dir/NecroDancer.log"
 }
 
@@ -98,7 +97,6 @@ if push; then
 	expect_file game-data git_HEAD.txt
 	expect_file game-data timestamp.txt
 	expect_no_file game-data NecroDancer.log
-	expect_no_file game-data necrodancer-xml.json
 	[[ "$(remote_file game-data scrape-dir.txt)" == 2026-01-01_00-00-00 ]] || fail "scrape-dir.txt names the wrong scrape"
 	remote_file game-data README.md | grep -qi proprietary || fail "README.md doesn't mention the licensing risk"
 else

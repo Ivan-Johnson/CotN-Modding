@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Shared by crawl-and-push.bash and push-game-data.bash; source it, don't run it.
+# Shared by crawl-and-push.bash and GameData/push-game-data.bash; source it, don't run it.
 #
 # `push_to_mirror BRANCH REPO_ROOT STAGE_DIR` makes STAGE_DIR the entire
 # contents of BRANCH on the mirror, as one new commit on top of the branch's

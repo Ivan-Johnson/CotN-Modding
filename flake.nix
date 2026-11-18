@@ -32,6 +32,8 @@
                         system = "x86_64-linux";
                         pkgs = import nixpkgs { inherit system; };
 
+                        mods = import ./Mods/flake-module.nix { inherit pkgs; };
+
                         # An array of all the different `flake-module.nix`s
                         modules = [
                                 (import ./DocDownloader/flake-module.nix {
@@ -39,7 +41,11 @@
                                         official = cotn-docs-official;
                                         gameData = cotn-docs-game-data;
                                 })
-                                (import ./Mods/flake-module.nix { inherit pkgs; })
+                                mods
+                                (import ./GameData/flake-module.nix {
+                                        inherit pkgs;
+                                        inherit (mods) liveGame;
+                                })
                         ];
 
                         disjointUnion = pkgs.lib.foldl' pkgs.lib.attrsets.unionOfDisjoint { };
