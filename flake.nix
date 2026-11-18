@@ -286,9 +286,11 @@
                 in
                 {
                         devShells.x86_64-linux.default = pkgs.mkShell {
+                                inputsFrom = [
+                                        dev-tools.devShells.x86_64-linux.default
+                                        dev-tools.devShells.x86_64-linux.github-cli
+                                ];
                                 buildInputs = conversionTools ++ [
-                                        dev-tools.packages.${pkgs.stdenv.hostPlatform.system}.default
-
                                         impureTests
                                         installMods
 
