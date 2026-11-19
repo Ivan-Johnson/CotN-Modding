@@ -3,11 +3,11 @@
     "cotn-docs-game-data": {
       "flake": false,
       "locked": {
-        "lastModified": 1794806125,
-        "narHash": "sha256-uW5pRRwNh8JX51yMRvNpLcWG47C34cUSHyB9hl4gpTA=",
+        "lastModified": 1795052318,
+        "narHash": "sha256-ZPf/ozKjQVNps5wpbUhEbWo7Kb//tqtjaIUn/LDljgY=",
         "ref": "game-data",
-        "rev": "a5ffbb896bca30b23cf69dc7418e0650c801a08a",
-        "revCount": 2,
+        "rev": "4f35e99788f163f9d951a1f2a1711f09f620e5a2",
+        "revCount": 3,
         "type": "git",
         "url": "ssh://git@github.com/Ivan-Johnson/CotN-docs.git"
       },

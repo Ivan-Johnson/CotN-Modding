@@ -25,6 +25,7 @@ readonly DATASETS=(
 	component-defaults.json
 	entity-prototypes.json
 	script-files.json
+	module-apis.json
 	versions.json
 )
 

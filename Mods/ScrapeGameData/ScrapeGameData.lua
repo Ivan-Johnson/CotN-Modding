@@ -4,6 +4,7 @@
 -- `nix run .#scrape-game-data` reassembles them into files. Each dump is
 -- pcall'd so one failure doesn't hide the others.
 local Base64 = require "system.utils.serial.Base64"
+local BytecodeApi = require "ScrapeGameData.BytecodeApi"
 local Components = require "necro.game.data.Components"
 local Entities = require "system.game.Entities"
 local FileIO = require "system.game.FileIO"
@@ -35,6 +36,31 @@ local function dump(name, produce)
 	else
 		out("ERROR %s: %s", name, tostring(result))
 	end
+end
+
+local function listScriptFiles()
+	return FileIO.listFiles("scripts", FileIO.List.FILES + FileIO.List.RECURSIVE + FileIO.List.SORTED)
+end
+
+-- The API of every compiled game script that has one, keyed by module name.
+-- A script that fails to parse is kept with its error, so one bad file
+-- doesn't hide the rest.
+local function scrapeModuleApis()
+	local apis = {}
+	for _, path in ipairs(listScriptFiles()) do
+		local module = path:gsub("%.lua$", ""):gsub("/", ".")
+		local ok, api, reason = pcall(function()
+			return BytecodeApi.parse(FileIO.readFileToString("scripts/" .. path))
+		end)
+		if not ok then
+			apis[module] = { error = tostring(api) }
+		elseif api then
+			apis[module] = api
+		else
+			out("skipped %s: %s", path, reason)
+		end
+	end
+	return apis
 end
 
 local function sortedKeys(t)
@@ -126,7 +152,11 @@ event.levelLoad.add("ScrapeProbes", { order = "extraEntities", sequence = 100 },
 	end)
 
 	dump("script-files.json", function()
-		return json(FileIO.listFiles("scripts", FileIO.List.FILES + FileIO.List.RECURSIVE + FileIO.List.SORTED))
+		return json(listScriptFiles())
+	end)
+
+	dump("module-apis.json", function()
+		return json(scrapeModuleApis())
 	end)
 
 	dump("versions.json", function()

@@ -42,6 +42,16 @@ let
                                 touch "$out"
                         '';
 
+        # Runs the bytecode parser behind `ScrapeGameData` under plain
+        # LuaJIT; see `Mods/test-bytecode-api.lua`.
+        bytecodeApiTest =
+                pkgs.runCommand "cotn-bytecode-api-test" { nativeBuildInputs = [ pkgs.luajit ]; }
+                        ''
+                                cd ${./.}
+                                luajit test-bytecode-api.lua
+                                touch "$out"
+                        '';
+
         # Installs mods from the source tree (not the store, which only
         # sees git-tracked files) into the game as one bundle mod. See
         # `Mods/install-mods.bash`.
@@ -140,6 +150,7 @@ in
         checks = {
                 mods-lua-lint = modsLuaLint;
                 mods-layout = modsLayout;
+                bytecode-api = bytecodeApiTest;
         };
 
         apps = {

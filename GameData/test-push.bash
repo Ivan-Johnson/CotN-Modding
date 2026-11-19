@@ -51,7 +51,7 @@ write_scrape() {
 	local dir="$repo/Tmp/scrape-game-data/$1"
 	mkdir -p "$dir"
 	local dataset
-	for dataset in necrodancer.xml component-defaults.json entity-prototypes.json script-files.json versions.json; do
+	for dataset in necrodancer.xml component-defaults.json entity-prototypes.json script-files.json module-apis.json versions.json; do
 		if [[ "$dataset" == *.json ]]; then
 			echo "{\"scrape\":\"$1\",\"dataset\":\"$dataset\"}" > "$dir/$dataset"
 		else

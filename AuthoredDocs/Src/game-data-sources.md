@@ -41,6 +41,22 @@ entry was tried in CotN with Synchrony API 4.2.1 at run-time (inside an
   `necro.mod.Mods` can't be required (Permission denied), `_VERSION` is
   absent, and `Netplay` has no `getVersion`. There is no build number.
 
+* **Module APIs from bytecode**: `Mods/ScrapeGameData/BytecodeApi.lua` reads
+  each compiled script's bytecode inside the game and recovers its public
+  API: the `require`s, plus every member assigned to the returned table, with
+  function signatures (parameter names come from the debug info) and the
+  type or constant value of the rest. Names starting with `_` and anything
+  not on the returned table are skipped. The result is `module-apis.json`.
+  Against the 4.2.1 official docs it recovers 3,641 of 3,701 documented
+  functions, and finds functions the docs lack (for example
+  `Currency.lookUpEntityType`). Tables a module fills in but never
+  returns are published as `privateTables`. That recovers the commands of
+  `DebugCommands`, which the docs list as module functions even though they
+  only work as `DebugCommands.commands.<name>(...)`. The two
+  scripts shipped as plain source (`Beatmap`) are scanned heuristically and
+  flagged `source: true`. `Platform.checkProfanityFilter` is found, but as a re-export of another module's function (`kind: "unknown"`). Modules' tables can't be iterated at run-time
+  (`pairs` returns nothing), which is why this reads bytecode instead.
+
 ## Confirmed not to work or not be useful
 
 TODO - fact check. This is all AI generated. Just because the AI said it's
@@ -66,15 +82,14 @@ these options.
   `DebugDump.writeTextFile` is documented as internal-only. The log is the
   only output channel found so far.
 * **`FileIO.readFileToString` on `scripts/*.lua`**: it works, but the files
-  are LuaJIT bytecode (header `\27LJ`), so they aren't readable source.
-  Decompiling is a separate decision, gated on the TODO's last-resort item.
+  are LuaJIT bytecode (header `\27LJ`), so they aren't readable source. They
+  are not stripped, though; see "Module APIs from bytecode" above. Two files
+  (`necro/audio/Beatmap.lua`, `necro/patch/SkinSupporterHotfix.lua`) are
+  plain source. The game has no `load`, `loadstring` or `lpeg` for mods, so
+  they are scanned with Lua patterns for top-level function declarations.
 
 ## Worth investigating further
 
-* **Bytecode string tables**: the compiled scripts still carry their string
-  constants (module paths, function names, field names). Extracting them
-  offline would give a function-name inventory per module, without decompiling.
-  Getting the bytes out means dumping hex or base64 through the log.
 * **`GameXML.getEnemyData(name, type)` and `getCharacterData(id)`**: should
   yield enemy stats and character starting items. Their argument and return
   shapes are undocumented, so each needs a live probe.

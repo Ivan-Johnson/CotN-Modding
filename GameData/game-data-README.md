@@ -15,7 +15,8 @@ either can later be made public without the other.
 ## Contents
 
 * `necrodancer.xml`, `component-defaults.json`, `entity-prototypes.json`,
-  `script-files.json` and `versions.json`: the scraped datasets.
+  `script-files.json`, `module-apis.json` and `versions.json`: the scraped
+  datasets.
 * `scrape-dir.txt`: the name of the local scrape these came from.
 * `git_HEAD.txt`, `git_diff.txt`, `git_status.txt` and `timestamp.txt`: the
   state of the publishing repo, and when the push happened.
