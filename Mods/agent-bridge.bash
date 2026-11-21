@@ -22,7 +22,8 @@
 #                                   rectangle (up to 400): its name, whether it
 #                                   is solid, a wall or a floor, and the dig
 #                                   resistance a shovel must beat
-#   spawn TYPE [X Y]                next to the player by default
+#   spawn TYPE [X Y] [force]        next to the player by default; refuses a solid
+#                                   or off-level tile unless `force` is given
 #   convert ID TYPE
 #   clear                           remove every enemy (anything with an `ai`),
 #                                   so spawn tests see only what they spawn

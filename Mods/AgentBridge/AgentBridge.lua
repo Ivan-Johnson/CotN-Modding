@@ -271,6 +271,13 @@ commands.spawn = {
 			local position = requirePlayer().position
 			x, y = position.x + 1, position.y
 		end
+		local tile = describeTile(x, y)
+		if (tile.solid or not tile.tile) and args[4] ~= "force" then
+			error(string.format(
+				"(%d,%d) is %s; add `force` as the last argument to spawn there anyway",
+				x, y, tile.tile and (tile.tile .. ", a solid tile") or "outside the level"
+			), 0)
+		end
 		local entity = Object.spawn(typeName, x, y)
 		-- Spawned outside a turn, the entity would stay invulnerable until the
 		-- next one, unlike the enemies a level starts with.
