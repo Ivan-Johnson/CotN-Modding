@@ -63,7 +63,6 @@ local SPECIALS = {
 -- already in the file instead of running it a second time.
 local started = false
 local lastID
-local pendingInTurn
 
 
 local function reply(id, kind, payload)
@@ -151,9 +150,8 @@ local function queueInput(action, count)
 	end
 end
 
--- Each command: `inTurn` commands change the game and run from event.turn,
--- followed by an IDLE input so that a turn happens at all; the rest run
--- straight from the tick that read them. `run(args)` returns the reply value.
+-- Each command runs straight from the tick that read it; `run(args)` returns the
+-- reply value.
 local commands = {}
 
 local function rhythmModeName()
@@ -202,7 +200,6 @@ commands.entities = {
 }
 
 commands.spawn = {
-	inTurn = true,
 	run = function(args)
 		local typeName = requireEntityType(args[1])
 		local x, y = tonumber(args[2]), tonumber(args[3])
@@ -211,12 +208,16 @@ commands.spawn = {
 			x, y = position.x + 1, position.y
 		end
 		local entity = Object.spawn(typeName, x, y)
+		-- Spawned outside a turn, the entity would stay invulnerable until the
+		-- next one, unlike the enemies a level starts with.
+		if entity.spawnInvincibility then
+			entity.spawnInvincibility.active = false
+		end
 		return summarizeEntity(entity)
 	end,
 }
 
 commands.convert = {
-	inTurn = true,
 	run = function(args)
 		local entity = requireEntity(args[1])
 		Object.convertImmediately(entity, requireEntityType(args[2]))
@@ -295,9 +296,6 @@ local function receive(line)
 		reply(id, "ERROR", "unknown command '" .. tostring(name) .. "'")
 	elseif Player.getCount() > 1 then
 		reply(id, "ERROR", "refusing to act in a multiplayer session")
-	elseif handler.inTurn then
-		pendingInTurn = { id = id, handler = handler, args = args }
-		queueInput(Action.Special.IDLE, 1)
 	else
 		execute({ id = id, handler = handler, args = args })
 	end
@@ -317,12 +315,5 @@ event.tick.add("AgentBridgePoll", { order = "invokeLater" }, function()
 	end
 end)
 
-event.turn.add("AgentBridgeExecute", { order = "customActions" }, function()
-	local command = pendingInTurn
-	pendingInTurn = nil
-	if command then
-		execute(command)
-	end
-end)
 
 print("[AgentBridge] WARNING: dev-only mod; it runs commands from " .. COMMAND_FILE)

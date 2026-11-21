@@ -25,10 +25,13 @@ What a tracer-bullet POC for `AgentBridge` (issue #11) verified live on CotN
 ## Running code in-turn
 
 * `event.turn.add(name, {order = "customActions"}, fn)` runs in-turn, where
-  `Object.spawn` and `Object.convert` are safe.
+  `Object.spawn` and `Object.convert` are documented as safe. `AgentBridge`
+  does not use it: the `IDLE` input it needs to make a turn fire drops the
+  groove chain. Spawning from `event.tick` works too, but the entity keeps
+  `spawnInvincibility` until the next turn, so clear `spawnInvincibility.active`.
 * Turns do not fire on their own. `Turn.getCurrentTurnID()` advances only when
   an action is simulated, so a queued in-turn command waits until an input
-  arrives. Follow each command with `Input.add(Action.Special.IDLE, 1)`.
+  arrives.
 * Mutating state from `event.tick` also applies and persists, but neither path
   survives rollback: after `Rollback.perform`, a spawn from a queued command
   was gone. Anything that must survive would have to travel as an action with

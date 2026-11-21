@@ -6,7 +6,7 @@
 # Usage: agent-bridge install
 #        agent-bridge COMMAND [ARG...]
 #
-# Commands (replies are JSON; mutating commands pass one beat, and `new-run`
+# Commands (replies are JSON; `input` and `step` pass beats, and `new-run`
 # uses no-beat mode, so time passes only when you act):
 #   state                           the player's position, health and items
 #   entities [type=T] [component=C] [id=N] [show=C1,C2|all]

@@ -2,7 +2,7 @@
 
 `AgentBridge` lets an AI agent drive a live game. An agent outside the game
 writes commands to a file inside the mod's own directory; the mod polls that
-file from `event.tick` and executes the commands in-turn. The mod answers with
+file from `event.tick` and executes the commands there. The mod answers with
 request-ID-tagged single-line `print()` output in `NecroDancer.log`, which the
 agent tails. A flake-app CLI, `agent-bridge`, hides this so the transport can
 change without touching agent instructions.
@@ -27,8 +27,10 @@ neither is a generic channel. Reading files works, and so does `print()`.
 * The command file must live inside a mounted mod's directory; a directory
   without a `mod.json` is invisible to `FileIO`. `install-mods` rsyncs with
   `--delete`, so a reinstall removes it.
-* Each command is queued, run from `event.turn`, and paired with an `IDLE`
-  input so the turn fires. Its effects do not survive rollback, which is
+* Each command runs from the `event.tick` that read it, not in-turn. An
+  earlier design queued each one for `event.turn` behind an `IDLE` input, but
+  that idle turn dropped the player's groove chain and used up a spawned
+  enemy's spawn invincibility. Effects do not survive rollback, which is
   acceptable only because the mod is single-player. See
   `AuthoredDocs/Src/live-game-control.md`.
 * `AgentBridge` is dev-only. It logs a warning on load and refuses commands
