@@ -10,3 +10,6 @@ matches your task.
   not reload.
 * [game-data-sources.md](./game-data-sources.md): which game data a running
   mod can read (`GameXML`, `FileIO`, versions), and which APIs fail.
+* [live-game-control.md](./live-game-control.md): getting commands into and
+  output out of a running game, running code in-turn, moving the player,
+  spawning or converting entities, and dumping an entity.
