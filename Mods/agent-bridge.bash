@@ -12,6 +12,10 @@
 #   entities [type=T] [component=C] [id=N] [show=C1,C2|all]
 #                                   entities with a position (or component C);
 #                                   `show` adds their components' fields
+#   tile X Y [X2 Y2]                the tile at X Y, or every tile in the
+#                                   rectangle (up to 400): its name, whether it
+#                                   is solid, a wall or a floor, and the dig
+#                                   resistance a shovel must beat
 #   spawn TYPE [X Y]                next to the player by default
 #   convert ID TYPE
 #   input ACTION                    up, down, left, right, up_left, ..., idle,

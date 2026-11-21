@@ -23,10 +23,12 @@ local Music = require "necro.audio.Music"
 local Object = require "necro.game.object.Object"
 local Player = require "necro.game.character.Player"
 local RhythmMode = require "necro.game.data.modifier.RhythmMode"
+local Tile = require "necro.game.tile.Tile"
 local Turn = require "necro.cycles.Turn"
 
 local CHUNK_SIZE = 4000
 local MAX_STEPS = 200
+local MAX_TILES = 400
 local SONG_END_WARNING_SECONDS = 30
 local PLAYER_ID = 1
 
@@ -214,6 +216,41 @@ commands.entities = {
 			results[i] = show and dumpEntity(entity, show) or summarizeEntity(entity)
 		end
 		return { count = #results, entities = results }
+	end,
+}
+
+local function describeTile(x, y)
+	local info = Tile.getInfo(x, y)
+	return {
+		x = x,
+		y = y,
+		tile = info and info.name,
+		solid = Tile.isSolid(x, y),
+		wall = info and info.isWall or false,
+		floor = info and info.isFloor or false,
+		digResistance = info and info.digResistance,
+	}
+end
+
+-- `tile X Y` describes one tile; `tile X1 Y1 X2 Y2` lists the rectangle row by
+-- row, from X1 to X2 within each row. Tiles outside the level have no `tile`.
+commands.tile = {
+	run = function(args)
+		local x1 = assert(tonumber(args[1]), "expected X")
+		local y1 = assert(tonumber(args[2]), "expected Y")
+		if not args[3] then
+			return describeTile(x1, y1)
+		end
+		local x2 = assert(tonumber(args[3]), "expected X2")
+		local y2 = assert(tonumber(args[4]), "expected Y2")
+		local tiles = {}
+		for y = math.min(y1, y2), math.max(y1, y2) do
+			for x = math.min(x1, x2), math.max(x1, x2) do
+				assert(#tiles < MAX_TILES, "range has more than " .. MAX_TILES .. " tiles")
+				tiles[#tiles + 1] = describeTile(x, y)
+			end
+		end
+		return { count = #tiles, tiles = tiles }
 	end,
 }
 

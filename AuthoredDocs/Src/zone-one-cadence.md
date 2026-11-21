@@ -29,7 +29,9 @@ region from roughly x = -13 to 14 and y = -8 to 18. The first run listed:
 * **Traps:** `BombTrap`, `BounceTrapLeft`, `TempoUpTrap` and `Sync_WallSpike`.
 * **Decoration:** 30 `WallTorch`.
 
-Walls and floor are not entities, so `entities` cannot show the map.
+Walls and floor are not entities, so `entities` cannot show the map; read them
+with `agent-bridge tile X Y [X2 Y2]`. A start area showed `Floor` around the
+player, with `DirtWall` (`digResistance` 1) and `StoneWall` (2) beyond.
 
 A later run listed 111 entities with a position (the player's inventory items
 sit at the player's tile and count). By type: `WallTorch` 40, `Skeleton` 10,
@@ -68,17 +70,15 @@ Read from `innateAttack`, `health` and `beatDelay`:
 * A spawned `Skeleton` placed at (3, 0) was adjacent (1, 0) after the one beat
   the spawn took. A spawned `Monkey` moved onto the player's tile. A spawned
   `Slime2` at (3, 0) did not move in three beats.
-* Moving into some walls did nothing and the next input moved. Padding each
-  input with `step 1` before and after it, `right` along y = -4 from (3, -4)
-  gave (4, -4), (4, -4), (5, -4), (5, -4), (6, -4): one input that does not move, then one
-  that does. That fits digging dirt with `ShovelBasic` (the first input digs,
-  the next walks through), but nothing read the tile, so it is not confirmed.
-* Some walls never gave way: `up` five times at (3, -4) and `down` three times
-  at (3, 0) never moved. I assume walls the basic shovel cannot dig.
-* Inputs sent back to back without a `step 1` between them were less
-  predictable: a few that looked like they should walk through open floor did
-  not move. I could not tell a dropped input from a dig, so treat unpadded
-  position sequences with suspicion.
+* Moving into a `DirtWall` digs it with `ShovelBasic`: the first input leaves
+  the player in place and turns the tile into `Floor` (confirmed with the
+  `tile` command), and the next input walks through.
+* A `StoneWall` (`digResistance` 2) never gave way to the basic shovel in three
+  tries; a `DirtWall` has `digResistance` 1. The map's outer edge is
+  `LevelBorder`, a solid wall with no `digResistance`.
+* Earlier unpadded position sequences, where inputs sent back to back seemed to
+  drop, were most likely dirt being dug rather than dropped inputs. The
+  padded run (`step 1` around each input) is the one to trust.
 * An input takes effect within about one second, as the `state` that follows it
   already shows the result.
 * In real-time rhythm `turnID` rose by about 30 per second even with no input,
@@ -101,8 +101,8 @@ not come to you: time passes only when you act.
 ## Unverified
 
 * Whether real-time rhythm, which the bridge no longer uses, behaves differently.
-* Digging: whether a non-moving input really digs, and what stops
-  `ShovelBasic`. The back-to-back input behavior above is unexplained.
+* Whether a non-moving input is always a dig, and whether a better shovel
+  breaks `StoneWall`.
 * What chests, the shop, traps and the `BatMiniboss` do when engaged.
 * What `AddchestBlack`, `AddchestRed`, `AddchestWhite`, `CoinsX15` and
   `CoinsX2` do in the starting kit.
@@ -111,5 +111,5 @@ not come to you: time passes only when you act.
 
 ## What would help next
 
-A bridge command that reads a tile (walls, floor, stairs) would turn this
-from probing into mapping.
+The `tile` command (#23) now reads walls and floor. An ASCII map view (#24)
+would make it easier still.
