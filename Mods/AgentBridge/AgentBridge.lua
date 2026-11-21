@@ -16,6 +16,7 @@ local Entities = require "system.game.Entities"
 local ExtraMode = require "necro.game.data.modifier.ExtraMode"
 local FileIO = require "system.game.FileIO"
 local GameSession = require "necro.client.GameSession"
+local GrooveChain = require "necro.game.character.GrooveChain"
 local Input = require "necro.client.Input"
 local Json = require "AgentBridge.Json"
 local Music = require "necro.audio.Music"
@@ -66,6 +67,7 @@ local SPECIALS = {
 local started = false
 local lastID
 local songEndWarned = false
+local lastMultiplier = 1
 
 
 local function reply(id, kind, payload)
@@ -78,6 +80,15 @@ local function replyData(id, value)
 	for i = 1, total do
 		reply(id, "DATA", string.format("%d/%d %s", i, total, encoded:sub((i - 1) * CHUNK_SIZE + 1, i * CHUNK_SIZE)))
 	end
+end
+
+local function enumName(enum, value)
+	for name, candidate in pairs(enum) do
+		if candidate == value then
+			return name
+		end
+	end
+	return tostring(value)
 end
 
 -- Unlike replies, events are not tied to a command: one plain JSON line each,
@@ -167,13 +178,7 @@ end
 local commands = {}
 
 local function rhythmModeName()
-	local mode = RhythmMode.getMode()
-	for name, value in pairs(RhythmMode.Type) do
-		if value == mode then
-			return name
-		end
-	end
-	return tostring(mode)
+	return enumName(RhythmMode.Type, RhythmMode.getMode())
 end
 
 commands.state = {
@@ -373,6 +378,7 @@ end)
 
 event.levelLoad.add("AgentBridgeLevelLoad", { order = "lobbyLevel" }, function()
 	songEndWarned = false
+	lastMultiplier = 1
 	emitEvent("level_loaded", {})
 end)
 
@@ -390,6 +396,33 @@ event.tick.add("AgentBridgeSongEndWarning", { order = "invokeLater" }, function(
 	if remaining > 0 and remaining <= SONG_END_WARNING_SECONDS then
 		songEndWarned = true
 		emitEvent("song_ending", { secondsLeft = math.floor(remaining) })
+	end
+end)
+
+local MULTIPLIER_LOSS_CAUSES = {
+	IDLE = "idling",
+	FAIL = "a failed action",
+	ACTION = "an invalid action",
+	TRAPDOOR = "falling down a trapdoor",
+	DAMAGE = "taking damage",
+}
+
+event.objectGrooveChain.add("AgentBridgeMultiplier", { order = "multiplier" }, function(ev)
+	if not Player.isPlayerEntity(ev.entity) then
+		return
+	end
+	if ev.type < 0 then
+		if lastMultiplier > 1 then
+			local cause = enumName(GrooveChain.Type, ev.type)
+			emitEvent("multiplier_lost", {
+				previous = lastMultiplier,
+				cause = cause,
+				because = MULTIPLIER_LOSS_CAUSES[cause],
+			})
+		end
+		lastMultiplier = 1
+	else
+		lastMultiplier = ev.multiplier or GrooveChain.getCoinMultiplier(ev.entity)
 	end
 end)
 

@@ -23,7 +23,8 @@
 #   level N
 #
 # Events (damage taken and dealt, kills, deaths, level loads, song ending or
-# ended) go to stderr as `event: {JSON}` lines after the next command's reply.
+# ended, coin multiplier lost) go to stderr as `event: {JSON}` lines after the
+# next command's reply.
 #
 # Environment: COTN_LOG, COTN_LOCAL_MODS_DIR, ITJ_BUNDLE_NAME (default
 # DevBundle), ITJ_AGENT_BRIDGE_TIMEOUT (seconds, default 30). Expects
