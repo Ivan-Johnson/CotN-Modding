@@ -96,6 +96,7 @@ let
                         pkgs.coreutils
                         pkgs.gnugrep
                         pkgs.gnused
+                        pkgs.jq
                         installMods
                 ];
                 text = ''

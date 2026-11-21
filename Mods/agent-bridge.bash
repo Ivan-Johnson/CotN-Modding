@@ -1,13 +1,18 @@
 #!/usr/bin/env bash
 # Sends one command to the AgentBridge mod in the running game and prints its
-# JSON reply. The mod can only be read from NecroDancer.log, so this writes the
-# command file and waits for the reply lines tagged with its ID.
+# Sends one command to the AgentBridge mod in the running game and prints its
+# reply as compact text. The mod can only be read from NecroDancer.log, so this
+# writes the command file and waits for the reply lines tagged with its ID.
 #
-# Usage: agent-bridge COMMAND [ARG...]
+# Usage: agent-bridge [--json] COMMAND [ARG...]
 #
 # Any command installs AgentBridge into the bundle first when it is missing.
+# `--json` (or ITJ_AGENT_BRIDGE_JSON=1) prints the raw JSON reply instead. In
+# the compact form, `input` and `step` print a header (health, position, level,
+# turn) and one line per action: `right+(1,0)` moved there, `right=` did not,
+# then its events, dug tiles, and the entities within 6 tiles that moved.
 #
-# Commands (replies are JSON; `input` and `step` pass beats, and `new-run`
+# Commands (`input` and `step` pass beats, and `new-run`
 # uses no-beat mode, so time passes only when you act):
 #   state                           the player's position, health and items
 #   entities [type=T] [component=C] [id=N] [show=C1,C2|all]
@@ -46,6 +51,49 @@ set -euo pipefail
 
 bundleName="${ITJ_BUNDLE_NAME:-DevBundle}"
 timeoutSeconds="${ITJ_AGENT_BRIDGE_TIMEOUT:-30}"
+rawJson="${ITJ_AGENT_BRIDGE_JSON:-}"
+
+if [[ ${1:-} == --json ]]; then
+	rawJson=1
+	shift
+fi
+
+# Turns a reply's JSON into the compact text form.
+read -r -d '' compactFilter <<'EOF' || true
+def pos: "(\(.x),\(.y))";
+def near($p): (.to // .from) as $e
+	| (($e.x - $p.x) | fabs) <= 6 and (($e.y - $p.y) | fabs) <= 6;
+def ev: .event + "(" + ([to_entries[]
+	| select(.key | IN("event", "level", "turnID", "targetID") | not)
+	| "\(.key)=\(.value)"] | join(" ")) + ")";
+def entity: "\(.type)#\(.id)" + (if .gone then " gone" else " \(.from | pos)>\(.to | pos)" end);
+def action($i): . as $r
+	| ["\($i + 1) \(.action)\(if .moved then "+" + (.to | pos) else "=" end)"]
+	+ ((.tilesChanged // []) | map("\(.from)>\(.to)@\(pos)"))
+	+ ((.events // []) | map(ev))
+	+ ((.entitiesMoved // []) | map(select(near($r.to))) | map(entity))
+	+ (if .timedOut then ["TIMED-OUT"] else [] end)
+	| join("  ");
+def tile: "\(.tile // "none") solid=\(.solid) wall=\(.wall) floor=\(.floor)"
+	+ (if .digResistance then " dig=\(.digResistance)" else "" end);
+if has("results") then
+	"hp=\(.player.health)/\(.player.maxHealth) at=\(.player | pos) lvl=\(.level) turn=\(.turnID)",
+	(.results | to_entries[] | .key as $i | .value | action($i))
+elif has("tiles") then
+	(.tiles[] | "\(pos) \(tile)")
+elif has("tile") or has("solid") then
+	"\(pos) \(tile)"
+elif has("entities") then
+	"count=\(.count)",
+	(.entities[] | "\(.type)#\(.id) \(pos)"
+		+ (if .components then " \(.components | tojson)" else "" end))
+elif has("inventory") then
+	"\(.player.type) hp=\(.player.components.health.health)/\(.player.components.health.maxHealth) at=\(.player.components.position | pos) lvl=\(.level) turn=\(.turnID) rhythm=\(.rhythmMode) song=\(.song.time | floor)/\(.song.length | floor)s ended=\(.song.endReached)",
+	"inv: " + (.inventory | map("\(.type)#\(.id)") | join(" "))
+elif has("id") and has("type") then
+	"\(.type)#\(.id) \(pos)"
+else tojson end
+EOF
 
 if [[ ${1:-} == "" ]]; then
 	sed -n '2,/^set -euo/p' "${BASH_SOURCE[0]}" | sed '$d; s/^# \{0,1\}//' >&2
@@ -90,8 +138,8 @@ printEvents() {
 		sed -E "s/^.*\[AgentBridge\] EVENT /event: /; s/'?\r?\$//" >&2 || true
 	echo "$total" >"$seenFile"
 }
-trap printEvents EXIT
-
+replyFile="$(mktemp)"
+trap 'rm -f "$replyFile"; printEvents' EXIT
 # Rename, so the mod never reads a half-written file.
 printf '%s %s\n' "$id" "$*" >"$modDir/.cmd.tmp"
 mv "$modDir/.cmd.tmp" "$modDir/cmd.txt"
@@ -114,8 +162,13 @@ while ((SECONDS < deadline)); do
 		total="${first#DATA *\/}"
 		total="${total%% *}"
 		if (($(grep -c '^DATA ' <<<"$replies") >= total)); then
-			sed -E 's/^DATA [0-9]+\/[0-9]+ //' <<<"$replies" | tr -d '\n' | base64 -d
-			echo
+			sed -E 's/^DATA [0-9]+\/[0-9]+ //' <<<"$replies" | tr -d '\n' | base64 -d >"$replyFile"
+			echo >>"$replyFile"
+			if [[ -n $rawJson ]]; then
+				cat "$replyFile"
+			else
+				jq -r "$compactFilter" "$replyFile"
+			fi
 			exit 0
 		fi
 		;;

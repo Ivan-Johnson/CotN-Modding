@@ -83,8 +83,10 @@ commands and conventions.
   and drive the running game to learn mechanics by experiment, e.g.
   `agent-bridge new-run Dove`, `agent-bridge spawn Skeleton`, `agent-bridge
   entities type=Skeleton show=health`; run it with no arguments for the
-  command list. Any command installs `AgentBridge` first when it is missing. Replies are
-  JSON and take about a second. `input` takes several actions and replies once
+  command list. Any command installs `AgentBridge` first when it is missing.
+  Replies are compact text (`--json` for the raw JSON; the mod reports
+  entities within 12 tiles, the text shows those within 6) and take about a
+  second. `input` takes several actions and replies once
   all have resolved, with each one's outcome, so batch them: `agent-bridge
   input right right up`. The game's events print to stderr as `event:`
   lines after the next command's reply; run `state` to flush the latest.
