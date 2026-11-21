@@ -84,7 +84,9 @@ commands and conventions.
   `agent-bridge install` once per session, then e.g. `agent-bridge new-run
   Dove`, `agent-bridge spawn Skeleton`, `agent-bridge entities type=Skeleton
   show=health`; run it with no arguments for the command list. Replies are
-  JSON and take about a second. The game's events print to stderr as `event:`
+  JSON and take about a second. `input` takes several actions and replies once
+  all have resolved, with each one's outcome, so batch them: `agent-bridge
+  input right right up`. The game's events print to stderr as `event:`
   lines after the next command's reply; run `state` to flush the latest.
   `new-run` uses no-beat mode, so time passes only when you act; `new-run
   rhythm=regular` keeps the real-time beat and lets the song end. Installing

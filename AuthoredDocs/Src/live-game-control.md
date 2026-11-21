@@ -44,6 +44,12 @@ What a tracer-bullet POC for `AgentBridge` (issue #11) verified live on CotN
   from a tick handler.
 * There is no "step N beats" API; `Turn.process(target)` did nothing. N
   `IDLE` inputs advance about one beat each, faster than real time.
+* `AgentBridge` queues one input at a time and waits for
+  `Turn.getCurrentTurnID()` to change before recording the outcome and queuing
+  the next. In no-beat mode a turn resolves within a tick or so, so a batch of
+  inputs costs one command round trip. Walls and floor are tiles, not
+  entities: comparing `Tile.getInfo(x, y).name` around the player before and
+  after an input shows a dug wall.
 
 ## Spawning and converting
 

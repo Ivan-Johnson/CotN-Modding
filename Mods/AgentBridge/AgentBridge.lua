@@ -29,6 +29,9 @@ local Turn = require "necro.cycles.Turn"
 local CHUNK_SIZE = 4000
 local MAX_STEPS = 200
 local MAX_TILES = 400
+local MAX_INPUTS = 50
+local JOB_TIMEOUT_TICKS = 5000
+local TILE_SCAN_RADIUS = 2
 local SONG_END_WARNING_SECONDS = 30
 local PLAYER_ID = 1
 
@@ -70,6 +73,8 @@ local started = false
 local lastID
 local songEndWarned = false
 local lastMultiplier = 1
+-- The input or step command in progress, if any; see `startJob`.
+local job
 
 
 local function reply(id, kind, payload)
@@ -100,6 +105,9 @@ local function emitEvent(kind, fields)
 	fields.turnID = Turn.getCurrentTurnID()
 	fields.level = CurrentLevel.getNumber()
 	print("[AgentBridge] EVENT " .. Json.encode(fields))
+	if job and job.pending then
+		job.events[#job.events + 1] = fields
+	end
 end
 
 local function dumpEntity(entity, show)
@@ -280,22 +288,128 @@ commands.convert = {
 	end,
 }
 
+local PENDING = {}
+
+local function resolveAction(name)
+	return assert(DIRECTIONS[name] or SPECIALS[name], "unknown input '" .. tostring(name) .. "'")
+end
+
+local function snapshotTiles(center)
+	local snapshot = {}
+	for y = center.y - TILE_SCAN_RADIUS, center.y + TILE_SCAN_RADIUS do
+		for x = center.x - TILE_SCAN_RADIUS, center.x + TILE_SCAN_RADIUS do
+			local info = Tile.getInfo(x, y)
+			snapshot[#snapshot + 1] = { x = x, y = y, tile = info and info.name }
+		end
+	end
+	return snapshot
+end
+
+local function changedTiles(before)
+	local changed = {}
+	for _, was in ipairs(before) do
+		local info = Tile.getInfo(was.x, was.y)
+		local now = info and info.name
+		if now ~= was.tile then
+			changed[#changed + 1] = { x = was.x, y = was.y, from = was.tile, to = now }
+		end
+	end
+	return #changed > 0 and changed or nil
+end
+
+local function playerSummary()
+	local player = requirePlayer()
+	return {
+		x = player.position.x,
+		y = player.position.y,
+		health = player.health and player.health.health,
+		maxHealth = player.health and player.health.maxHealth,
+	}
+end
+
+local function finishJob(extra)
+	local finished = job
+	job = nil
+	local payload = extra or {}
+	payload.results = finished.results
+	payload.player = playerSummary()
+	payload.turnID = Turn.getCurrentTurnID()
+	payload.level = CurrentLevel.getNumber()
+	replyData(finished.id, payload)
+end
+
+local function recordOutcome()
+	local position = requirePlayer().position
+	local from = job.from
+	local outcome = {
+		action = job.names[job.index],
+		from = { x = from.x, y = from.y },
+		to = { x = position.x, y = position.y },
+		moved = position.x ~= from.x or position.y ~= from.y,
+		tilesChanged = changedTiles(job.tiles),
+		events = #job.events > 0 and job.events or nil,
+		timedOut = not job.resolved or nil,
+	}
+	if not job.onlyNoteworthy or outcome.moved or outcome.tilesChanged or outcome.events or outcome.timedOut then
+		job.results[#job.results + 1] = outcome
+	end
+end
+
+-- Runs from the tick: queues one action at a time and waits for the turn to
+-- advance, so each outcome is its own action's. A turn that never advances,
+-- such as one lost to a level change, ends the action after JOB_TIMEOUT_TICKS.
+local function advanceJob()
+	if job.pending then
+		job.ticks = job.ticks + 1
+		job.resolved = Turn.getCurrentTurnID() ~= job.turnBefore
+		if not job.resolved and job.ticks < JOB_TIMEOUT_TICKS then
+			return
+		end
+		recordOutcome()
+		job.pending = false
+	end
+	if job.index >= #job.names then
+		finishJob()
+		return
+	end
+	local position = requirePlayer().position
+	job.index = job.index + 1
+	job.from = { x = position.x, y = position.y }
+	job.tiles = snapshotTiles(position)
+	job.turnBefore = Turn.getCurrentTurnID()
+	job.events = {}
+	job.ticks = 0
+	job.pending = true
+	queueInput(resolveAction(job.names[job.index]), 1)
+end
+
+-- Replies only once every action has resolved, so the agent needs no
+-- sleep-then-poll loop. `onlyNoteworthy` drops outcomes where nothing happened.
+local function startJob(id, names, onlyNoteworthy)
+	requirePlayer()
+	job = { id = id, names = names, onlyNoteworthy = onlyNoteworthy, index = 0, results = {}, pending = false }
+	return PENDING
+end
+
 commands.input = {
-	run = function(args)
-		local name = args[1]
-		local action = DIRECTIONS[name] or SPECIALS[name]
-		assert(action, "unknown input '" .. tostring(name) .. "'")
-		queueInput(action, 1)
-		return { queued = name }
+	run = function(args, id)
+		assert(#args >= 1 and #args <= MAX_INPUTS, "give 1 to " .. MAX_INPUTS .. " inputs")
+		for _, name in ipairs(args) do
+			resolveAction(name)
+		end
+		return startJob(id, args, false)
 	end,
 }
 
 commands.step = {
-	run = function(args)
+	run = function(args, id)
 		local count = tonumber(args[1]) or 1
 		assert(count >= 1 and count <= MAX_STEPS, "step count must be 1 to " .. MAX_STEPS)
-		queueInput(Action.Special.IDLE, count)
-		return { queued = count }
+		local names = {}
+		for i = 1, count do
+			names[i] = "idle"
+		end
+		return startJob(id, names, true)
 	end,
 }
 
@@ -332,11 +446,11 @@ commands.level = {
 }
 
 local function execute(command)
-	local ok, result = pcall(command.handler.run, command.args)
-	if ok then
-		replyData(command.id, result)
-	else
+	local ok, result = pcall(command.handler.run, command.args, command.id)
+	if not ok then
 		reply(command.id, "ERROR", (tostring(result):gsub("%s+", " ")))
+	elseif result ~= PENDING then
+		replyData(command.id, result)
 	end
 end
 
@@ -359,12 +473,22 @@ local function receive(line)
 		reply(id, "ERROR", "unknown command '" .. tostring(name) .. "'")
 	elseif Player.getCount() > 1 then
 		reply(id, "ERROR", "refusing to act in a multiplayer session")
+	elseif job then
+		reply(id, "ERROR", "busy: the previous input or step has not finished")
 	else
 		execute({ id = id, handler = handler, args = args })
 	end
 end
 
 event.tick.add("AgentBridgePoll", { order = "invokeLater" }, function()
+	if job then
+		local ok, err = pcall(advanceJob)
+		if not ok then
+			local failed = job
+			job = nil
+			reply(failed.id, "ERROR", (tostring(err):gsub("%s+", " ")))
+		end
+	end
 	local text = FileIO.exists(COMMAND_FILE) and FileIO.readFileToString(COMMAND_FILE, 4096)
 	local line = text and text:match("^[^\n]*")
 	local id = line and line:match("^%S+")

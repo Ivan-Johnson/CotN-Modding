@@ -18,9 +18,14 @@
 #                                   resistance a shovel must beat
 #   spawn TYPE [X Y]                next to the player by default
 #   convert ID TYPE
-#   input ACTION                    up, down, left, right, up_left, ..., idle,
-#                                   item1, item2, bomb, throw, spell1, spell2
-#   step N                          advance N beats
+#   input ACTION...                 up, down, left, right, up_left, ..., idle,
+#                                   item1, item2, bomb, throw, spell1, spell2.
+#                                   Up to 50 in one call; replies once all have
+#                                   resolved, with each action's outcome: where
+#                                   the player moved from and to, tiles that
+#                                   changed nearby (a dug wall), and its events
+#   step N                          like `input idle` N times, but lists only
+#                                   the beats where something happened
 #   new-run [CHARACTER] [rhythm=regular]
 #                                   start a SingleZone run; rhythm=regular keeps
 #                                   the real-time beat, e.g. to see the song end
