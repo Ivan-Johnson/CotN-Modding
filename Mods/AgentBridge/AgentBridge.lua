@@ -62,7 +62,7 @@ local SPECIALS = {
 local started = false
 local lastID
 local pendingInTurn
-local pendingCharacter
+
 
 local function reply(id, kind, payload)
 	print(string.format("[AgentBridge] %s %s %s", id, kind, payload))
@@ -232,12 +232,15 @@ commands.step = {
 
 commands["new-run"] = {
 	run = function(args)
-		pendingCharacter = args[1]
-		if pendingCharacter then
-			assert(Entities.isValidEntityType(pendingCharacter), "unknown character '" .. pendingCharacter .. "'")
+		local character = args[1]
+		if character then
+			requireEntityType(character)
 		end
 		GameSession.start({ mode = GameSession.Mode.SingleZone })
-		return { started = "SingleZone", character = pendingCharacter }
+		if character then
+			Player.setCharacterType(PLAYER_ID, character)
+		end
+		return { started = "SingleZone", character = character }
 	end,
 }
 
@@ -304,12 +307,6 @@ event.turn.add("AgentBridgeExecute", { order = "customActions" }, function()
 	pendingInTurn = nil
 	if command then
 		execute(command)
-	end
-end)
-
-event.levelGenerate.add("AgentBridgeCharacter", {}, function(ev)
-	if ev.options and pendingCharacter then
-		ev.options.initialCharacters = { [PLAYER_ID] = pendingCharacter }
 	end
 end)
 
