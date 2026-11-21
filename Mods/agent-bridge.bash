@@ -3,8 +3,9 @@
 # JSON reply. The mod can only be read from NecroDancer.log, so this writes the
 # command file and waits for the reply lines tagged with its ID.
 #
-# Usage: agent-bridge install
-#        agent-bridge COMMAND [ARG...]
+# Usage: agent-bridge COMMAND [ARG...]
+#
+# Any command installs AgentBridge into the bundle first when it is missing.
 #
 # Commands (replies are JSON; `input` and `step` pass beats, and `new-run`
 # uses no-beat mode, so time passes only when you act):
@@ -58,20 +59,15 @@ fi
 
 modDir="$COTN_LOCAL_MODS_DIR/$bundleName/AgentBridge"
 
-if [[ $1 == install ]]; then
-	baseline=$(wc -l <"$COTN_LOG")
-	ITJ_BUNDLE_RELOAD_TRIGGER="AgentBridge/AgentBridge.lua" install-mods AgentBridge
-	if ! wait_for_log "$baseline" "[AgentBridge] ready"; then
-		echo "agent-bridge: the mod did not report ready" >&2
+# Commits and `itj-impure-tests` replace the bundle's mods, so any command may
+# find AgentBridge gone.
+if [[ ! -d $modDir ]]; then
+	installBaseline=$(wc -l <"$COTN_LOG")
+	ITJ_BUNDLE_RELOAD_TRIGGER="AgentBridge/AgentBridge.lua" install-mods AgentBridge >&2
+	if ! wait_for_log "$installBaseline" "[AgentBridge] ready"; then
+		echo "agent-bridge: installed AgentBridge but it did not report ready; is the game running?" >&2
 		exit 1
 	fi
-	echo "agent-bridge: ready"
-	exit 0
-fi
-
-if [[ ! -d $modDir ]]; then
-	echo "agent-bridge: AgentBridge is not installed; run 'agent-bridge install'" >&2
-	exit 1
 fi
 
 seenFile="$modDir/.events-seen"
@@ -127,5 +123,5 @@ while ((SECONDS < deadline)); do
 	sleep 0.1
 done
 
-echo "agent-bridge: no reply in ${timeoutSeconds}s; is the game running with AgentBridge installed ('agent-bridge install')?" >&2
+echo "agent-bridge: no reply in ${timeoutSeconds}s; is the game running with AgentBridge?" >&2
 exit 1

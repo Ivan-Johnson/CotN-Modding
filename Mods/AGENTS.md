@@ -80,10 +80,10 @@ commands and conventions.
 ## Driving the live game
 
 * `agent-bridge` (a flake app, also in the dev shell) lets an agent observe
-  and drive the running game to learn mechanics by experiment. Run
-  `agent-bridge install` once per session, then e.g. `agent-bridge new-run
-  Dove`, `agent-bridge spawn Skeleton`, `agent-bridge entities type=Skeleton
-  show=health`; run it with no arguments for the command list. Replies are
+  and drive the running game to learn mechanics by experiment, e.g.
+  `agent-bridge new-run Dove`, `agent-bridge spawn Skeleton`, `agent-bridge
+  entities type=Skeleton show=health`; run it with no arguments for the
+  command list. Any command installs `AgentBridge` first when it is missing. Replies are
   JSON and take about a second. `input` takes several actions and replies once
   all have resolved, with each one's outcome, so batch them: `agent-bridge
   input right right up`. The game's events print to stderr as `event:`
@@ -91,8 +91,9 @@ commands and conventions.
   `new-run` uses no-beat mode, so time passes only when you act; `new-run
   rhythm=regular` keeps the real-time beat and lets the song end. Installing
   `AgentBridge` replaces the bundle's other mods, and
-  `nix run .#itj-impure-tests` replaces `AgentBridge` with the test mods, so
-  re-run `agent-bridge install` after each test run. Bridge commands that change
+  `nix run .#itj-impure-tests` (which the pre-commit hook also runs) replaces
+  `AgentBridge` with the test mods; the next command reinstalls it, taking a few
+  seconds. Bridge commands that change
   the game run from the tick, never via a queued input: an `IDLE` input costs
   the groove chain. See
   `Docs/Adr/0006-agent-bridge-uses-command-file-and-log.md`.
