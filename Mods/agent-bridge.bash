@@ -23,7 +23,8 @@
 #                                   Up to 50 in one call; replies once all have
 #                                   resolved, with each action's outcome: where
 #                                   the player moved from and to, tiles that
-#                                   changed nearby (a dug wall), and its events
+#                                   changed nearby (a dug wall), entities within
+#                                   12 tiles that moved or died, and its events
 #   step N                          like `input idle` N times, but lists only
 #                                   the beats where something happened
 #   new-run [CHARACTER] [rhythm=regular]

@@ -32,6 +32,7 @@ local MAX_TILES = 400
 local MAX_INPUTS = 50
 local JOB_TIMEOUT_TICKS = 5000
 local TILE_SCAN_RADIUS = 2
+local ENTITY_RADIUS = 12
 local SONG_END_WARNING_SECONDS = 30
 local PLAYER_ID = 1
 
@@ -338,6 +339,45 @@ local function finishJob(extra)
 	replyData(finished.id, payload)
 end
 
+-- Positions of the world's entities, minus the player's own: inventory items
+-- and the head ride along with the player, so they are not "others moving".
+-- With a `center`, only entities within ENTITY_RADIUS of it.
+local function snapshotEntities(center)
+	local snapshot = {}
+	for entity in Entities.entitiesWithComponents({ "position" }) do
+		local position = entity.position
+		local near = not center
+			or (math.abs(position.x - center.x) <= ENTITY_RADIUS and math.abs(position.y - center.y) <= ENTITY_RADIUS)
+		if near and entity.id ~= PLAYER_ID and not entity.item and not entity.attachment then
+			snapshot[entity.id] = { type = entity.name, x = position.x, y = position.y }
+		end
+	end
+	return snapshot
+end
+
+-- Entities that moved or vanished (died) during the action.
+local function changedEntities(before)
+	local after = snapshotEntities()
+	local changed = {}
+	for id, was in pairs(before) do
+		local now = after[id]
+		if not now then
+			changed[#changed + 1] = { id = id, type = was.type, from = { x = was.x, y = was.y }, gone = true }
+		elseif now.x ~= was.x or now.y ~= was.y then
+			changed[#changed + 1] = {
+				id = id,
+				type = was.type,
+				from = { x = was.x, y = was.y },
+				to = { x = now.x, y = now.y },
+			}
+		end
+	end
+	table.sort(changed, function(a, b)
+		return a.id < b.id
+	end)
+	return #changed > 0 and changed or nil
+end
+
 local function recordOutcome()
 	local position = requirePlayer().position
 	local from = job.from
@@ -347,10 +387,18 @@ local function recordOutcome()
 		to = { x = position.x, y = position.y },
 		moved = position.x ~= from.x or position.y ~= from.y,
 		tilesChanged = changedTiles(job.tiles),
+		entitiesMoved = changedEntities(job.entities),
 		events = #job.events > 0 and job.events or nil,
 		timedOut = not job.resolved or nil,
 	}
-	if not job.onlyNoteworthy or outcome.moved or outcome.tilesChanged or outcome.events or outcome.timedOut then
+	if
+		not job.onlyNoteworthy
+		or outcome.moved
+		or outcome.tilesChanged
+		or outcome.entitiesMoved
+		or outcome.events
+		or outcome.timedOut
+	then
 		job.results[#job.results + 1] = outcome
 	end
 end
@@ -376,6 +424,7 @@ local function advanceJob()
 	job.index = job.index + 1
 	job.from = { x = position.x, y = position.y }
 	job.tiles = snapshotTiles(position)
+	job.entities = snapshotEntities(position)
 	job.turnBefore = Turn.getCurrentTurnID()
 	job.events = {}
 	job.ticks = 0
