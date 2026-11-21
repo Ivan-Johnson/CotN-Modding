@@ -77,6 +77,15 @@ local function replyData(id, value)
 	end
 end
 
+-- Unlike replies, events are not tied to a command: one plain JSON line each,
+-- which `agent-bridge` prints after the next command's reply.
+local function emitEvent(kind, fields)
+	fields.event = kind
+	fields.turnID = Turn.getCurrentTurnID()
+	fields.level = CurrentLevel.getNumber()
+	print("[AgentBridge] EVENT " .. Json.encode(fields))
+end
+
 local function dumpEntity(entity, show)
 	local defaults = Components.getComponentDefaults()
 	local components = {}
@@ -315,5 +324,43 @@ event.tick.add("AgentBridgePoll", { order = "invokeLater" }, function()
 	end
 end)
 
+
+event.objectTakeDamage.add("AgentBridgeDamage", { order = "screenShake" }, function(ev)
+	local entity = ev.entity
+	if Player.isPlayerEntity(entity) then
+		if ev.damage > 0 then
+			emitEvent("damage_taken", {
+				amount = ev.damage,
+				source = ev.attacker and ev.attacker.name or ev.killerName,
+				health = entity.health and entity.health.health,
+			})
+		end
+	elseif ev.attacker and Player.isPlayerEntity(ev.attacker) then
+		emitEvent("damage_dealt", {
+			target = entity.name,
+			targetID = entity.id,
+			amount = ev.damage,
+			survived = ev.survived,
+		})
+	end
+end)
+
+event.objectDeath.add("AgentBridgeDeath", { order = "postDeathVision" }, function(ev)
+	local entity = ev.entity
+	local killer = ev.killer or ev.attacker
+	if Player.isPlayerEntity(entity) then
+		emitEvent("player_died", { killer = killer and killer.name or ev.killerName })
+	else
+		emitEvent("killed", {
+			target = entity.name,
+			targetID = entity.id,
+			by = killer and killer.name or ev.killerName,
+		})
+	end
+end)
+
+event.levelLoad.add("AgentBridgeLevelLoad", { order = "lobbyLevel" }, function()
+	emitEvent("level_loaded", {})
+end)
 
 print("[AgentBridge] WARNING: dev-only mod; it runs commands from " .. COMMAND_FILE)

@@ -20,6 +20,9 @@
 #   new-run [CHARACTER]             start a SingleZone run
 #   level N
 #
+# Events (damage taken and dealt, kills, deaths, level loads) go to stderr as
+# `event: {JSON}` lines after the next command's reply.
+#
 # Environment: COTN_LOG, COTN_LOCAL_MODS_DIR, ITJ_BUNDLE_NAME (default
 # DevBundle), ITJ_AGENT_BRIDGE_TIMEOUT (seconds, default 30). Expects
 # `wait_for_log` from the flake, and `install-mods` on PATH.
@@ -50,8 +53,27 @@ if [[ ! -d $modDir ]]; then
 	exit 1
 fi
 
+seenFile="$modDir/.events-seen"
 id="$(date +%s%N)"
 baseline=$(wc -l <"$COTN_LOG")
+
+# Prints the game's events since the previous command to stderr, so that
+# stdout stays pure JSON. A log shorter than the remembered position means the
+# game restarted.
+# shellcheck disable=SC2329 # invoked by the EXIT trap
+printEvents() {
+	local seen total
+	seen=$(cat "$seenFile" 2>/dev/null || echo "$baseline")
+	total=$(wc -l <"$COTN_LOG")
+	if ((seen > total)); then
+		seen=0
+	fi
+	tail -n "+$((seen + 1))" "$COTN_LOG" |
+		grep -aF "[AgentBridge] EVENT " |
+		sed -E "s/^.*\[AgentBridge\] EVENT /event: /; s/'?\r?\$//" >&2 || true
+	echo "$total" >"$seenFile"
+}
+trap printEvents EXIT
 
 # Rename, so the mod never reads a half-written file.
 printf '%s %s\n' "$id" "$*" >"$modDir/.cmd.tmp"
