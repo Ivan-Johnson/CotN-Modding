@@ -27,18 +27,26 @@
 # next command's reply.
 #
 # Environment: COTN_LOG, COTN_LOCAL_MODS_DIR, ITJ_BUNDLE_NAME (default
-# DevBundle), ITJ_AGENT_BRIDGE_TIMEOUT (seconds, default 30). Expects
-# `wait_for_log` from the flake, and `install-mods` on PATH.
+# DevBundle), ITJ_AGENT_BRIDGE_TIMEOUT (seconds, default 30). Run it from
+# the dev shell (or `nix run .#agent-bridge --`): the flake supplies
+# `wait_for_log` and `install-mods`, and the dev shell sets COTN_LOG and
+# COTN_LOCAL_MODS_DIR.
 set -euo pipefail
 
 bundleName="${ITJ_BUNDLE_NAME:-DevBundle}"
 timeoutSeconds="${ITJ_AGENT_BRIDGE_TIMEOUT:-30}"
-modDir="$COTN_LOCAL_MODS_DIR/$bundleName/AgentBridge"
 
 if [[ ${1:-} == "" ]]; then
 	sed -n '2,/^set -euo/p' "${BASH_SOURCE[0]}" | sed '$d; s/^# \{0,1\}//' >&2
 	exit 2
 fi
+
+if [[ -z ${COTN_LOG:-} || -z ${COTN_LOCAL_MODS_DIR:-} ]]; then
+	echo "agent-bridge: COTN_LOG or COTN_LOCAL_MODS_DIR is unset; run it from the dev shell (nix develop) or as 'nix run .#agent-bridge -- ...'" >&2
+	exit 1
+fi
+
+modDir="$COTN_LOCAL_MODS_DIR/$bundleName/AgentBridge"
 
 if [[ $1 == install ]]; then
 	baseline=$(wc -l <"$COTN_LOG")
