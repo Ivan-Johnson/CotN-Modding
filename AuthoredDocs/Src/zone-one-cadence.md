@@ -66,26 +66,26 @@ Read from `innateAttack`, `health` and `beatDelay`:
   shovel cannot dig.
 * An input takes effect within about one second, as the `state` that follows it
   already shows the result.
-* `turnID` rose by about 30 per second even with no input, so it is not a beat
-  counter.
+* In real-time rhythm `turnID` rose by about 30 per second even with no input,
+  so it is not a beat counter.
 
-## Damage taken looks too high
+## Damage taken
 
-Standing still next to a spawned enemy and sending one `step 1` per sample
-cost the player:
+The first run used real-time rhythm, and one `step 1` sample cost 3 to 4 times
+`innateAttack.damage`: `Zombie` (`damage` 2) took 12, 6, 0 and `Skeleton`
+(`damage` 1) took 12, 8, 5, 1. Several beats passed between commands at about
+1 s latency. `new-run` now uses no-beat mode (#18), and the same setup behaves:
+a spawned `Skeleton` (`damage` 1, `interval` 2) took the player from 12 to 11,
+11, 10, 10, 9, 9 over six `step 1` samples, i.e. its stated damage every second
+step. A spawned `Zombie` beside the player did not attack in six steps; it
+walks a straight line.
 
-* `Zombie` (`damage` 2): 12, 6, 0.
-* `Skeleton` (`damage` 1): 12, 8, 5, 1, then 0, in separate samples a loss of 3
-  to 4 per step.
-
-That is about three times the `innateAttack.damage` each time. I do not know
-whether one `step` runs several turns, or whether health is scaled. Treat
-combat outcomes from `agent-bridge` as unreliable until this is explained. A
-spawned enemy beside a 12-health player can kill it within four steps.
+In no-beat mode the song never ends, a beat cannot be missed, and enemies do
+not come to you: time passes only when you act.
 
 ## Unverified
 
-* What a `step` really advances, and why damage is about triple.
+* Whether real-time rhythm, which the bridge no longer uses, behaves differently.
 * Digging, and what stops `ShovelBasic`.
 * What chests, the shop, traps and the `BatMiniboss` do when engaged.
 * What `AddchestBlack`, `AddchestRed`, `AddchestWhite`, `CoinsX15` and

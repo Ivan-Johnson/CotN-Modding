@@ -13,12 +13,14 @@ local Base64 = require "system.utils.serial.Base64"
 local Components = require "necro.game.data.Components"
 local CurrentLevel = require "necro.game.level.CurrentLevel"
 local Entities = require "system.game.Entities"
+local ExtraMode = require "necro.game.data.modifier.ExtraMode"
 local FileIO = require "system.game.FileIO"
 local GameSession = require "necro.client.GameSession"
 local Input = require "necro.client.Input"
 local Json = require "AgentBridge.Json"
 local Object = require "necro.game.object.Object"
 local Player = require "necro.game.character.Player"
+local RhythmMode = require "necro.game.data.modifier.RhythmMode"
 local Turn = require "necro.cycles.Turn"
 
 local CHUNK_SIZE = 4000
@@ -154,12 +156,23 @@ end
 -- straight from the tick that read them. `run(args)` returns the reply value.
 local commands = {}
 
+local function rhythmModeName()
+	local mode = RhythmMode.getMode()
+	for name, value in pairs(RhythmMode.Type) do
+		if value == mode then
+			return name
+		end
+	end
+	return tostring(mode)
+end
+
 commands.state = {
 	run = function()
 		local player = requirePlayer()
 		return {
 			turnID = Turn.getCurrentTurnID(),
 			level = CurrentLevel.getNumber(),
+			rhythmMode = rhythmModeName(),
 			player = dumpEntity(player, parseShow("position,health,character")),
 			inventory = listInventory(player),
 		}
@@ -236,6 +249,8 @@ commands["new-run"] = {
 		if character then
 			requireEntityType(character)
 		end
+		-- The ~1 s command latency leaves several beats between commands.
+		ExtraMode.setActive(ExtraMode.Type.NO_BEAT, true)
 		GameSession.start({ mode = GameSession.Mode.SingleZone })
 		if character then
 			Player.setCharacterType(PLAYER_ID, character)
