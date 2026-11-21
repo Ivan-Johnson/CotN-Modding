@@ -1,5 +1,7 @@
 -- Offline test for bundle-layout.lua, covering the Lua syntax its rewrite and
 -- its check must agree on. Run from this directory: luajit test-bundle-layout.lua
+-- Needs `bundle-layout` (the flake's wrapper) on `PATH`; the `bundle-layout`
+-- flake check provides it.
 package.path = "./?.lua;" .. package.path
 local BundleLayout = require "bundle-layout"
 
@@ -67,6 +69,40 @@ expect("check finds the namespace and the stray string", #errors, 2)
 expect("checkInstall refuses a missing Mods/ dependency", #BundleLayout.checkInstall(tmp, { "Alpha" }), 1)
 expect("checkInstall ignores dependencies outside Mods/", #BundleLayout.checkInstall(tmp, { "Alpha", "Beta" }), 0)
 expect("rewriteTree refuses unsafe trees", #BundleLayout.rewriteTree(tmp, "Bundle", { "Alpha", "Beta" }), 1)
+-- The command line, through the real wrapper. The module-level cases above
+-- cannot see a broken entry guard, which makes every command a silent no-op.
+local function succeeds(command)
+	local status = os.execute(command .. " 2>/dev/null")
+	return status == 0 or status == true
+end
+
+local function read(path)
+	local handle = assert(io.open(tmp .. "/" .. path, "r"))
+	local content = handle:read("*a")
+	handle:close()
+	return content
+end
+
+expect("cli check fails on a violating tree", succeeds("bundle-layout check " .. tmp), false)
+expect(
+	"cli check-install fails on a missing dependency",
+	succeeds("bundle-layout check-install " .. tmp .. " Alpha"),
+	false
+)
+expect(
+	"cli check-install passes when dependencies are installed",
+	succeeds("bundle-layout check-install " .. tmp .. " Alpha Beta"),
+	true
+)
+expect("cli rewrite fails on an unsafe tree", succeeds("bundle-layout rewrite " .. tmp .. " Bundle Alpha Beta"), false)
+expect("cli rewrite leaves an unsafe tree untouched", read("Alpha/a.lua"), 'require "Beta.x"')
+expect("cli rejects bad usage", succeeds("bundle-layout bogus"), false)
+
+write("Beta/x.lua", 'require "Alpha.y"')
+expect("cli rewrite succeeds on a safe tree", succeeds("bundle-layout rewrite " .. tmp .. " Bundle Alpha Beta"), true)
+expect("cli rewrite prefixes the require", read("Beta/x.lua"), 'require "Bundle.Alpha.y"')
+expect("cli rewrite prefixes every mod", read("Alpha/a.lua"), 'require "Bundle.Beta.x"')
+
 os.execute("rm -rf " .. tmp)
 
 if failures > 0 then

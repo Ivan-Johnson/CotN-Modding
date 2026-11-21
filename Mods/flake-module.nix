@@ -50,12 +50,14 @@ let
                 touch "$out"
         '';
 
-        # Tests the layout rules and the rewrite on fixtures; see
+        # Tests the layout rules and the rewrite on fixtures, in-process and
+        # through the real `bundle-layout` wrapper; see
         # `Mods/test-bundle-layout.lua`.
         bundleLayoutTest =
                 pkgs.runCommand "cotn-bundle-layout-test"
                         {
                                 nativeBuildInputs = [
+                                        bundleLayout
                                         bundleLuajit
                                         pkgs.coreutils
                                 ];
