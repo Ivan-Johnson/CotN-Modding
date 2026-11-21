@@ -55,6 +55,25 @@ What a tracer-bullet POC for `AgentBridge` (issue #11) verified live on CotN
   entities: comparing `Tile.getInfo(x, y).name` around the player before and
   after an input shows a dug wall.
 
+* `agent-bridge` in the dev shell is a built copy of `Mods/agent-bridge.bash`;
+  `install-mods` installs the mod from the source tree. After editing the
+  script the CLI lacks the new commands until the shell is re-entered
+  (`bash Mods/agent-bridge.bash` runs the source meanwhile). The CLI compares
+  a build-time hash of the script with the source and warns on a mismatch.
+
+## Enemy cadence
+
+* A spawned enemy's `beatDelay.counter` starts at 0, and an enemy with
+  `beatDelay.interval` 1 acts every beat; with interval 2 (Skeleton, Slime2)
+  it acts on beats 1, 3, 5, ... after the spawn. A dump taken after an action
+  shows the counter at 0 again.
+* Deterministic enemies (Slime2, Slime3, Skeleton) acted on the same beats
+  whether the `idle`s were batched or sent one per command, once the settle
+  wait above was in. Random movers (Zombie, Bat) vary run to run, so compare
+  them with `scenario repeat=N`, never one trace against another.
+* An enemy that never moves while `aggro.active` is true is probably
+  blocked, not asleep: check the tiles and the entities around it first.
+
 ## Spawning and converting
 
 * `Object.spawn(type, x, y)` and `Object.convert(entity, type)` work from both
