@@ -47,7 +47,11 @@ What a tracer-bullet POC for `AgentBridge` (issue #11) verified live on CotN
 * `AgentBridge` queues one input at a time and waits for
   `Turn.getCurrentTurnID()` to change before recording the outcome and queuing
   the next. In no-beat mode a turn resolves within a tick or so, so a batch of
-  inputs costs one command round trip. Walls and floor are tiles, not
+  inputs costs one command round trip. It then waits 30 more ticks before the
+  next input: with no wait, enemies skipped a move about every 24 beats (a
+  Slime3, which moves every beat, did so in 40 batched 8-beat runs, and never
+  in 49 beats sent one `idle` per command). 10 ticks still skipped; 25 did
+  not. Walls and floor are tiles, not
   entities: comparing `Tile.getInfo(x, y).name` around the player before and
   after an input shows a dug wall.
 
@@ -57,15 +61,24 @@ What a tracer-bullet POC for `AgentBridge` (issue #11) verified live on CotN
   tick and turn handlers. `Object.convertImmediately` also works.
 * Converting to an unknown type does not throw; it logs
   `[Object] [warning] Invalid target type for conversion`.
-* `Entities.despawn(id)` removes an entity at once, from a command handler.
-  `AgentBridge`'s `clear` uses it on every entity with an `ai` component
-  (enemies and the shopkeeper), which leaves a level where only spawned
-  enemies act.
+* `Entities.despawn(id)` removes an entity at once but leaves it occupying
+  its tile: an enemy later spawned beside it could never step there (a
+  Skeleton stayed put in every run after the first). `Object.delete(entity)`
+  cleans up properly. `AgentBridge`'s `clear` uses it on every entity with an
+  `ai` component (enemies and the shopkeeper), which leaves a level where only
+  spawned enemies act.
+* `Tile.setType(x, y, "Floor")` turns a wall into floor, with its tile
+  properties. Entities attached to the wall (spike traps, wall torches) stay,
+  so `AgentBridge`'s `clear arena=N` and `scenario ... arena=N` also delete
+  the `*Wall*` entities within N tiles of the player.
 * `AgentBridge`'s `scenario TYPE X Y ACTION...` runs a whole experiment on
   the current level in one call: it optionally clears the enemies, spawns,
   performs the actions and reports the spawned entity's chosen components
-  before and after. Level layouts differ between runs, so check that the
-  spawn tile is floor.
+  before and after. Level layouts differ between runs, so use `arena=N` to
+  turn the square within N tiles of the player into floor. `repeat=N` runs it
+  N times from the same start (player teleported back with `Move.absolute`
+  and healed, the enemy deleted) and replies with aggregates: step directions,
+  moves per beat, first move, steps toward and away from the player.
 * Spawning or converting to `Dove` also attaches a `DoveHead` entity on the
   same tile.
 * `FamiliarDove` spawns as a world entity. Its use as an inventory item is
@@ -90,4 +103,5 @@ What a tracer-bullet POC for `AgentBridge` (issue #11) verified live on CotN
 * Multiplayer and replay determinism.
 * The lobby, character selection, and `GameSession.restart`.
 * Custom actions with args (NecroEdit uses `Action.Special.NecroEdit_Cmd`).
-* Whether enemies behave correctly under rapid `IDLE` inputs.
+* Why enemies skipped a move without a settle wait between inputs; the
+  wait is a measured workaround, not an explanation.

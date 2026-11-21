@@ -19,6 +19,7 @@ local GameSession = require "necro.client.GameSession"
 local GrooveChain = require "necro.game.character.GrooveChain"
 local Input = require "necro.client.Input"
 local Json = require "AgentBridge.Json"
+local Move = require "necro.game.system.Move"
 local Music = require "necro.audio.Music"
 local Object = require "necro.game.object.Object"
 local Player = require "necro.game.character.Player"
@@ -31,8 +32,15 @@ local MAX_STEPS = 200
 local MAX_TILES = 400
 local MAX_INPUTS = 50
 local JOB_TIMEOUT_TICKS = 5000
+-- Ticks to wait after a turn advances before the next action. Queuing the next
+-- one right away made enemies skip a move about every 24 beats (measured with
+-- Slime3, which moves every beat); 10 ticks still skipped, 25 did not.
+local SETTLE_TICKS = 30
 local TILE_SCAN_RADIUS = 2
 local ENTITY_RADIUS = 12
+local MAX_ARENA_RADIUS = 10
+local MAX_REPEATS = 100
+local ARENA_FLOOR = "Floor"
 local SONG_END_WARNING_SECONDS = 30
 local PLAYER_ID = 1
 
@@ -297,18 +305,83 @@ commands.spawn = {
 -- Removes every enemy so a test sees only what it spawns. Enemies are the
 -- entities with an `ai`; the list is built first because despawning while
 -- iterating would disturb the iteration.
-commands.clear = {
-	run = function()
-		local doomed = {}
-		for entity in Entities.entitiesWithComponents({ "ai" }) do
-			if entity.id ~= PLAYER_ID then
-				doomed[#doomed + 1] = entity.id
+-- `Entities.despawn` leaves the entity occupying its tile, so a later enemy
+-- cannot step there; `Object.delete` does the game's own cleanup.
+local function deleteEntities(ids)
+	for _, id in ipairs(ids) do
+		Object.delete(Entities.getEntityByID(id))
+	end
+end
+
+local function clearEnemies()
+	local doomed = {}
+	for entity in Entities.entitiesWithComponents({ "ai" }) do
+		if entity.id ~= PLAYER_ID then
+			doomed[#doomed + 1] = entity.id
+		end
+	end
+	deleteEntities(doomed)
+	return #doomed
+end
+
+-- Turns the square of tiles within `radius` of the player into floor, so
+-- walls from the random level cannot skew a test. Whatever is attached to a
+-- wall that goes (a wall torch, a spike trap) is despawned with it; walls
+-- beyond the square stay as the arena's boundary.
+local function carveArena(radius)
+	local center = requirePlayer().position
+	local carved = 0
+	for y = center.y - radius, center.y + radius do
+		for x = center.x - radius, center.x + radius do
+			local info = Tile.getInfo(x, y)
+			if not (info and info.isFloor) then
+				Tile.setType(x, y, ARENA_FLOOR)
+				carved = carved + 1
 			end
 		end
-		for _, id in ipairs(doomed) do
-			Entities.despawn(id)
+	end
+	local doomed = {}
+	for entity in Entities.entitiesWithComponents({ "position" }) do
+		local position = entity.position
+		if
+			entity.id ~= PLAYER_ID
+			and not entity.item
+			and not entity.attachment
+			and not entity.ai
+			and math.abs(position.x - center.x) <= radius
+			and math.abs(position.y - center.y) <= radius
+			and entity.name:find("Wall", 1, true)
+		then
+			doomed[#doomed + 1] = entity.id
 		end
-		return { cleared = #doomed }
+	end
+	deleteEntities(doomed)
+	return carved
+end
+
+local function parseArena(text)
+	if not text then
+		return nil
+	end
+	local radius = tonumber(text)
+	assert(
+		radius and radius >= 1 and radius <= MAX_ARENA_RADIUS and radius % 1 == 0,
+		"arena must be a whole number from 1 to " .. MAX_ARENA_RADIUS
+	)
+	return radius
+end
+
+-- `clear` removes the enemies; `clear arena=N` also floors the square within N
+-- tiles of the player.
+commands.clear = {
+	run = function(args)
+		local options = parseOptions(args)
+		local radius = parseArena(options.arena)
+		local result = { cleared = clearEnemies() }
+		if radius then
+			result.arenaTilesCarved = carveArena(radius)
+		end
+		return result
 	end,
 }
 
@@ -359,9 +432,17 @@ local function playerSummary()
 	}
 end
 
+-- Defined with `scenario`: records a finished run of a `repeat` series and
+-- starts the next, or replies with the aggregates.
+local finishSeriesRun
+
 local function finishJob(extra)
 	local finished = job
 	job = nil
+	if finished.series then
+		finishSeriesRun(finished)
+		return
+	end
 	local payload = extra or {}
 	payload.results = finished.results
 	payload.player = playerSummary()
@@ -449,7 +530,13 @@ local function advanceJob()
 	if job.pending then
 		job.ticks = job.ticks + 1
 		job.resolved = Turn.getCurrentTurnID() ~= job.turnBefore
+		if job.resolved and not job.resolvedTick then
+			job.resolvedTick = job.ticks
+		end
 		if not job.resolved and job.ticks < JOB_TIMEOUT_TICKS then
+			return
+		end
+		if job.resolved and job.ticks - job.resolvedTick < SETTLE_TICKS then
 			return
 		end
 		recordOutcome()
@@ -467,6 +554,7 @@ local function advanceJob()
 	job.turnBefore = Turn.getCurrentTurnID()
 	job.events = {}
 	job.ticks = 0
+	job.resolvedTick = nil
 	job.pending = true
 	queueInput(resolveAction(job.names[job.index]), 1)
 end
@@ -501,10 +589,133 @@ commands.step = {
 	end,
 }
 
+-- Starts one run of a scenario: spawns the entity and begins the actions.
+local function beginScenarioRun(id, spec, series)
+	if spec.clear then
+		clearEnemies()
+	end
+	local spawned = commands.spawn.run({ spec.typeName, spec.x, spec.y, spec.force and "force" or nil })
+	startJob(id, spec.names, false)
+	job.series = series
+	job.watch = {
+		id = spawned.id,
+		show = spec.show,
+		before = dumpEntity(Entities.getEntityByID(spawned.id), spec.show),
+	}
+end
+
+local function sign(n)
+	return n > 0 and 1 or (n < 0 and -1 or 0)
+end
+
+local function distance(a, b)
+	return math.abs(a.x - b.x) + math.abs(a.y - b.y)
+end
+
+-- What one run did to the watched entity: the beats it moved on, each step's
+-- direction, and whether it got closer to the player (measured against where
+-- the player ended that action, so the player's own moves do not count).
+local function summarizeRun(finished)
+	local watchID = finished.watch.id
+	local run = { moveBeats = {}, steps = {}, closer = 0, farther = 0, damageTaken = 0 }
+	for beat, outcome in ipairs(finished.results) do
+		for _, moved in ipairs(outcome.entitiesMoved or {}) do
+			if moved.id == watchID and moved.to then
+				run.moveBeats[#run.moveBeats + 1] = beat
+				local dx, dy = moved.to.x - moved.from.x, moved.to.y - moved.from.y
+				run.steps[#run.steps + 1] = string.format("%d,%d", sign(dx), sign(dy))
+				local before, after = distance(moved.from, outcome.to), distance(moved.to, outcome.to)
+				if after < before then
+					run.closer = run.closer + 1
+				elseif after > before then
+					run.farther = run.farther + 1
+				end
+			end
+		end
+		for _, event in ipairs(outcome.events or {}) do
+			if event.event == "damage_taken" then
+				run.damageTaken = run.damageTaken + event.amount
+			elseif event.event == "killed" and event.targetID == watchID then
+				run.killedOnBeat = beat
+			end
+		end
+	end
+	run.firstMoveBeat = run.moveBeats[1]
+	local exists = Entities.entityExists(watchID)
+	local position = exists and Entities.getEntityByID(watchID).position
+	run.final = position and { x = position.x, y = position.y } or nil
+	return run
+end
+
+local function bump(counts, key)
+	key = tostring(key)
+	counts[key] = (counts[key] or 0) + 1
+end
+
+local function aggregateRuns(runs)
+	local aggregate = {
+		runs = #runs,
+		moves = 0,
+		closer = 0,
+		farther = 0,
+		damageTaken = 0,
+		killedRuns = 0,
+		stepCounts = {},
+		firstMoveBeat = {},
+		moveBeats = {},
+	}
+	for _, run in ipairs(runs) do
+		aggregate.moves = aggregate.moves + #run.steps
+		aggregate.closer = aggregate.closer + run.closer
+		aggregate.farther = aggregate.farther + run.farther
+		aggregate.damageTaken = aggregate.damageTaken + run.damageTaken
+		aggregate.killedRuns = aggregate.killedRuns + (run.killedOnBeat and 1 or 0)
+		bump(aggregate.firstMoveBeat, run.firstMoveBeat or "never")
+		for _, step in ipairs(run.steps) do
+			bump(aggregate.stepCounts, step)
+		end
+		for _, beat in ipairs(run.moveBeats) do
+			bump(aggregate.moveBeats, beat)
+		end
+	end
+	return aggregate
+end
+
+-- Puts the player back where the series began, at full recorded health, so
+-- each run starts alike. The coin multiplier is not reset.
+local function resetPlayer(start)
+	local player = requirePlayer()
+	assert(Move.absolute(player, start.x, start.y, Move.Type.TELEPORT), "could not move the player back to the start")
+	player.health.health = start.health
+end
+
+finishSeriesRun = function(finished)
+	local series = finished.series
+	series.runs[#series.runs + 1] = summarizeRun(finished)
+	if Entities.entityExists(finished.watch.id) then
+		deleteEntities({ finished.watch.id })
+	end
+	if #series.runs < series.total then
+		resetPlayer(series.start)
+		beginScenarioRun(finished.id, series.spec, series)
+		return
+	end
+	replyData(finished.id, {
+		repeated = series.total,
+		aggregate = aggregateRuns(series.runs),
+		runs = series.runs,
+		player = playerSummary(),
+		turnID = Turn.getCurrentTurnID(),
+		level = CurrentLevel.getNumber(),
+	})
+end
+
 -- Runs a whole experiment against the current level in one call: optionally
--- clears the enemies, spawns TYPE at X Y, performs the actions, and replies
--- with the actions' outcomes plus the spawned entity's `watch` components
--- before and after. Start from a fresh level with `new-run` first.
+-- carves an arena and clears the enemies, spawns TYPE at X Y, performs the
+-- actions, and replies with the actions' outcomes plus the spawned entity's
+-- `watch` components before and after. With `repeat=N` it runs the experiment
+-- N times from the same start and replies with aggregates instead. Start from
+-- a fresh level with `new-run` first.
 commands.scenario = {
 	run = function(args, id)
 		local words, options = {}, {}
@@ -526,18 +737,35 @@ commands.scenario = {
 		for _, name in ipairs(names) do
 			resolveAction(name)
 		end
-		local show = parseShow(options.watch or "position,health,aggro")
-		if options.clear == "true" then
-			commands.clear.run()
-		end
-		local spawnArgs = { typeName, x, y, options.force == "true" and "force" or nil }
-		local spawned = commands.spawn.run(spawnArgs)
-		startJob(id, names, false)
-		job.watch = {
-			id = spawned.id,
-			show = show,
-			before = dumpEntity(Entities.getEntityByID(spawned.id), show),
+		local total = options["repeat"] and tonumber(options["repeat"])
+		assert(
+			not options["repeat"] or (total and total >= 1 and total <= MAX_REPEATS and total % 1 == 0),
+			"repeat must be a whole number from 1 to " .. MAX_REPEATS
+		)
+		local radius = parseArena(options.arena)
+		local spec = {
+			typeName = typeName,
+			x = x,
+			y = y,
+			names = names,
+			show = parseShow(options.watch or "position,health,aggro"),
+			clear = options.clear == "true",
+			force = options.force == "true",
 		}
+		local player = requirePlayer()
+		if radius then
+			carveArena(radius)
+		end
+		local series
+		if total then
+			series = {
+				total = total,
+				spec = spec,
+				runs = {},
+				start = { x = player.position.x, y = player.position.y, health = player.health.health },
+			}
+		end
+		beginScenarioRun(id, spec, series)
 		return PENDING
 	end,
 }

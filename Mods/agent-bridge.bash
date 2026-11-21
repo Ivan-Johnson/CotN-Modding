@@ -26,8 +26,11 @@
 #   spawn TYPE [X Y] [force]        next to the player by default; refuses a solid
 #                                   or off-level tile unless `force` is given
 #   convert ID TYPE
-#   clear                           remove every enemy (anything with an `ai`),
-#                                   so spawn tests see only what they spawn
+#   clear [arena=N]                 remove every enemy (anything with an `ai`),
+#                                   so spawn tests see only what they spawn;
+#                                   arena=N (1 to 10) also turns the square
+#                                   within N tiles of the player into floor,
+#                                   dropping wall torches and spikes there
 #   input ACTION...                 up, down, left, right, up_left, ..., idle,
 #                                   item1, item2, bomb, throw, spell1, spell2.
 #                                   Up to 50 in one call; replies once all have
@@ -35,13 +38,23 @@
 #                                   the player moved from and to, tiles that
 #                                   changed nearby (a dug wall), entities within
 #                                   12 tiles that moved or died, and its events
-#   scenario TYPE X Y [watch=C1,C2] [clear=true] [force=true] ACTION...
+#   scenario TYPE X Y [watch=C1,C2] [clear=true] [arena=N] [force=true]
+#            [repeat=N] ACTION...
 #                                   one whole experiment on the current level:
-#                                   optionally clear the enemies, spawn TYPE at
-#                                   X Y, perform the actions, and reply like
-#                                   `input` plus the spawned entity's `watch`
-#                                   components (default position, health,
-#                                   aggro) before and after. Run `new-run` first
+#                                   optionally carve an arena and clear the
+#                                   enemies, spawn TYPE at X Y, perform the
+#                                   actions, and reply like `input` plus the
+#                                   spawned entity's `watch` components
+#                                   (default position, health, aggro) before
+#                                   and after. repeat=N (1 to 100) runs it N
+#                                   times from the same start, putting the
+#                                   player back and healing it between runs,
+#                                   and replies with aggregates instead: the
+#                                   entity's steps by direction, the beats it
+#                                   moved on, its first move, steps toward
+#                                   and away from the player, damage taken
+#                                   and kills, then one line per run. The coin
+#                                   multiplier is not reset. Run `new-run` first
 #   step N                          like `input idle` N times, but lists only
 #                                   the beats where something happened
 #   new-run [CHARACTER] [rhythm=regular]
@@ -87,7 +100,17 @@ def action($i): . as $r
 	| join("  ");
 def tile: "\(.tile // "none") solid=\(.solid) wall=\(.wall) floor=\(.floor)"
 	+ (if .digResistance then " dig=\(.digResistance)" else "" end);
-if has("results") then
+def counts: to_entries | sort_by(.key) | map("\(.key):\(.value)") | join(" ");
+if has("aggregate") then
+	"hp=\(.player.health)/\(.player.maxHealth) at=\(.player | pos) lvl=\(.level) turn=\(.turnID)",
+	.aggregate as $a
+	| "runs=\($a.runs) moves=\($a.moves) closer=\($a.closer) farther=\($a.farther) damage=\($a.damageTaken) killedRuns=\($a.killedRuns)",
+	"steps dx,dy: \($a.stepCounts | counts)",
+	"first move beat: \($a.firstMoveBeat | counts)",
+	"moves per beat: \($a.moveBeats | counts)",
+	(.runs | to_entries[] | "run \(.key + 1): moves=\(.value.steps | join(" ")) beats=\(.value.moveBeats | join(",")) damage=\(.value.damageTaken)"
+		+ (if .value.killedOnBeat then " killed@\(.value.killedOnBeat)" else "" end))
+elif has("results") then
 	"hp=\(.player.health)/\(.player.maxHealth) at=\(.player | pos) lvl=\(.level) turn=\(.turnID)",
 	(.results | to_entries[] | .key as $i | .value | action($i)),
 	(if .watched then
