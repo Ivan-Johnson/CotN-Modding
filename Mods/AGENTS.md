@@ -25,6 +25,11 @@ commands and conventions.
 
 ## Dev loop
 
+* Before running `nix run .#itj-impure-tests`, lint the Lua:
+  `luacheck --config Mods/.luacheckrc Mods`. It catches syntax errors and
+  undefined globals in seconds; the live game only reports them after a full
+  install/reload cycle. `luajit` is also on `PATH` for running small Lua
+  snippets.
 * Assume by default that CotN is already running with an unpacked mod
   loaded; don't ask the user to confirm this or to run
   `nix run .#itj-impure-tests` themselves before trying it. It (see

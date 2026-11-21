@@ -198,6 +198,10 @@ in
                         # For packaging mods
                         pkgs.zip
                         pkgs.unzip
+
+                        # For checking mod Lua before a live reload
+                        pkgs.luaPackages.luacheck
+                        pkgs.luajit
                 ];
                 shellHook = ''
                         # This path is platform specific. e.g. if you're running the native steam runtime vs proton
