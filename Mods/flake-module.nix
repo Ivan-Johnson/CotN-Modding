@@ -27,18 +27,42 @@ let
                                 touch "$out"
                         '';
 
+        bundleLuajit = pkgs.luajit.withPackages (p: [ p.cjson ]);
+
+        # Validates and rewrites the bundle layout; the one home of the rules
+        # `install-mods` relies on. See `Mods/bundle-layout.lua`.
+        bundleLayout = pkgs.writeShellApplication {
+                name = "bundle-layout";
+                runtimeInputs = [
+                        pkgs.coreutils
+                        pkgs.findutils
+                        bundleLuajit
+                ];
+                text = ''
+                        exec luajit ${./bundle-layout.lua} "$@"
+                '';
+        };
+
         # The conventions `install-mods` relies on, e.g. that each mod's
         # directory is named after its namespace.
-        modsLayout =
-                pkgs.runCommand "cotn-mods-layout"
+        modsLayout = pkgs.runCommand "cotn-mods-layout" { nativeBuildInputs = [ bundleLayout ]; } ''
+                bundle-layout check ${./.}
+                touch "$out"
+        '';
+
+        # Tests the layout rules and the rewrite on fixtures; see
+        # `Mods/test-bundle-layout.lua`.
+        bundleLayoutTest =
+                pkgs.runCommand "cotn-bundle-layout-test"
                         {
                                 nativeBuildInputs = [
-                                        pkgs.jq
-                                        pkgs.gnugrep
+                                        bundleLuajit
+                                        pkgs.coreutils
                                 ];
                         }
                         ''
-                                bash ${./check-layout.bash} ${./.}
+                                cd ${./.}
+                                luajit test-bundle-layout.lua
                                 touch "$out"
                         '';
 
@@ -59,8 +83,7 @@ let
                 name = "install-mods";
                 runtimeInputs = [
                         pkgs.coreutils
-                        pkgs.findutils
-                        pkgs.gnused
+                        bundleLayout
                         pkgs.jq
                         pkgs.rsync
                 ];
@@ -168,6 +191,7 @@ in
                 mods-lua-lint = modsLuaLint;
                 mods-layout = modsLayout;
                 bytecode-api = bytecodeApiTest;
+                bundle-layout = bundleLayoutTest;
         };
 
         apps = {

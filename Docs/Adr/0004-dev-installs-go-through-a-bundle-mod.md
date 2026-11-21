@@ -29,10 +29,12 @@ installed mod gains the bundle's name as a prefix. `install-mods` rewrites
 
 * `Mods/<name>/` must equal the `namespace` and `name` in its `mod.json`.
 * A string that names a mod's modules (such as `"HelloWorldTests.api"`) may
-  appear only as the argument of a `require`; the rewrite touches nothing
-  else. Dynamic requires built by concatenation are not rewritten.
-* Both rules are enforced by the `mods-layout` check
-  (`Mods/check-layout.bash`).
+  appear only as the whole, static argument of a `require` (any quote style,
+  also `pcall(require, …)`); the rewrite touches nothing else, and comments
+  are ignored. Dynamic requires built by concatenation fail the check.
+* Both rules, the rewrite, and the dependency refusal below live in one place,
+  `Mods/bundle-layout.lua`, which tokenizes the Lua instead of matching text.
+  The `mods-layout` check and the `bundle-layout` fixture test run it.
 * `install-mods` refuses to install a mod that depends on another mod from
   `Mods/` that is not also being installed, since a bundled mod can only find
   mods bundled with it.

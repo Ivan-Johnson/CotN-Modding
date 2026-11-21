@@ -7,9 +7,8 @@
 # different set replaces the bundle's contents, which uninstalls the rest.
 #
 # A module's name is "<mod name>.<path>", so inside the bundle every mod's
-# modules gain the bundle's name as a prefix. check-layout.bash guarantees that
-# a mod only names its own (or another mod's) modules in the form this script
-# rewrites.
+# modules gain the bundle's name as a prefix. bundle-layout.lua, which also
+# does the rewriting, defines the form a mod must name modules in for that.
 #
 # Usage: install-mods [MOD...]
 #
@@ -34,17 +33,7 @@ for mod in "${mods[@]}"; do
 	fi
 done
 
-# A bundled mod can only find mods that are bundled with it.
-status=0
-for mod in "${mods[@]}"; do
-	while IFS= read -r dependency; do
-		if [[ -f "$modsRoot/$dependency/mod.json" ]] && [[ ! " ${mods[*]} " == *" $dependency "* ]]; then
-			echo "install-mods: $mod depends on $dependency, which is not being installed" >&2
-			status=1
-		fi
-	done < <(jq -r '.dependencies // {} | keys[]' "$modsRoot/$mod/mod.json")
-done
-((status == 0)) || exit 1
+bundle-layout check-install "$modsRoot" "${mods[@]}"
 
 stage="$(mktemp -d)"
 trap 'rm -rf "$stage"' EXIT
@@ -69,13 +58,7 @@ jq -n \
 		name: $name
 	}' >"$stage/mod.json"
 
-if ((${#mods[@]} > 0)); then
-	# One pass over every installed mod's name, so that the rewritten
-	# text is never itself rewritten (the bundle may share a mod's name).
-	alternatives="$(IFS='|'; echo "${mods[*]}")"
-	find "$stage" -name '*.lua' -print0 |
-		xargs -0 -r sed -i -E "s/(require[ (,]+)\"($alternatives)\\./\\1\"$bundleName.\\2./g"
-fi
+bundle-layout rewrite "$stage" "$bundleName" "${mods[@]}"
 
 if [[ -n ${ITJ_BUNDLE_RELOAD_TRIGGER:-} ]]; then
 	echo "-- install-mods trigger $(date +%s%N)" >>"$stage/$ITJ_BUNDLE_RELOAD_TRIGGER"

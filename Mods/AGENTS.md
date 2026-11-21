@@ -69,8 +69,11 @@ commands and conventions.
 * A module's name is `<mod name>.<path>`, so in the bundle it gains the bundle
   name as a prefix. `install-mods` rewrites `require "<Mod>.…"` to
   `require "<Bundle>.<Mod>.…"` for the installed mods. Any string naming a
-  mod's modules outside a `require` fails the `mods-layout` check, so write
-  such requires as `require "<Mod>.<path>"` or `pcall(require, "<Mod>.<path>")`.
+  mod's modules other than as a require's whole static argument (e.g. a
+  `string.format` pattern, or `require("<Mod>." .. x)`) fails the `mods-layout`
+  check. Write such requires as `require "<Mod>.<path>"` or
+  `pcall(require, "<Mod>.<path>")`. All of this lives in `bundle-layout.lua`;
+  its fixture test is `test-bundle-layout.lua`.
 * `install-mods` refuses to install a mod whose `mod.json` dependencies include
   a mod from `Mods/` that isn't also being installed.
 * Never delete a mod's installed directory while the game runs: the game's
