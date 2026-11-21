@@ -14,7 +14,8 @@
 #
 # Commands (`input` and `step` pass beats, and `new-run`
 # uses no-beat mode, so time passes only when you act):
-#   state                           the player's position, health and items
+#   state                           the player's position, health, facing, coin
+#                                   multiplier, kill count, gold and items
 #   entities [type=T] [component=C] [id=N] [show=C1,C2|all]
 #                                   entities with a position (or component C);
 #                                   `show` adds their components' fields
@@ -63,7 +64,7 @@ fi
 
 # Turns a reply's JSON into the compact text form.
 read -r -d '' compactFilter <<'EOF' || true
-def pos: "(\(.x),\(.y))";
+def pos: if .x == null then "(no position)" else "(\(.x),\(.y))" end;
 def near($p): (.to // .from) as $e
 	| (($e.x - $p.x) | fabs) <= 6 and (($e.y - $p.y) | fabs) <= 6;
 def ev: .event + "(" + ([to_entries[]
@@ -91,7 +92,8 @@ elif has("entities") then
 	(.entities[] | "\(.type)#\(.id) \(pos)"
 		+ (if .components then " \(.components | tojson)" else "" end))
 elif has("inventory") then
-	"\(.player.type) hp=\(.player.components.health.health)/\(.player.components.health.maxHealth) at=\(.player.components.position | pos) lvl=\(.level) turn=\(.turnID) rhythm=\(.rhythmMode) song=\(.song.time | floor)/\(.song.length | floor)s ended=\(.song.endReached)",
+	"\(.player.type) hp=\(.player.components.health.health)/\(.player.components.health.maxHealth) at=\(.player.components.position | pos) facing=\(.facing // "?") lvl=\(.level) turn=\(.turnID) rhythm=\(.rhythmMode) song=\(.song.time | floor)/\(.song.length | floor)s ended=\(.song.endReached)",
+	"chain: x\(.player.components.grooveChain.multiplier) kills=\(.player.components.grooveChain.killCount) gold=\(.player.components.goldCounter.amount)",
 	"inv: " + (.inventory | map("\(.type)#\(.id)") | join(" "))
 elif has("id") and has("type") then
 	"\(.type)#\(.id) \(pos)"

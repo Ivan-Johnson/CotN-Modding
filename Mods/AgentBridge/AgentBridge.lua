@@ -195,14 +195,20 @@ end
 commands.state = {
 	run = function()
 		local player = requirePlayer()
-		return {
+		local result = {
 			turnID = Turn.getCurrentTurnID(),
 			level = CurrentLevel.getNumber(),
 			rhythmMode = rhythmModeName(),
 			song = { time = Music.getMusicTime(), length = Music.getMusicLength(), endReached = Music.isSongEndReached() },
-			player = dumpEntity(player, parseShow("position,health,character")),
+			player = dumpEntity(player, parseShow("position,health,character,grooveChain,goldCounter")),
 			inventory = listInventory(player),
 		}
+		for name, direction in pairs(DIRECTIONS) do
+			if player.facingDirection and player.facingDirection.direction == direction then
+				result.facing = name
+			end
+		end
+		return result
 	end,
 }
 
