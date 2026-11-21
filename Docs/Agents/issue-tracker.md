@@ -11,6 +11,7 @@ Issues and specs for this repo live as GitHub issues. Use the `gh` CLI for all o
 - **Comment on an issue**: `gh issue comment <number> --body "..."`
 - **Edit an issue**: `gh issue edit <number> --add-label "..."` / `--add-blocked-by ...` / etc.
 - **Close**: `gh issue close <number> --comment "..."`
+- **Complete an issue in a commit**: end the commit body with `Closes #N`, one keyword per issue (`Closes #1` then `Closes #2` on separate lines), so pushing closes it. Don't close it by hand afterwards.
 - **Help**: Use `gh foo --help` for more information about about `foo`.
 
 Infer the repo from `git remote -v`; `gh` does this automatically when run inside a clone.
