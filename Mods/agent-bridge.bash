@@ -105,6 +105,7 @@ while ((SECONDS < deadline)); do
 	replies="$(
 		tail -n "+$((baseline + 1))" "$COTN_LOG" |
 			grep -aF "[AgentBridge] $id " |
+			grep -a $'"\r$' |
 			sed -E 's/^.*\[AgentBridge\] [^ ]+ //; s/"[[:space:]]*$//' || true
 	)"
 	first="${replies%%$'\n'*}"
