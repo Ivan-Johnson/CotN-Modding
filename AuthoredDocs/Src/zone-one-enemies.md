@@ -33,8 +33,8 @@ Every beat count below is one player action, not a wall-clock beat.
 | `Slime2` | 2 | 2 | 2 | 2 |
 | `Slime3` | 1 | 1 | 1 | 1 |
 | `Skeleton` | 1 | 2 | 1 | 1 |
-| `Skeleton2` | 2 | n/a | 3 | 2 |
-| `Skeleton3` | 3 | n/a | 4 | 2 observed |
+| `Skeleton2` | 2 | 2 | 3 | 2 |
+| `Skeleton3` | 3 | 2 | 4 | 2 observed |
 | `Zombie` | 1 | 2 | 2 | 1 |
 | `Monkey` | 1 | 1 | 0 | 1 |
 | `Monkey2` | 2 | n/a | 0 | 2 |
@@ -48,8 +48,8 @@ Every beat count below is one player action, not a wall-clock beat.
 
 "n/a" means the component was not dumped. Damage above is the
 `innateAttack.damage`. Observed damage matched it for `Skeleton` (1),
-`Zombie` (2), `Skeleton2` (3) and `Bat3` (3). `Skeleton3` dealt 4, so its
-component was not read.
+`Zombie` (2), `Skeleton2` (3), `Bat3` (3) and `Ghost` (2). `Skeleton3` dealt
+4, so its component was not read.
 
 ### Slimes
 
@@ -80,9 +80,15 @@ component was not read.
 
 * `Monkey` and `Monkey2`: step adjacent on beat 1, then onto the player's
   tile on beat 2 and stay there. They dealt no damage in 12 beats.
-* A `Monkey` dies to one hit. `Monkey2` took two.
-* The components include `grabHopInPlaceOnHit`. I did not check whether a
-  monkey steals anything.
+* A monkey on the player's tile has grabbed the player. Every move the player
+  made (right, left, up) was blocked: the position stayed (0,0) and the dagger
+  hit the monkey instead. The components include `grabParalyzeVictim`,
+  `grabMoveOntoVictim` and `grabIncreaseHealth` (max 4).
+* A grabbing `Monkey` took four hits (`survived=true` three times, then
+  `killed`), not one. An ungrabbing `Monkey` dies to one hit; `Monkey2` took
+  two.
+* Nothing was stolen: the inventory, including both coin stacks, was identical
+  after the kill.
 
 ### Bats
 
@@ -96,20 +102,23 @@ component was not read.
 
 ### Ghost, Wraith, Trapchest
 
-* `Ghost` and `Wraith` never moved in 12 beats and were not hit by the dagger
-  at (1,0). The `Wraith` was moved through, so the attack test probably
-  spawned it elsewhere. I do not know why.
+* `Ghost` starts with `aggro.active` false and woke by itself with the player
+  3 tiles away. Once awake, it moved only on beats where the player moved away
+  from it: it advanced as the player moved left or down and stayed put when
+  the player moved toward it. It reached the player's tile and hit for 2.
+  That is why it "never moved" in the idle test.
+* `Wraith`: `aggro.active` stayed false in every test, including adjacent to
+  the player for 6 beats. It has `voiceAggro` (`wraithCry`) and never moved or
+  attacked. The player walked onto its tile without hitting it, so a spawned
+  `Wraith` seems inert. The earlier "not hit at (1,0)" result is separate:
+  (0,3) is a dirt wall, and a `Wraith` spawned there sits inside it.
 * `Trapchest` never moved. Moving into it on the second hit dealt 2 damage to
   the player (a trap), and the third hit killed it.
 
 ## Unverified
 
-* Why `Slime`, `Ghost` and `Wraith` never move. `aggro.active` was false for
-  a `Ghost`, which suggests they wake only in some condition I did not
-  trigger.
-* What a `Monkey` does while standing on the player's tile.
-* Whether `Slime` ever hits for 100.
+* What wakes a `Wraith`, and whether a spawned one differs from a natural one.
+* Why `Slime` never moves. `aggro.active` is true, so it seems to be simply
+  stationary, yet its `innateAttack.damage` is 100.
 * Whether `BatMiniboss` attacks when adjacent.
 * Whether any of these drop gold or change the multiplier when killed.
-* Whether `Skeleton2` and `Skeleton3` have `beatDelay` of 2 like `Skeleton`.
-  Their observed hits were two beats apart.
