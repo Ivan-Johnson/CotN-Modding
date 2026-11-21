@@ -84,7 +84,9 @@ commands and conventions.
   `new-run` uses no-beat mode, so time passes only when you act; `new-run
   rhythm=regular` keeps the real-time beat and lets the song end. Installing
   `AgentBridge` replaces the bundle's other mods, so run
-  `nix run .#itj-impure-tests` to put them back. See
+  `nix run .#itj-impure-tests` to put them back. Bridge commands that change
+  the game run from the tick, never via a queued input: an `IDLE` input costs
+  the groove chain. See
   `Docs/Adr/0006-agent-bridge-uses-command-file-and-log.md`.
 
 ## Read when needed
