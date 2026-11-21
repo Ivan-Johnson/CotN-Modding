@@ -1,0 +1,12 @@
+{
+	"namespace": "AgentBridge",
+	"displayName": "Agent Bridge",
+	"version": "0.1.0",
+	"synchronyVersion": "4.2.1",
+	"description": "Lets an AI agent drive a live game through a command file and NecroDancer.log. Dev-only: not intended for players.",
+	"author": "error 255",
+	"dependencies": {},
+	"api": {"scriptPath":""},
+	"tags": [],
+	"name": "AgentBridge"
+}

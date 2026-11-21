@@ -1,6 +1,7 @@
 # Mods
 
-The Synchrony mods themselves: `HelloWorld`, `ScrapeGameData`, and
+The Synchrony mods themselves: `HelloWorld`, `ScrapeGameData`,
+`AgentBridge`, and
 `HelloWorldTests`, a generic, reusable test-running framework any mod can
 optionally contribute test cases to. See the repo-root `AGENTS.md` for shared
 commands and conventions.
@@ -70,6 +71,17 @@ commands and conventions.
 * Never delete a mod's installed directory while the game runs: the game's
   live-reload stopped noticing changes after that. Replace the contents
   instead (`rsync --delete`, as `install-mods` does), or restart the game.
+
+## Driving the live game
+
+* `agent-bridge` (a flake app, also in the dev shell) lets an agent observe
+  and drive the running game to learn mechanics by experiment. Run
+  `agent-bridge install` once per session, then e.g. `agent-bridge new-run
+  Dove`, `agent-bridge spawn Skeleton`, `agent-bridge entities type=Skeleton
+  show=health`; run it with no arguments for the command list. Replies are
+  JSON and take about a second. Installing `AgentBridge` replaces the bundle's
+  other mods, so run `nix run .#itj-impure-tests` to put them back. See
+  `Docs/Adr/0006-agent-bridge-uses-command-file-and-log.md`.
 
 ## Read when needed
 

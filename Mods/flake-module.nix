@@ -88,6 +88,22 @@ let
                 }
         '';
 
+        # Sends commands to the AgentBridge mod in the running game. See
+        # `Mods/agent-bridge.bash`.
+        agentBridge = pkgs.writeShellApplication {
+                name = "agent-bridge";
+                runtimeInputs = [
+                        pkgs.coreutils
+                        pkgs.gnugrep
+                        pkgs.gnused
+                        installMods
+                ];
+                text = ''
+                        ${waitForLog}
+                        ${builtins.readFile ./agent-bridge.bash}
+                '';
+        };
+
         # Drives the game's live-reload and asserts on the resulting log
         # output. Impure (needs a running, native Steam/Proton CotN
         # instance and a live mods directory), so it lives in `apps`
@@ -165,10 +181,17 @@ in
                         program = "${impureTests}/bin/run-tests";
                         meta.description = "Rsync mods into the game's local mods directory and run its automated test suite";
                 };
+
+                agent-bridge = {
+                        type = "app";
+                        program = "${agentBridge}/bin/agent-bridge";
+                        meta.description = "Send a command to the AgentBridge mod in the running game: nix run .#agent-bridge -- state";
+                };
         };
 
         devShell = pkgs.mkShell {
                 buildInputs = [
+                        agentBridge
                         impureTests
                         installMods
 
