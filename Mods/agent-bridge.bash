@@ -24,6 +24,8 @@
 #                                   resistance a shovel must beat
 #   spawn TYPE [X Y]                next to the player by default
 #   convert ID TYPE
+#   clear                           remove every enemy (anything with an `ai`),
+#                                   so spawn tests see only what they spawn
 #   input ACTION...                 up, down, left, right, up_left, ..., idle,
 #                                   item1, item2, bomb, throw, spell1, spell2.
 #                                   Up to 50 in one call; replies once all have

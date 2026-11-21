@@ -57,6 +57,10 @@ What a tracer-bullet POC for `AgentBridge` (issue #11) verified live on CotN
   tick and turn handlers. `Object.convertImmediately` also works.
 * Converting to an unknown type does not throw; it logs
   `[Object] [warning] Invalid target type for conversion`.
+* `Entities.despawn(id)` removes an entity at once, from a command handler.
+  `AgentBridge`'s `clear` uses it on every entity with an `ai` component
+  (enemies and the shopkeeper), which leaves a level where only spawned
+  enemies act.
 * Spawning or converting to `Dove` also attaches a `DoveHead` entity on the
   same tile.
 * `FamiliarDove` spawns as a world entity. Its use as an inventory item is

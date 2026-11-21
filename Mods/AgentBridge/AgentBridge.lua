@@ -281,6 +281,24 @@ commands.spawn = {
 	end,
 }
 
+-- Removes every enemy so a test sees only what it spawns. Enemies are the
+-- entities with an `ai`; the list is built first because despawning while
+-- iterating would disturb the iteration.
+commands.clear = {
+	run = function()
+		local doomed = {}
+		for entity in Entities.entitiesWithComponents({ "ai" }) do
+			if entity.id ~= PLAYER_ID then
+				doomed[#doomed + 1] = entity.id
+			end
+		end
+		for _, id in ipairs(doomed) do
+			Entities.despawn(id)
+		end
+		return { cleared = #doomed }
+	end,
+}
+
 commands.convert = {
 	run = function(args)
 		local entity = requireEntity(args[1])
