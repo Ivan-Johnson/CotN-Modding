@@ -56,6 +56,12 @@ What a tracer-bullet POC for `AgentBridge` (issue #11) verified live on CotN
 * `FamiliarDove` spawns as a world entity. Its use as an inventory item is
   untested.
 
+## Events about the player
+
+* Hook the `object*` events (`objectGrooveChain`, `objectTakeDamage`,
+  `objectDeath`, `objectSongEnd`). The `holder*` events run per inventory
+  item: `holderGrooveChain` never fires for the player's multiplier.
+
 ## Dumping an entity
 
 * Loop over `Entities.listComponentNames()`, read `entity[name]`, and read the
