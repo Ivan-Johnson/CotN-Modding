@@ -12,8 +12,11 @@ local ESCAPES = {
 	["\t"] = "\\t",
 }
 
+-- Bytes above 0x7f are escaped too, so the output is ASCII: a game string can
+-- hold bytes that are not valid UTF-8, which would break JSON consumers. Text
+-- that was UTF-8 therefore comes back as one code point per byte.
 local function encodeString(str)
-	local escaped = str:gsub('[%c"\\]', function(char)
+	local escaped = str:gsub('[%c"\\\128-\255]', function(char)
 		return ESCAPES[char] or string.format("\\u%04x", char:byte())
 	end)
 	return '"' .. escaped .. '"'

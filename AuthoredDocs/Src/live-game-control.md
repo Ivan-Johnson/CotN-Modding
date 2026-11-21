@@ -111,6 +111,15 @@ What a tracer-bullet POC for `AgentBridge` (issue #11) verified live on CotN
 
 ## Dumping an entity
 
+* `AgentBridge`'s `entities show=@ai` dumps only the components that decide how
+  an enemy moves and attacks (`ai`, `aiPattern`, `aiBasicSeek`, `beatDelay`,
+  `aggro`, `activationRange`, `stasisAI`, `innateAttack`, ...), about 1 KB
+  instead of 15 KB; `watch=@ai` does the same for `scenario`. Presets can be
+  mixed with names: `show=@ai,grooveChain`.
+* Replies are pure ASCII: bytes above 0x7f become `\u00XX` escapes, because a
+  `show=all` dump held a byte (0xa6) that is not valid UTF-8 and broke JSON
+  parsers. Non-ASCII text therefore reads as one code point per byte.
+
 * Loop over `Entities.listComponentNames()`, read `entity[name]`, and read the
   fields named in `Components.getComponentDefaults()[name]`.
 * A dump is 12 to 17 KB (Cadence about 16.5 KB). A log line took 17 KB, so cap

@@ -140,13 +140,37 @@ local function summarizeEntity(entity)
 	return { id = entity.id, type = entity.name, x = position and position.x, y = position and position.y }
 end
 
+-- `show=@name` expands to a group of components; names an entity lacks are
+-- skipped, so one preset covers every enemy type.
+local SHOW_PRESETS = {
+	-- What decides how an enemy moves and attacks.
+	ai = {
+		"position", "health", "facingDirection", "hasMoved",
+		"ai", "aiBasicSeek", "aiPattern", "aiMoveOnFallbackCollision", "aiTeamCollision",
+		"activationRange", "aggro", "beatDelay", "beatCounter",
+		"random", "randomInitialFacingDirection", "turnOnMoveFail",
+		"stasis", "stasisAI", "stasisOnApproach",
+		"charge", "chargeStartOnDirection",
+		"grab", "grabAI", "grabIncreaseHealth",
+		"innateAttack",
+	},
+}
+
 local function parseShow(text)
 	if text == "all" then
 		return "all"
 	end
 	local show = {}
 	for name in (text or ""):gmatch("[^,]+") do
-		show[name] = true
+		local presetName = name:match("^@(.+)$")
+		if presetName then
+			local preset = assert(SHOW_PRESETS[presetName], "unknown preset '@" .. presetName .. "'")
+			for _, component in ipairs(preset) do
+				show[component] = true
+			end
+		else
+			show[name] = true
+		end
 	end
 	return show
 end
@@ -236,7 +260,10 @@ commands.entities = {
 		local show = options.show and parseShow(options.show)
 		local results = {}
 		for i, entity in ipairs(found) do
-			results[i] = show and dumpEntity(entity, show) or summarizeEntity(entity)
+			results[i] = summarizeEntity(entity)
+			if show then
+				results[i].components = dumpEntity(entity, show).components
+			end
 		end
 		return { count = #results, entities = results }
 	end,

@@ -16,9 +16,13 @@
 # uses no-beat mode, so time passes only when you act):
 #   state                           the player's position, health, facing, coin
 #                                   multiplier, kill count, gold and items
-#   entities [type=T] [component=C] [id=N] [show=C1,C2|all]
+#   entities [type=T] [component=C] [id=N] [show=C1,C2|@preset|all]
 #                                   entities with a position (or component C);
-#                                   `show` adds their components' fields
+#                                   `show` adds their components' fields.
+#                                   `@ai` expands to the components that decide
+#                                   how an enemy moves and attacks (also usable
+#                                   in scenario's `watch=`). Replies are ASCII:
+#                                   bytes above 0x7f arrive as \u00XX escapes
 #   tile X Y [X2 Y2]                the tile at X Y, or every tile in the
 #                                   rectangle (up to 400): its name, whether it
 #                                   is solid, a wall or a floor, and the dig
