@@ -17,11 +17,13 @@
 #   input ACTION                    up, down, left, right, up_left, ..., idle,
 #                                   item1, item2, bomb, throw, spell1, spell2
 #   step N                          advance N beats
-#   new-run [CHARACTER]             start a SingleZone run
+#   new-run [CHARACTER] [rhythm=regular]
+#                                   start a SingleZone run; rhythm=regular keeps
+#                                   the real-time beat, e.g. to see the song end
 #   level N
 #
-# Events (damage taken and dealt, kills, deaths, level loads) go to stderr as
-# `event: {JSON}` lines after the next command's reply.
+# Events (damage taken and dealt, kills, deaths, level loads, song ending or
+# ended) go to stderr as `event: {JSON}` lines after the next command's reply.
 #
 # Environment: COTN_LOG, COTN_LOCAL_MODS_DIR, ITJ_BUNDLE_NAME (default
 # DevBundle), ITJ_AGENT_BRIDGE_TIMEOUT (seconds, default 30). Expects

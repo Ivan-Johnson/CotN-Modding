@@ -18,6 +18,7 @@ local FileIO = require "system.game.FileIO"
 local GameSession = require "necro.client.GameSession"
 local Input = require "necro.client.Input"
 local Json = require "AgentBridge.Json"
+local Music = require "necro.audio.Music"
 local Object = require "necro.game.object.Object"
 local Player = require "necro.game.character.Player"
 local RhythmMode = require "necro.game.data.modifier.RhythmMode"
@@ -25,6 +26,7 @@ local Turn = require "necro.cycles.Turn"
 
 local CHUNK_SIZE = 4000
 local MAX_STEPS = 200
+local SONG_END_WARNING_SECONDS = 30
 local PLAYER_ID = 1
 
 -- A mod's own directory is not exposed, but the location prefix of a Lua error
@@ -63,6 +65,7 @@ local SPECIALS = {
 -- already in the file instead of running it a second time.
 local started = false
 local lastID
+local songEndWarned = false
 
 
 local function reply(id, kind, payload)
@@ -180,6 +183,7 @@ commands.state = {
 			turnID = Turn.getCurrentTurnID(),
 			level = CurrentLevel.getNumber(),
 			rhythmMode = rhythmModeName(),
+			song = { time = Music.getMusicTime(), length = Music.getMusicLength(), endReached = Music.isSongEndReached() },
 			player = dumpEntity(player, parseShow("position,health,character")),
 			inventory = listInventory(player),
 		}
@@ -255,17 +259,25 @@ commands.step = {
 
 commands["new-run"] = {
 	run = function(args)
-		local character = args[1]
+		local character, regular
+		for _, arg in ipairs(args) do
+			if arg == "rhythm=regular" then
+				regular = true
+			else
+				assert(not arg:find("=", 1, true), "unknown option '" .. arg .. "'; the only one is rhythm=regular")
+				character = arg
+			end
+		end
 		if character then
 			requireEntityType(character)
 		end
 		-- The ~1 s command latency leaves several beats between commands.
-		ExtraMode.setActive(ExtraMode.Type.NO_BEAT, true)
+		ExtraMode.setActive(ExtraMode.Type.NO_BEAT, not regular)
 		GameSession.start({ mode = GameSession.Mode.SingleZone })
 		if character then
 			Player.setCharacterType(PLAYER_ID, character)
 		end
-		return { started = "SingleZone", character = character }
+		return { started = "SingleZone", character = character, rhythmMode = rhythmModeName() }
 	end,
 }
 
@@ -360,7 +372,25 @@ event.objectDeath.add("AgentBridgeDeath", { order = "postDeathVision" }, functio
 end)
 
 event.levelLoad.add("AgentBridgeLevelLoad", { order = "lobbyLevel" }, function()
+	songEndWarned = false
 	emitEvent("level_loaded", {})
+end)
+
+event.objectSongEnd.add("AgentBridgeSongEnd", { order = "spawnEntity" }, function(ev)
+	if Player.isPlayerEntity(ev.entity) then
+		emitEvent("song_ended", { nextLevel = CurrentLevel.getNumber() + 1 })
+	end
+end)
+
+event.tick.add("AgentBridgeSongEndWarning", { order = "invokeLater" }, function()
+	if songEndWarned or not Player.getPlayerEntity(PLAYER_ID) or RhythmMode.getMode() == RhythmMode.Type.NO_BEAT then
+		return
+	end
+	local remaining = Music.getMusicLength() - Music.getMusicTime()
+	if remaining > 0 and remaining <= SONG_END_WARNING_SECONDS then
+		songEndWarned = true
+		emitEvent("song_ending", { secondsLeft = math.floor(remaining) })
+	end
 end)
 
 print("[AgentBridge] WARNING: dev-only mod; it runs commands from " .. COMMAND_FILE)

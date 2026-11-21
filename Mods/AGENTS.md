@@ -81,9 +81,10 @@ commands and conventions.
   show=health`; run it with no arguments for the command list. Replies are
   JSON and take about a second. The game's events print to stderr as `event:`
   lines after the next command's reply; run `state` to flush the latest.
-  `new-run` uses no-beat mode, so time passes only when you act. Installing
-  `AgentBridge` replaces the bundle's
-  other mods, so run `nix run .#itj-impure-tests` to put them back. See
+  `new-run` uses no-beat mode, so time passes only when you act; `new-run
+  rhythm=regular` keeps the real-time beat and lets the song end. Installing
+  `AgentBridge` replaces the bundle's other mods, so run
+  `nix run .#itj-impure-tests` to put them back. See
   `Docs/Adr/0006-agent-bridge-uses-command-file-and-log.md`.
 
 ## Read when needed
