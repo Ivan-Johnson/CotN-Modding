@@ -121,6 +121,18 @@ if [[ ! -d $modDir ]]; then
 		echo "agent-bridge: installed AgentBridge but it did not report ready; is the game running?" >&2
 		exit 1
 	fi
+	# One install makes the game load the mod twice a few milliseconds apart,
+	# and the second load discards a command sent after the first ready line.
+	# So wait until the ready lines stop coming.
+	readyCount=0
+	while true; do
+		sleep 1
+		newCount=$(tail -n "+$((installBaseline + 1))" "$COTN_LOG" | grep -acF "[AgentBridge] ready" || true)
+		if ((newCount == readyCount)); then
+			break
+		fi
+		readyCount=$newCount
+	done
 fi
 
 seenFile="$modDir/.events-seen"
