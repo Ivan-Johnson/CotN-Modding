@@ -115,10 +115,35 @@ Every beat count below is one player action, not a wall-clock beat.
 * `Trapchest` never moved. Moving into it on the second hit dealt 2 damage to
   the player (a trap), and the third hit killed it.
 
+## Gold and the coin multiplier
+
+Read from the player's `grooveChain` and `goldCounter` components after
+kills, in no-beat mode.
+
+* A killed enemy leaves a `ResourceCoinN` entity on its tile. The player
+  gets the gold by walking onto it.
+* The multiplier starts at 1. `grooveChain` has `killsForInitMultiplier` 1,
+  `killsPerMultiplier` 4 and `maximumMultiplier` 3, and `killCount` followed
+  that: the first kill gave multiplier 2 and the fifth gave 3.
+* Six `Slime` kills in a row gave +2, +3, +3, +3, +3, +4 gold. That fits
+  "the multiplier at the kill, plus 1", with the multiplier before the
+  kill's own increase.
+* The chain breaks (`multiplier_lost`, `killCount` back to 0) on an `idle`
+  action, even in no-beat mode, and on a failed action such as moving into a
+  wall. Moving to an empty tile does not break it.
+* Damage taken did not get tested cleanly: the wall bump broke the chain
+  before the `Skeleton` hit.
+* One kill each, with the coin picked up, gave 2 gold (`Zombie`, `Monkey`)
+  and 4 gold (`Skeleton`, `Bat`). Pickups were not confirmed individually,
+  so treat those as rough. A `Skeleton2` kill left a `ResourceCoin6`.
+* `ResourceDiamond` entities in the entity list are part of the level, not
+  drops.
+
 ## Unverified
 
 * What wakes a `Wraith`, and whether a spawned one differs from a natural one.
+* Whether taking damage breaks the multiplier, and what each type's coin is
+  worth.
 * Why `Slime` never moves. `aggro.active` is true, so it seems to be simply
   stationary, yet its `innateAttack.damage` is 100.
 * Whether `BatMiniboss` attacks when adjacent.
-* Whether any of these drop gold or change the multiplier when killed.
