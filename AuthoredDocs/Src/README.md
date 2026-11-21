@@ -16,5 +16,7 @@ matches your task.
 * [zone-one-cadence.md](./zone-one-cadence.md): what a single-zone zone one
   run as Cadence starts with and contains, enemy stats, and open questions
   about combat and damage.
+* [zone-one-enemies.md](./zone-one-enemies.md): per-type health, damage,
+  speed, movement and hits to kill for the zone one enemies.
 * [dove.md](./dove.md): the Dove character's components, items and traits, and
   what is still unverified about how it works.
