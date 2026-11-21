@@ -13,3 +13,5 @@ matches your task.
 * [live-game-control.md](./live-game-control.md): getting commands into and
   output out of a running game, running code in-turn, moving the player,
   spawning or converting entities, and dumping an entity.
+* [dove.md](./dove.md): the Dove character's components, items and traits, and
+  what is still unverified about how it works.
