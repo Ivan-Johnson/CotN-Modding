@@ -35,6 +35,13 @@
 #                                   the player moved from and to, tiles that
 #                                   changed nearby (a dug wall), entities within
 #                                   12 tiles that moved or died, and its events
+#   scenario TYPE X Y [watch=C1,C2] [clear=true] [force=true] ACTION...
+#                                   one whole experiment on the current level:
+#                                   optionally clear the enemies, spawn TYPE at
+#                                   X Y, perform the actions, and reply like
+#                                   `input` plus the spawned entity's `watch`
+#                                   components (default position, health,
+#                                   aggro) before and after. Run `new-run` first
 #   step N                          like `input idle` N times, but lists only
 #                                   the beats where something happened
 #   new-run [CHARACTER] [rhythm=regular]
@@ -82,7 +89,11 @@ def tile: "\(.tile // "none") solid=\(.solid) wall=\(.wall) floor=\(.floor)"
 	+ (if .digResistance then " dig=\(.digResistance)" else "" end);
 if has("results") then
 	"hp=\(.player.health)/\(.player.maxHealth) at=\(.player | pos) lvl=\(.level) turn=\(.turnID)",
-	(.results | to_entries[] | .key as $i | .value | action($i))
+	(.results | to_entries[] | .key as $i | .value | action($i)),
+	(if .watched then
+		"watched \(.watched.before.type)#\(.watched.before.id) before: \(.watched.before.components | tojson)",
+		"watched \(.watched.before.type)#\(.watched.before.id) after:  \(.watched.after | if .gone then "gone" else .components | tojson end)"
+	else empty end)
 elif has("tiles") then
 	(.tiles[] | "\(pos) \(tile)")
 elif has("tile") or has("solid") then

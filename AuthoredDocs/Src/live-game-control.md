@@ -61,6 +61,11 @@ What a tracer-bullet POC for `AgentBridge` (issue #11) verified live on CotN
   `AgentBridge`'s `clear` uses it on every entity with an `ai` component
   (enemies and the shopkeeper), which leaves a level where only spawned
   enemies act.
+* `AgentBridge`'s `scenario TYPE X Y ACTION...` runs a whole experiment on
+  the current level in one call: it optionally clears the enemies, spawns,
+  performs the actions and reports the spawned entity's chosen components
+  before and after. Level layouts differ between runs, so check that the
+  spawn tile is floor.
 * Spawning or converting to `Dove` also attaches a `DoveHead` entity on the
   same tile.
 * `FamiliarDove` spawns as a world entity. Its use as an inventory item is

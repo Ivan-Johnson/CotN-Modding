@@ -280,7 +280,7 @@ commands.spawn = {
 		local tile = describeTile(x, y)
 		if (tile.solid or not tile.tile) and args[4] ~= "force" then
 			error(string.format(
-				"(%d,%d) is %s; add `force` as the last argument to spawn there anyway",
+				"(%d,%d) is %s; add `force` (`force=true` for scenario) to spawn there anyway",
 				x, y, tile.tile and (tile.tile .. ", a solid tile") or "outside the level"
 			), 0)
 		end
@@ -367,6 +367,14 @@ local function finishJob(extra)
 	payload.player = playerSummary()
 	payload.turnID = Turn.getCurrentTurnID()
 	payload.level = CurrentLevel.getNumber()
+	if finished.watch then
+		local watch = finished.watch
+		local exists = Entities.entityExists(watch.id)
+		payload.watched = {
+			before = watch.before,
+			after = exists and dumpEntity(Entities.getEntityByID(watch.id), watch.show) or { gone = true },
+		}
+	end
 	replyData(finished.id, payload)
 end
 
@@ -490,6 +498,47 @@ commands.step = {
 			names[i] = "idle"
 		end
 		return startJob(id, names, true)
+	end,
+}
+
+-- Runs a whole experiment against the current level in one call: optionally
+-- clears the enemies, spawns TYPE at X Y, performs the actions, and replies
+-- with the actions' outcomes plus the spawned entity's `watch` components
+-- before and after. Start from a fresh level with `new-run` first.
+commands.scenario = {
+	run = function(args, id)
+		local words, options = {}, {}
+		for _, arg in ipairs(args) do
+			local key, value = arg:match("^(%w+)=(.*)$")
+			if key then
+				options[key] = value
+			else
+				words[#words + 1] = arg
+			end
+		end
+		local typeName, x, y = words[1], words[2], words[3]
+		assert(typeName and x and y, "expected TYPE X Y before the actions")
+		local names = {}
+		for i = 4, #words do
+			names[#names + 1] = words[i]
+		end
+		assert(#names >= 1 and #names <= MAX_INPUTS, "give 1 to " .. MAX_INPUTS .. " actions")
+		for _, name in ipairs(names) do
+			resolveAction(name)
+		end
+		local show = parseShow(options.watch or "position,health,aggro")
+		if options.clear == "true" then
+			commands.clear.run()
+		end
+		local spawnArgs = { typeName, x, y, options.force == "true" and "force" or nil }
+		local spawned = commands.spawn.run(spawnArgs)
+		startJob(id, names, false)
+		job.watch = {
+			id = spawned.id,
+			show = show,
+			before = dumpEntity(Entities.getEntityByID(spawned.id), show),
+		}
+		return PENDING
 	end,
 }
 
