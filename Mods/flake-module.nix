@@ -126,6 +126,7 @@ let
                 ];
                 text = ''
                         ${waitForLog}
+                        builtScriptHash=${builtins.hashString "sha256" (builtins.readFile ./agent-bridge.bash)}
                         ${builtins.readFile ./agent-bridge.bash}
                 '';
         };

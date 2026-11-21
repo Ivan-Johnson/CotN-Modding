@@ -93,6 +93,11 @@ commands and conventions.
   all have resolved, with each one's outcome, so batch them: `agent-bridge
   input right right up`. The game's events print to stderr as `event:`
   lines after the next command's reply; run `state` to flush the latest.
+  The `agent-bridge` in your shell is a built copy of `Mods/agent-bridge.bash`,
+  but the mod is installed from source, so after editing the script the CLI
+  is stale (no new commands) until the dev shell is re-entered; it warns when
+  it detects this. Until then, run `bash Mods/agent-bridge.bash` from the dev
+  shell.
   `new-run` uses no-beat mode, so time passes only when you act; `new-run
   rhythm=regular` keeps the real-time beat and lets the song end. Installing
   `AgentBridge` replaces the bundle's other mods, and

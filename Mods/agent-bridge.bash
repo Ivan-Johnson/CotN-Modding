@@ -134,6 +134,17 @@ elif has("id") and has("type") then
 else tojson end
 EOF
 
+# The dev shell holds a built copy of this script, but `install-mods` installs
+# the mod from the source tree, so after an edit the two can drift apart until
+# the shell is re-entered. `builtScriptHash` is set by the nix build.
+sourceScript="${ITJ_FLAKE_ROOT:-}/Mods/agent-bridge.bash"
+if [[ -n ${builtScriptHash:-} && -f $sourceScript ]]; then
+	sourceHash=$(sha256sum "$sourceScript" | cut -d' ' -f1)
+	if [[ $sourceHash != "$builtScriptHash" ]]; then
+		echo "agent-bridge: warning: this CLI is older than Mods/agent-bridge.bash, so it may lack commands the installed mod has; re-enter the dev shell (or run 'bash Mods/agent-bridge.bash' from it)" >&2
+	fi
+fi
+
 if [[ ${1:-} == "" ]]; then
 	sed -n '2,/^set -euo/p' "${BASH_SOURCE[0]}" | sed '$d; s/^# \{0,1\}//' >&2
 	exit 2
