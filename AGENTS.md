@@ -67,6 +67,9 @@ than silently overriding it.
 Issues live in GitHub Issues for `Ivan-Johnson/CotN-Modding`, via `gh`. See
 `Docs/Agents/issue-tracker.md`.
 
+**Implementing an issue:** end the commit message with `Closes #<n>` (on the
+last commit if there are several).
+
 ### Triage labels
 
 Default five-role vocabulary, plus a `priority:now` label. See
