@@ -22,3 +22,7 @@ Separate from the triage roles above: this repo doesn't do versioned releases, s
 | *(unlabeled)*  | Backlog default — fine, just not urgent                           |
 
 `priority:now` composes with the triage labels above and with blocking edges: an issue can be `priority:now` **and** `ready-for-agent` **and** still gated by an open blocker. It only means "prioritize me," not "unblocked" or "ready" — check those separately.
+
+## Topic labels
+
+`agent-explorability` marks anything that makes it easier for AI agents to explore and learn about CotN, such as `AgentBridge` features. It is a topic, not a triage role, so it composes with every label above.
