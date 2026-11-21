@@ -49,14 +49,15 @@ Read from `innateAttack`, `health` and `beatDelay`:
 | Type     | Health | `innateAttack.damage` | `beatDelay.interval` |
 | -------- | ------ | --------------------- | -------------------- |
 | Slime    | 1      | 100                   | 1                    |
-| Slime2   | 2 or 4 | 2                     | 2                    |
+| Slime2   | 2      | 2                     | 2                    |
 | Skeleton | 1      | 1                     | 2                    |
 | Zombie   | 1      | 2                     | 2                    |
 | Monkey   | 1      | 0                     | 1                    |
 | BatMiniboss | 2   | 3                     | 2                    |
 
-* `Slime2` showed `maxHealth` 4 in one run and 2 in every later one. I do not
-  know why.
+* `Slime2` showed `maxHealth` 4 in one early run; every later measurement
+  gave 2.
+* Full per-type stats and movement are in [zone-one-enemies.md](zone-one-enemies.md).
 * `Slime`'s damage of 100 is as read; I never let one hit me, so I do not know
   what it does in play.
 * Dagger kills take one hit per health point: a spawned `Slime2` went from 2 to
@@ -64,8 +65,9 @@ Read from `innateAttack`, `health` and `beatDelay`:
 
 ## Behavior
 
-* Enemies in the starting level mostly stayed put while I idled; they did not
-  converge on the player. A spawned `Skeleton` or `Zombie` next to the player
+* Enemies in the starting level mostly stayed put while I idled because most
+  types do not seek the player (see
+  [zone-one-enemies.md](zone-one-enemies.md#movement-ai)). A spawned `Skeleton` or `Zombie` next to the player
   attacked at once.
 * A spawned `Skeleton` placed at (3, 0) was adjacent (1, 0) after the one beat
   the spawn took. A spawned `Monkey` moved onto the player's tile. A spawned
@@ -93,7 +95,7 @@ The first run used real-time rhythm, and one `step 1` sample cost 3 to 4 times
 a spawned `Skeleton` (`damage` 1, `interval` 2) took the player from 12 to 11,
 11, 10, 10, 9, 9 over six `step 1` samples, i.e. its stated damage every second
 step. A spawned `Zombie` beside the player did not attack in six steps; it
-walks a straight line.
+walks a straight line, and attacks only when the player is on its line.
 
 In no-beat mode the song never ends, a beat cannot be missed, and enemies do
 not come to you: time passes only when you act.

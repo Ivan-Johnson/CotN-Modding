@@ -15,15 +15,49 @@ layout and the run's starting state see [zone-one-cadence.md](./zone-one-cadence
 
 Every beat count below is one player action, not a wall-clock beat.
 
+A second pass re-measured every type in a 5 by 5 open room, spawning with
+`spawn TYPE X Y force`, one enemy at a time. Where it contradicts the first
+pass, this page now states the second pass. Pitfalls when repeating it:
+
+* The level is random. Check with `tile` that the spawn tile is open; `force`
+  places an enemy inside a wall without complaint, and it then just sits.
+* Send at most about 20 idles per `input`. Cadence over longer batches
+  looked shifted by one beat; single-action calls did not show that. The
+  cause is not known.
+* A spawned enemy's first action can come one beat late, so beat 1 is not
+  always a move.
+
+## Movement AI
+
+`ai.id` picks the movement style, and `ai.directions` holds direction codes:
+1 is right, 3 up, 5 left, 7 down, and 2, 4, 6 and 8 are the diagonals.
+
+| `ai.id` | Style | Types |
+|---------|-------|-------|
+| 0 | stationary | `Slime`, `Trapchest`, the `Headless` skeletons |
+| 1 | straight line, reverses at an obstacle | `Zombie` |
+| 2 | fixed loop (`aiPattern.moves`) | `Slime2`, `Slime3` |
+| 3 | random walk | `Bat`, `Bat2`, `Bat3`, `BatMiniboss` |
+| 7 | seeks the player | `Skeleton`, `Skeleton2`, `Skeleton3`, `Monkey`, `Monkey2`, `Ghost`, `Wraith` |
+
+`Wraith` has `ai.id` 7 but never acts; see below.
+
 ## Shared components
 
-* All thirteen types below have `activationRange.radius` 3, an `ai.directions`
-  list and `aiBasicSeek`.
-* `beatDelay.interval` is how many beats pass between the enemy's actions.
+* All types below have `activationRange.radius` 3, an `ai.directions` list
+  and `aiBasicSeek`, whatever their `ai.id`.
+* `beatDelay.interval` is how many beats pass between the enemy's actions:
+  1 acts every beat, 2 every second beat.
 * `innateAttack.damage` is the damage of its attack.
+* `aggro.active` is not what makes an enemy act. `Skeleton` and `Monkey`
+  start with it false and chase at once.
 * Enemies far from the player also move each beat. With the player idle,
   `Zombie` and `Slime2` ids more than 8 tiles away still stepped every action,
-  so `activationRange` is not a limit on movement.
+  so `activationRange` is not a limit on movement. This was not re-measured.
+* Every seeker moves along x first and only then along y, even when the
+  vertical distance is larger.
+* An attack costs the attacker's slot: once adjacent, `Skeleton`, `Zombie`
+  and `Slime2` hit every second beat, and so does `Slime3` (see below).
 
 ## Stats and behavior
 
@@ -34,86 +68,120 @@ Every beat count below is one player action, not a wall-clock beat.
 | `Slime3` | 1 | 1 | 1 | 1 |
 | `Skeleton` | 1 | 2 | 1 | 1 |
 | `Skeleton2` | 2 | 2 | 3 | 2 |
-| `Skeleton3` | 3 | 2 | 4 | 2 observed |
+| `Skeleton3` | 3 | 2 | 4 | 3 |
 | `Zombie` | 1 | 2 | 2 | 1 |
-| `Monkey` | 1 | 1 | 0 | 1 |
-| `Monkey2` | 2 | n/a | 0 | 2 |
+| `Monkey` | 1 | 1 | 0 | 1, or 4 while grabbing |
+| `Monkey2` | 2 | 1 | 0 | 2, or 6 while grabbing |
 | `Bat` | 1 | 2 | 1 | 1 |
 | `Bat2` | 1 | 1 | 2 | 1 |
 | `Bat3` | 1 | 1 | 3 | 1 |
-| `BatMiniboss` | 2 | 2 | 3 | 1 observed |
-| `Ghost` | 1 | 1 | 2 | unknown |
-| `Wraith` | 1 | 1 | 1 | unknown |
-| `Trapchest` | 1 | 1 | 2 | 1 (after a trap) |
+| `BatMiniboss` | 2 | 2 | 3 | at least 2 |
+| `Ghost` | 1 | 1 | 2 | 1, only on the turn that faces it |
+| `Wraith` | 1 | 1 | 1 | cannot be hit |
+| `Trapchest` | 1 | 1 | 2 | 3 bumps |
 
-"n/a" means the component was not dumped. Damage above is the
-`innateAttack.damage`. Observed damage matched it for `Skeleton` (1),
-`Zombie` (2), `Skeleton2` (3), `Bat3` (3) and `Ghost` (2). `Skeleton3` dealt
-4, so its component was not read.
+Damage is the `innateAttack.damage`. Observed damage matched it for
+`Slime2` (2), `Slime3` (1), `Skeleton` (1), `Skeleton2` (3), `Skeleton3` (4),
+`Zombie` (2), `Bat` (1), `Bat2` (2), `Bat3` (3) and `Ghost` (2).
 
 ### Slimes
 
-* `Slime`: never moved in 12 beats and dies in one hit. Its damage of 100 was
-  never observed, because nothing attacked.
-* `Slime2`: moves every other beat, bouncing between two adjacent tiles. It
-  does not approach. It took two hits to kill, and its first hit moved it
-  1,1 while adjacent.
-* `Slime3`: moves every beat around a 4-tile loop,
-  (2,1), (1,1), (1,0), (2,0). Its `aiPattern` moves are `[1,7,5,3]`.
+* `Slime`: stationary and harmless. It did not move or attack in 8 beats,
+  even adjacent to the player, so its damage of 100 never fired. One hit
+  kills it.
+* `Slime2`: bounces down and up (codes `[7,3]`) on every second beat,
+  regardless of where the player is. Which direction it starts with depends on
+  the spawn tile. If the player is in its path it attacks for 2 every second
+  beat and does not move. A move into a wall is skipped and it goes the
+  other way instead (spawned at (0,2) with a wall below, it went up first).
+* `Slime3`: walks a 4-tile loop on every beat: right, down, left, up
+  (`[1,7,5,3]`), so clockwise on screen. The starting corner depends on
+  the spawn tile: from (1,1) it goes right first, from (2,2) next to a wall it
+  went left first. If the player is on its next step it attacks for 1 every
+  second beat, not every beat, and stays put.
+* After a hit, `Slime2` carries on with its bounce; the first hit moved it
+  from (1,0) to (1,1), which is its normal move, not knockback.
 
 ### Skeletons
 
-* `Skeleton`: steps adjacent on the first beat, then hits every second
-  beat. Five hits took the player from 12 to 7.
-* `Skeleton2`: hits for 3 every two beats. It killed the player in 12 beats
-  (12, 9, 6, 3, 0). After one dagger hit it becomes a
-  `Skeleton2Headless` and keeps advancing.
-* `Skeleton3`: hits for 4 every two beats. It killed the player at 12, 8, 4,
-  0. Two dagger hits were needed, and the second moved it next to the
-  player.
+* `Skeleton`, `Skeleton2`, `Skeleton3`: seek the player, one tile every second
+  beat, x first and then y. Next to the player they attack every second
+  beat. Which beat they first move on depends on the spawn timing.
+* `Skeleton2` and `Skeleton3` hit for 3 and 4, so each kills a 12 health
+  player in four and three hits.
+* A dagger hit turns `Skeleton2` (first hit) and `Skeleton3` (second hit)
+  into `Skeleton2Headless` and `Skeleton3Headless`, shoved one tile away along
+  the hit direction. `Skeleton2` needs 2 hits in total and `Skeleton3` needs 3.
+  The first hit on `Skeleton3` changed nothing visible.
+* A headless skeleton stood still in every test: 7 to 12 beats, with the
+  player idle, then moving around the room. Spawned directly it also does
+  nothing. It has `charge` components but no `ai` movement (`ai.id` 0). The
+  first pass's "keeps advancing" was not reproduced.
 
 ### Zombie
 
-* Steps adjacent on beat 1, then hits for 2 every second beat.
+* Walks in a straight line, one tile every second beat. The initial direction
+  is random (sampled over four directions from the same tile), not toward the
+  player. At a wall it pauses one move slot and turns round, so a corridor of
+  n tiles gives n-1 moves, a pause, and n-1 moves back.
+* It does not chase: it walked past a player standing one tile off its line.
+* If the player is next on its line it stops and attacks for 2 every second
+  beat. A zombie spawned at (0,-2) did this.
 
 ### Monkeys
 
-* `Monkey` and `Monkey2`: step adjacent on beat 1, then onto the player's
-  tile on beat 2 and stay there. They dealt no damage in 12 beats.
+* `Monkey` and `Monkey2`: seek the player one tile every beat, x first, and step
+  onto the player's tile. From (2,0) they were adjacent after beat 1 and on
+  the player after beat 2. They deal no damage.
 * A monkey on the player's tile has grabbed the player. Every move the player
-  made (right, left, up) was blocked: the position stayed (0,0) and the dagger
-  hit the monkey instead. The components include `grabParalyzeVictim`,
-  `grabMoveOntoVictim` and `grabIncreaseHealth` (max 4).
-* A grabbing `Monkey` took four hits (`survived=true` three times, then
-  `killed`), not one. An ungrabbing `Monkey` dies to one hit; `Monkey2` took
-  two.
-* Nothing was stolen: the inventory, including both coin stacks, was identical
-  after the kill.
+  made was blocked and the dagger hit the monkey instead. The components
+  include `grabParalyzeVictim`, `grabMoveOntoVictim` and `grabIncreaseHealth`.
+* Grabbing multiplies the monkey's health: `Monkey` goes from 1 to 4
+  (`multiplier` 4, `max` 4) and `Monkey2` from 2 to 6 (`multiplier` 3, `max` 6).
+  A grabbing `Monkey` took 4 hits and a grabbing `Monkey2` took 6. A monkey
+  hit before it grabs dies to its normal health: 1 hit, or 2 for `Monkey2`.
+  A first hit on `Monkey2` moved it back one tile, and it came back.
+* Nothing was stolen: the inventory was identical after each kill. No coin
+  was left when a monkey died on the player's tile.
 
 ### Bats
 
-* Bats fly erratically (`aiMoveOnFallbackCollision` is present), so they
-  keep leaving the tile next to the player.
-* `Bat2` and `Bat3` move every beat. `Bat3` hit once for 3 within 12 beats.
-  `Bat` and `Bat2` never hit within 12 beats.
-* `Bat3` has eight directions in its `ai.directions`.
-* `BatMiniboss` moves every second beat and did not attack in 12 beats.
-  A dagger hit did not kill it.
+* Bats take a random step with no bias towards the player. Over about 330 steps
+  across `Bat`, `Bat2`, `Bat3` and `BatMiniboss`, 48 to 51% of the steps
+  got closer, which is chance. They attack only when a
+  random step lands on the player; the hit takes the slot of a move.
+* `Bat`, `BatMiniboss`: one step every second beat, in the four
+  directions. `Bat2`: one step every beat, four directions. `Bat3`: one step
+  every beat, in all eight directions, so diagonals appear.
+* A step into a wall seems to be lost, so a bat sometimes skips a beat. Over 40 beats
+  `Bat2` and `Bat3` moved 34 to 39 times.
+* `Bat3` hit the player 2 to 4 times in 40 beats; `Bat2` hit 0 to 2 times, and `Bat` 3 times in one trial and never in two.
+* `BatMiniboss` did not attack in 40 beats. One dagger hit did not kill it.
 
 ### Ghost, Wraith, Trapchest
 
-* `Ghost` starts with `aggro.active` false and woke by itself with the player
-  3 tiles away. Once awake, it moved only on beats where the player moved away
-  from it: it advanced as the player moved left or down and stayed put when
-  the player moved toward it. It reached the player's tile and hit for 2.
-  That is why it "never moved" in the idle test.
-* `Wraith`: `aggro.active` stayed false in every test, including adjacent to
-  the player for 6 beats. It has `voiceAggro` (`wraithCry`) and never moved or
-  attacked. The player walked onto its tile without hitting it, so a spawned
-  `Wraith` seems inert. The earlier "not hit at (1,0)" result is separate:
-  (0,3) is a dirt wall, and a `Wraith` spawned there sits inside it.
-* `Trapchest` never moved. Moving into it on the second hit dealt 2 damage to
-  the player (a trap), and the third hit killed it.
+* `Ghost` reacts to which way the player faces. It moves toward the player,
+  one tile a beat, x first, only while the player faces away from it, and
+  stands still while the player faces it. Facing away means the ghost is
+  behind the player: after the player moved up, a ghost at the lower right
+  closed in; after the player moved down with the ghost level to the right, it
+  stayed. It also keeps closing in while the player idles, as the facing
+  persists.
+* An adjacent `Ghost` hits for 2 on a beat when the player faces away. Pressing
+  toward a ghost while already facing it did nothing at all in 6 tries: no
+  hit, no move. A ghost can be killed on the action that turns the player to
+  face it: facing left, then pressing right with the ghost adjacent on the right
+  killed it in one hit. It starts with `aggro.active` false, and it has
+  `stasisAI` and `freezeAttackableFlags` components, which probably
+  implement the freeze.
+* `Wraith`: inert and not solid, even though `ai.id` is 7. It never moved or
+  attacked in any test, including adjacent to the player for 6 beats while the
+  player faced away. The player walks through its tile without hitting it, so
+  it cannot be hit. `aggro.active` stayed false. What a natural `Wraith` does
+  is unknown.
+* `Trapchest` never moves. Bumping it once does nothing, the second bump
+  deals 2 to the player, and the third kills it. It leaves a random item
+  (`HeadSpikedEars`, `WeaponHarp` and `Torch1` in three tries), not coins.
 
 ## Gold and the coin multiplier
 
@@ -139,11 +207,41 @@ kills, in no-beat mode.
 * `ResourceDiamond` entities in the entity list are part of the level, not
   drops.
 
-## Unverified
+* A second pass saw these coin entities after one kill each, with the
+  multiplier not controlled: `Slime` 2, `Slime3` 4, `Skeleton` 4, `Zombie` 2,
+  `Monkey` 2, `Bat` 4, `Bat2` 6, `Bat3` 30 (suspiciously high), `Skeleton2` 6
+  and `Skeleton3` 8 (both left by the headless form). Do not read these as
+  per-type values yet. `Trapchest` leaves an item and `Ghost` and `Wraith` were
+  not measured.
 
-* What wakes a `Wraith`, and whether a spawned one differs from a natural one.
-* Whether taking damage breaks the multiplier, and what each type's coin is
-  worth.
-* Why `Slime` never moves. `aggro.active` is true, so it seems to be simply
-  stationary, yet its `innateAttack.damage` is 100.
-* Whether `BatMiniboss` attacks when adjacent.
+## Unverified and still to do
+
+Not yet re-measured in the second pass:
+
+* Per-type coin value with the chain reset first (`idle`, then kill), and
+  whether taking damage breaks the multiplier. The run that was meant to
+  measure this was stopped.
+* `Ghost` movement from diagonal positions, and whether it uses the same x
+  first rule when blocked.
+* How seekers path around obstacles. Every seeker test had a clear line.
+* The `activationRange` claim above, and whether an enemy beyond radius 3
+  waits. A test at the edge of the room was invalid because `force` had
+  spawned the enemy inside a wall.
+* Seekers while the player runs away: whether `Monkey` keeps pace and
+  `Skeleton` lags.
+* Whether a `Zombie` can be hit while walking, and how it reacts to another
+  enemy in its way.
+* What decides a pattern slime's starting step. `Slime2` and `Slime3` start at
+  an index that is the same for the same tile but differs between tiles.
+* Whether a bat's lost beats come from walls or something else, and the
+  one-beat shift seen on 40-beat batches.
+* After some trial sequences, newly spawned enemies stood still, including
+  `Slime2` and `Slime3` on open floor, until `new-run`. It followed a blocked
+  slime trial once and did not repeat in a clean run, so it may be a
+  harness artifact. Not diagnosed.
+* What wakes a `Wraith`, and what a natural one does.
+* Whether `BatMiniboss` ever attacks, and how many hits kill it.
+* Why `Slime` never moves despite `innateAttack.damage` 100.
+* `Skeleton2Headless` and `Skeleton3Headless` when a natural level spawns
+  them, and what the `charge` components do.
+* Everything above was measured as Cadence with a dagger, in no-beat mode.
