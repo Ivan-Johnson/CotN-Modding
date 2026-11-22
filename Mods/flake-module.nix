@@ -78,14 +78,6 @@ let
                                 touch "$out"
                         '';
 
-        # Runs the route search behind `agent-bridge route` under plain
-        # LuaJIT; see `Mods/test-route.lua`.
-        routeTest = pkgs.runCommand "cotn-route-test" { nativeBuildInputs = [ pkgs.luajit ]; } ''
-                cd ${./.}
-                luajit test-route.lua
-                touch "$out"
-        '';
-
         # Installs mods from the source tree (not the store, which only
         # sees git-tracked files) into the game as one bundle mod. See
         # `Mods/install-mods.bash`.
@@ -120,24 +112,6 @@ let
                         done
                 }
         '';
-
-        # Sends commands to the AgentBridge mod in the running game. See
-        # `Mods/agent-bridge.bash`.
-        agentBridge = pkgs.writeShellApplication {
-                name = "agent-bridge";
-                runtimeInputs = [
-                        pkgs.coreutils
-                        pkgs.gnugrep
-                        pkgs.gnused
-                        pkgs.jq
-                        installMods
-                ];
-                text = ''
-                        ${waitForLog}
-                        builtScriptHash=${builtins.hashString "sha256" (builtins.readFile ./agent-bridge.bash)}
-                        ${builtins.readFile ./agent-bridge.bash}
-                '';
-        };
 
         # The single unit-test entrypoint: takes the game-instance lock,
         # installs the mods, runs the tests and prints the results. Impure
@@ -190,7 +164,6 @@ in
                 mods-layout = modsLayout;
                 bytecode-api = bytecodeApiTest;
                 bundle-layout = bundleLayoutTest;
-                route = routeTest;
                 impure-tests-lock = impureTestsLockTest;
         };
 
@@ -206,17 +179,10 @@ in
                         program = "${impureTests}/bin/run-tests";
                         meta.description = "Rsync mods into the game's local mods directory and run its automated test suite";
                 };
-
-                agent-bridge = {
-                        type = "app";
-                        program = "${agentBridge}/bin/agent-bridge";
-                        meta.description = "Send a command to the AgentBridge mod in the running game: nix run .#agent-bridge -- state";
-                };
         };
 
         devShell = pkgs.mkShell {
                 buildInputs = [
-                        agentBridge
                         impureTests
                         installMods
 

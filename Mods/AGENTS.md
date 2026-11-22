@@ -1,7 +1,6 @@
 # Mods
 
-The Synchrony mods themselves: `HelloWorld`, `ScrapeGameData`,
-`AgentBridge`, and
+The Synchrony mods themselves: `HelloWorld`, `ScrapeGameData`, and
 `HelloWorldTests`, a generic, reusable test-running framework any mod can
 optionally contribute test cases to. See the repo-root `AGENTS.md` for shared
 commands and conventions.
@@ -100,106 +99,6 @@ commands and conventions.
 * Never delete a mod's installed directory while the game runs: the game's
   live-reload stopped noticing changes after that. Replace the contents
   instead (`rsync --delete`, as `install-mods` does), or restart the game.
-
-## Driving the live game
-
-* Prefer a unit test that reports values (see "Dev loop") over driving the
-  game by hand; use the rest of this section only when a test cannot answer
-  the question.
-* `agent-bridge` (a flake app, also in the dev shell) lets an agent observe
-  and drive the running game to learn mechanics by experiment, e.g.
-  `agent-bridge new-run Dove`, `agent-bridge spawn Skeleton`, `agent-bridge
-  entities type=Skeleton show=health`; run it with no arguments for the
-  command index and `agent-bridge help COMMAND` for one command's full
-  description. `entities` hides held items and wall torches unless given
-  `type`, `component` or `id`, or `all=true`; `near=R` and `exclude=T1,T2`
-  narrow it further. Any command installs `AgentBridge` first when it is missing.
-  Replies are compact text (`--json` for the raw JSON; the mod reports
-  entities within 12 tiles, the text shows those within 6) and take about a
-  second. `input` takes several actions and replies once
-  all have resolved, with each one's outcome, so batch them: `agent-bridge
-  input right right up`. The game's events print to stderr as `event:`
-  lines after the next command's reply; run `state` to flush the latest.
-  The `agent-bridge` in your shell is a built copy of `Mods/agent-bridge.bash`,
-  but the mod is installed from source, so after editing the script the CLI
-  is stale (no new commands) until the dev shell is re-entered; it warns when
-  it detects this. Until then, run `nix run .#agent-bridge -- <cmd>`: the flake
-  wrapper supplies `wait_for_log`, so a bare `bash Mods/agent-bridge.bash`
-  fails with `wait_for_log: command not found` (after installing the mod).
-  `new-run` uses no-beat mode, so time passes only when you act; `new-run
-  rhythm=regular` keeps the real-time beat and lets the song end. Installing
-  `AgentBridge` replaces the bundle's other mods, and
-  `nix run .#itj-impure-tests` (which the pre-commit hook also runs) replaces
-  the bundle with the test mods and `AgentBridge` (so its own test runs), which
-  leaves the bridge installed; the next command then reloads it, taking a few
-  seconds. Bridge commands that change
-  the game run from the tick, never via a queued input: an `IDLE` input costs
-  the groove chain. See
-  `Docs/Adr/0006-agent-bridge-uses-command-file-and-log.md`.
-* `agent-bridge route [stairs|X Y] [dig=true]` prints the actions to the
-  stairs or a tile, so `agent-bridge input $(agent-bridge route stairs)`
-  walks there; use it rather than searching the map by hand. It lists enemies
-  on the way on stderr and stops at 50 actions (run it again). Put a step
-  onto stairs or a trapdoor last in a batch: after a trapdoor, later actions did not move.
-* An `input` that steps onto the stairs or a trapdoor replies before the new
-  level loads (up to about 2.5 s later, measured), so a `state` right after
-  it can still show the old level. Wait about 3 s (or repeat `state` until
-  `lvl` changes) before reading the new level.
-* `map` draws each entity type with the same glyph on every call and level,
-  and prints its top-left tile, so rows and columns convert to tile
-  coordinates without the player's position.
-* For fights, take a `snapshot` first and use `scenario ... repeat=N` to
-  compare runs, rather than single-stepping; an `=` outcome with
-  `damage_dealt` means the attack landed.
-
-### Experiment pitfalls
-
-* The mod waits 30 ticks after each input resolves before queuing the next.
-  Without the wait, enemies skipped a move about every 24 beats (a `Slime3`,
-  which moves every beat, did so in 40 batched 8-beat runs and never in 49
-  beats sent one `idle` per command); 10 ticks still skipped and 25 did not.
-  The cause is unknown; the wait is a measured workaround.
-* `snapshot` before any experiment that can kill you (traps, angering a
-  shopkeeper, a bomb beside you), then `restore` between trials. Each
-  `snapshot` overwrites the baseline `restore` returns to, so take it once,
-  before the loop.
-* Read the whole output of a loop. A `grep` that drops the likely killer (the
-  boss, say) hides the entity that ends the run.
-* After a multi-step `input`, read `at=`: a blocked move does not fail the
-  batch, it silently shortens the path. The `=` line names what blocked it
-  (`blocked-by Shopkeeper#12`, `blocked-by Dagger#40(price)` for a ware you
-  cannot buy, or the wall tile).
-* Level layouts are random, so use `scenario ... arena=N` for a clean room.
-  `spawn ... force` into a wall succeeds and the enemy just sits there, so
-  check the tile first. A spawned enemy's first action can come one beat late.
-* Deterministic enemies (`Slime2`, `Slime3`, `Skeleton`) act on the same beats
-  whether `idle`s are batched or sent singly. Random movers (`Zombie`, `Bat`)
-  vary, so compare them with `scenario repeat=N`, never one trace against
-  another.
-* An enemy that never moves while `aggro.active` is true is probably blocked,
-  not asleep: check the tiles and entities around it.
-* The diagonal inputs (`up_left` and the like) did nothing as Cadence on one
-  1-1 level: `input down_right` came back `TIMED-OUT` with no move and no
-  turn. Tried once.
-* After a win or death the run-summary screen swallows every action: `input`
-  replies `TIMED-OUT` after about 5000 ticks and `turn` never moves, though
-  `restore` still works. `state` prints `RUN SUMMARY SCREEN UP` while
-  `RunSummary.getActiveSummary()` is truthy. When an `input` times out and
-  `turn` is unchanged, check `state` for that line instead of polling or
-  listing processes; if it is absent, ask the user what is on screen.
-  Finish boss-fight experiments before taking the exit stairs, which ends the
-  run.
-* `clear` removes every enemy with an `ai`, shopkeepers included, and a
-  dead shopkeeper makes shop wares free. Do not `clear` before a shop test.
-* `spawn X Y` takes absolute tile coordinates, not offsets from the player.
-* `new-run seed=N` reproduced the same level and entity list on a second run;
-  use it so a death does not lose the level. Entity ids differ between runs.
-* `idle` is the no-op beat and drops the groove chain, so it is also how a
-  beat is "missed" in no-beat mode.
-* `route` crosses a `ShrineOfBlood` as if it were floor (no `ai`, `health`,
-  `trap` or `item`; collision mask 2), costing 10 health in one action. It
-  treats chests the same way (untested). Check the `map` legend and `entities`
-  before running a route you cannot afford to lose.
 
 ## Read when needed
 

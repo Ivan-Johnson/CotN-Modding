@@ -36,7 +36,7 @@ if [ -n "$selectedTest" ]; then
 fi
 
 ITJ_BUNDLE_EXTRA_FILE="$extraFile" ITJ_BUNDLE_EXTRA_CONTENT="$selectedTest" \
-        ITJ_BUNDLE_RELOAD_TRIGGER="HelloWorldTests/api.lua" install-mods HelloWorld HelloWorldTests AgentBridge
+        ITJ_BUNDLE_RELOAD_TRIGGER="HelloWorldTests/api.lua" install-mods HelloWorld HelloWorldTests
 
 # Wait for the tests mod's completion sentinel, rather than a
 # hardcoded sleep or a quiet-period guess.

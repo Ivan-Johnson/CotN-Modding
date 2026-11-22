@@ -15,7 +15,7 @@ loot pools.
 * `ChestLocked` opened by bumping it while holding a `MiscKey` (found
   on the floor 3 tiles from it); the key was used up and the chest dropped
   `HeadSunglasses`. Bumping it without a key was not tried.
-* `agent-bridge route` crosses a chest as if it were floor and opens it.
+* A route search that treated a chest as floor walked onto it and opened it.
 * A weapon drop is swapped in for the current weapon when the player picks it
   up (`Sync_WeaponOnyxDagger` replaced `WeaponDagger`, whose entity then
   vanished). Armor and other drops lie on the chest's tile until the player

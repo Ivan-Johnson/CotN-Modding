@@ -27,6 +27,6 @@ For players. Measured as Cadence in no-beat mode on CotN 4.2.1, on one seeded
   active; it has `unrevealedDamageImmunity`, cause unconfirmed). After the
   bomb a dagger hit did 1 damage, and the shopkeeper hit back for 19,
   killing the player at 9 health. Do not anger it.
-* A dead shopkeeper makes everything free: after `agent-bridge clear` removed
+* A dead shopkeeper makes everything free: after a live run removed
   it (it has an `ai`), stepping onto `ArmorLeather`, the heart and the dagger
   cost no gold. That explained a first, wrong, "shops are free" result.
