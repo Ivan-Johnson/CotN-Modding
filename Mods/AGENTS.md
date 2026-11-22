@@ -96,8 +96,9 @@ commands and conventions.
   The `agent-bridge` in your shell is a built copy of `Mods/agent-bridge.bash`,
   but the mod is installed from source, so after editing the script the CLI
   is stale (no new commands) until the dev shell is re-entered; it warns when
-  it detects this. Until then, run `bash Mods/agent-bridge.bash` from the dev
-  shell.
+  it detects this. Until then, run `nix run .#agent-bridge -- <cmd>`: the flake
+  wrapper supplies `wait_for_log`, so a bare `bash Mods/agent-bridge.bash`
+  fails with `wait_for_log: command not found` (after installing the mod).
   `new-run` uses no-beat mode, so time passes only when you act; `new-run
   rhythm=regular` keeps the real-time beat and lets the song end. Installing
   `AgentBridge` replaces the bundle's other mods, and

@@ -80,7 +80,8 @@ What a tracer-bullet POC for `AgentBridge` (issue #11) verified live on CotN
 * `agent-bridge` in the dev shell is a built copy of `Mods/agent-bridge.bash`;
   `install-mods` installs the mod from the source tree. After editing the
   script the CLI lacks the new commands until the shell is re-entered
-  (`bash Mods/agent-bridge.bash` runs the source meanwhile). The CLI compares
+  (`nix run .#agent-bridge --` runs the source meanwhile; a bare
+  `bash Mods/agent-bridge.bash` lacks `wait_for_log`). The CLI compares
   a build-time hash of the script with the source and warns on a mismatch.
 
 ## Enemy cadence
