@@ -8,10 +8,10 @@ per-step turns. This replaces `AgentBridge` (see
 `0006-agent-bridge-uses-command-file-and-log.md`), which is deleted. The
 workflow lives in `AuthoredDocs/Src/testing.md`.
 
-An interactive bridge made every experiment a hand-driven session: one command
-per second, state that drifted between commands, and no record of what had
-been measured. A test is repeatable, reviewable, and can stay in the suite as
-a regression test once the answer is known.
+An interactive bridge made every experiment a hand-driven session: about one
+command per second, and no record of what had been measured. A test is
+repeatable, reviewable, and can stay in the suite as a regression test once
+the answer is known.
 
 ## Considered options
 
