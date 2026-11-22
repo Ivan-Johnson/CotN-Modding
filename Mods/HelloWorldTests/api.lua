@@ -27,7 +27,8 @@ end
 --[[
 tests: queued via registerTest(), and run one at a time, each in its own
 fixed-seed GameSession. A test is a table:
-  name (string, required) - unique id, prefixes this test's PASS/FAIL lines
+  name (string, required) - unique id, prefixes this test's PASS/FAIL lines;
+    registering the same name again replaces the earlier test
   zone (integer?)         - procedural zone number to generate the level in
   character (string?)     - entity type name to play as, e.g. "Cadence"
   expectFail (boolean?)   - marks this test as expected to fail (default: false).
@@ -41,7 +42,7 @@ fixed-seed GameSession. A test is a table:
       assertion. A failing assert aborts the rest of this test's onLoad
       (later assertions in the same test are skipped, since they may rely on
       the failed one having held). To report a value, call
-      api.observe(key, value) (see observe above). Any other Lua error raised from onLoad
+      api.observe(key, value) (defined below). Any other Lua error raised from onLoad
       (e.g. a bad API call) is caught and treated the same as a failing
       assert
 ]]
@@ -87,6 +88,15 @@ end
 local function registerTest(test)
 	assert(type(test.name) == "string", "registerTest requires a name")
 	assert(type(test.onLoad) == "function", "registerTest requires an onLoad callback")
+	-- A reload can run a mod's load-time registerTest() calls again against
+	-- this same module instance, so a repeated name replaces its earlier
+	-- test instead of queueing a second run of it.
+	for index, existing in ipairs(tests) do
+		if existing.name == test.name then
+			tests[index] = test
+			return
+		end
+	end
 	table.insert(tests, test)
 end
 

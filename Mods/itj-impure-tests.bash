@@ -54,6 +54,15 @@ if ((timedOut)); then
         exit 1
 fi
 
+# A test that reports twice was queued twice (a reload registered it again),
+# so the run is not the single fixed-seed run the tests assume.
+duplicates=$(grep -oE '\[HelloWorldTests\] (PASS|FAIL|XFAIL|XPASS) [A-Za-z0-9_]+' <<<"$newOutput" | sort | uniq -d)
+if [ -n "$duplicates" ]; then
+        echo "itj-impure-tests: tests reported more than once:" >&2
+        echo "$duplicates" >&2
+        exit 1
+fi
+
 if grep -qE '\[HelloWorldTests\] Test suite completed: 0 failure\(s\)' <<<"$newOutput"; then
         echo All tests pass
 else

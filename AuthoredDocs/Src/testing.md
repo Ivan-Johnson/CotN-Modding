@@ -17,11 +17,10 @@ question:
 4. Read the `OBSERVED <test> <key>=<value>` lines and the `PASS`/`FAIL` line
    in what it prints. A Lua error in `onLoad` shows as `FAIL` with the message.
 
-Measured with a one-line test that observed the stairs count: the command
-returned in a few seconds, printed the `OBSERVED` and `PASS` lines, and
-exited with `All tests pass`. The test's lines appeared twice in the output
-(two runs, each with its own `Starting ... run with seed` line); cause not
-investigated. Once the question is answered, delete the scratch test or keep
+The command returns in a few seconds. Each run logs its own `Starting Single
+Zone run with seed N` line with a random N; that is the game's choice before
+the framework overrides it, and the level is generated from the fixed seed
+(`observe` reports it). Once the question is answered, delete the scratch test or keep
 it as a regression test with real assertions.
 
 ## Writing tests
@@ -29,6 +28,10 @@ it as a regression test with real assertions.
 * A mod under test contributes cases from its own `tests.lua` (for example
   `HelloWorld/tests.lua`), guarding the cross-mod `require()` of
   `HelloWorldTests.api` in a `pcall()`, since the framework may not be loaded.
+* Registering a name that is already registered replaces the earlier test: a
+  reload can run a mod's load-time `registerTest()` calls again, and the
+  replacement keeps each test running once. The entrypoint fails if a test
+  still reports twice.
 * Results print as `PASS`, `FAIL` or `SKIP` lines to `NecroDancer.log`.
 * To answer a question about the game instead of only asserting, call
   `api.observe(key, value)` from `onLoad`. It prints `[HelloWorldTests]
