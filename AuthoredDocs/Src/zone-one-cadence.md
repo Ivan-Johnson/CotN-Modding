@@ -104,23 +104,47 @@ walk-through (no-beat mode, 12 health) found:
   right after the move still shows the old level. The `level_loaded` event
   marks the switch. The player is at (0, 0) on every new level. Health,
   gold and the coin multiplier carry over.
-* The `map` command prints `stairs at` for the exit. On 1-1 a `Minotaur` stood
-  on it and woke up on its own; once it was dead the stairs worked. On 1-2
-  the tile was `LockedStairs` under a `BatMiniboss`: killing the miniboss
+* The `map` command prints `stairs at` for the exit, and the miniboss on it
+  differs between runs. In one run (1-1) a `Minotaur` stood on it and woke up
+  on its own; once it was dead the stairs worked. In another, a `Dragon` on
+  1-1 and a `Minotaur` on 1-2 were the guards, and 1-2's stairs were plain
+  `Stairs` (no `LockedStairs`). In the first run, on 1-2 the tile was
+  `LockedStairs` under a `BatMiniboss`: killing the miniboss
   turned it into `Stairs` in the same action. On 1-3 the stairs sat in a
   walled room with a `Minotaur2`, a `Skeleton3`, two `Monkey2`, a `Ghost`,
-  two `Bat` and others; it was not entered.
+  two `Bat` and others; it was not entered. A second run's 1-3 had a
+  `Dragon2` on the stairs. `Dragon` and `Minotaur` fights are in
+  [zone-one-enemies.md](zone-one-enemies.md).
 * A `Trapdoor` on 1-3 (at (-1, 9), plain floor to `tile`) took the player to
   1-4 without touching the stairs. `Trapdoor` entities were also listed on 1-1
   and 1-2 (not stepped on), so it may be a way past a locked or guarded exit.
-* 1-4 is the boss level: a closed start room of 5 by 5 tiles at the bottom, with
-  a `Minotaur2`, `Skeleton3`, `Bat2` and `Ghost` inside, and above it the boss
-  room with `Fortissimole`, 14 `Skeleton`s in two rows, four `Ghost`s and
-  five `PreBossBarrier` entities across the entrance at y = -7. Nothing there
-  was fought.
+  A later run's 1-3 had one at (10, 1), 10 tiles from the start, behind a
+  `DirtWall` and a `Ghost` in a one-tile cell; stepping on it loaded 1-4 with
+  the player's health unchanged. The position is random.
+* 1-4 is the boss level. The first run had a closed start room of 5 by 5
+  tiles at the bottom, with a `Minotaur2`, `Skeleton3`, `Bat2` and `Ghost`
+  inside, and above it the boss room with `Fortissimole`, 14 `Skeleton`s in
+  two rows, four `Ghost`s and five `PreBossBarrier` entities across the
+  entrance at y = -7. A later run had the same shape with a different cast:
+  a start room with `Dragon2`, `Bat2`, `Skeleton3` and `Ghost`, a boss room
+  with `Deathmetal` at (1, -11), no skeletons, seven `BounceTrapOmni` and
+  five `PreBossBarrier` at y = -7, x = -2 to 2. The boss is random, and
+  neither boss was fought.
 * A shop on 1-3 sold `Food4` for 65 gold (`priceTagCostCurrency.cost`). Its
   walls were `ShopWall` (`digResistance` 4) and `StoneWall`, which the basic
   shovel cannot dig; the shop was not entered.
+
+## Shrines
+
+A `ShrineOfBlood` stood in the middle of a 1-1 room (solid, `shrine.name`
+"blood", hint "Give blood, get blood weapon"). One `down` into it cost 10
+health (`damage_taken(amount=10 source=ShrineOfBlood)`, 12 to 1 in a single
+action), and the inventory then held `Sync_WeaponBloodTrident` instead of
+`WeaponDagger`, with a `ShovelBlood` listed on the tile below the shrine (it may be a
+drop; not checked). The dagger entity stayed at the player's tile. The shrine
+stayed in place with `interactable.active` still true, and was not tried a
+second time. `agent-bridge route` plans straight
+through it (see `live-game-control.md`).
 
 ## Unverified
 
