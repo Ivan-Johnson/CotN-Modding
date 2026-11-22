@@ -95,12 +95,40 @@ walks a straight line, and attacks only when the player is on its line.
 In no-beat mode the song never ends, a beat cannot be missed, and enemies do
 not come to you: time passes only when you act.
 
+## Beyond the first level
+
+A `new-run Cadence` is a `SingleZone` run that plays through 1-1 to 1-4. One
+walk-through (no-beat mode, 12 health) found:
+
+* Walking onto the stairs loads the next level after a second or so; `state`
+  right after the move still shows the old level. The `level_loaded` event
+  marks the switch. The player is at (0, 0) on every new level. Health,
+  gold and the coin multiplier carry over.
+* The `map` command prints `stairs at` for the exit. On 1-1 a `Minotaur` stood
+  on it and woke up on its own; once it was dead the stairs worked. On 1-2
+  the tile was `LockedStairs` under a `BatMiniboss`: killing the miniboss
+  turned it into `Stairs` in the same action. On 1-3 the stairs sat in a
+  walled room with a `Minotaur2`, a `Skeleton3`, two `Monkey2`, a `Ghost`,
+  two `Bat` and others; it was not entered.
+* A `Trapdoor` on 1-3 (at (-1, 9), plain floor to `tile`) took the player to
+  1-4 without touching the stairs. `Trapdoor` entities were also listed on 1-1
+  and 1-2 (not stepped on), so it may be a way past a locked or guarded exit.
+* 1-4 is the boss level: a closed start room of 5 by 5 tiles at the bottom, with
+  a `Minotaur2`, `Skeleton3`, `Bat2` and `Ghost` inside, and above it the boss
+  room with `Fortissimole`, 14 `Skeleton`s in two rows, four `Ghost`s and
+  five `PreBossBarrier` entities across the entrance at y = -7. Nothing there
+  was fought.
+* A shop on 1-3 sold `Food4` for 65 gold (`priceTagCostCurrency.cost`). Its
+  walls were `ShopWall` (`digResistance` 4) and `StoneWall`, which the basic
+  shovel cannot dig; the shop was not entered.
+
 ## Unverified
 
 * Whether real-time rhythm behaves differently from no-beat mode.
 * Whether a non-moving input is always a dig, and whether a better shovel
   breaks `StoneWall`.
-* What chests, the shop, traps and the `BatMiniboss` do when engaged.
+* What chests, the shop and most traps do when engaged. A `SpikeTrap` and a
+  `Sync_AutoSpikeTrap` each killed a `Slime3` that walked onto them.
 * What `AddchestBlack`, `AddchestRed`, `AddchestWhite`, `CoinsX15` and
   `CoinsX2` do in the starting kit.
 

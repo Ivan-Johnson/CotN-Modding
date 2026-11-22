@@ -76,7 +76,9 @@ pass, this page now states the second pass. Pitfalls when repeating it:
 | `Bat` | 1 | 2 | 1 | 1 |
 | `Bat2` | 1 | 1 | 2 | 1 |
 | `Bat3` | 1 | 1 | 3 | 1 |
-| `BatMiniboss` | 2 | 2 | 3 | at least 2 |
+| `BatMiniboss` | 2 | 2 | 3 | 2 |
+| `Minotaur` | 3 | 1 | 4 | 3 |
+| `Minotaur2` | 5 | 1 | 5 | not fought |
 | `Ghost` | 1 | 1 | 2 | 1, only on the turn that faces it |
 | `Wraith` | 1 | 1 | 1 | cannot be hit |
 | `Trapchest` | 1 | 1 | 2 | 3 bumps |
@@ -114,10 +116,15 @@ Damage is the `innateAttack.damage`. Observed damage matched it for
   into `Skeleton2Headless` and `Skeleton3Headless`, shoved one tile away along
   the hit direction. `Skeleton2` needs 2 hits in total and `Skeleton3` needs 3.
   The first hit on `Skeleton3` changed nothing visible.
-* A headless skeleton stood still in every test: 7 to 12 beats, with the
-  player idle, then moving around the room. Spawned directly it also does
-  nothing. It has `charge` components but no `ai` movement (`ai.id` 0). The
-  first pass's "keeps advancing" was not reproduced.
+* A headless skeleton has no `ai` movement (`ai.id` 0), but its `charge`
+  component makes it run. Hitting a natural `Skeleton2` with the dagger
+  shoved the resulting `Skeleton2Headless` one tile, and it then ran one tile
+  every beat in the direction of the hit (`charge.direction` 7, down), away
+  from the player, until a wall stopped it. It stayed there for the 8 beats
+  watched afterwards and never attacked. When another enemy stood right
+  behind it, it was not shoved or moved, and a second hit killed it. It stood
+  still in the earlier tests, where it was spawned directly or hit with a
+  wall behind it. Only `Skeleton2` was seen this way; `Skeleton3` is untested.
 
 ### Zombie
 
@@ -157,7 +164,26 @@ Damage is the `innateAttack.damage`. Observed damage matched it for
 * A step into a wall seems to be lost, so a bat sometimes skips a beat. Over 40 beats
   `Bat2` and `Bat3` moved 34 to 39 times.
 * `Bat3` hit the player 2 to 4 times in 40 beats; `Bat2` hit 0 to 2 times, and `Bat` 3 times in one trial and never in two.
-* `BatMiniboss` did not attack in 40 beats. One dagger hit did not kill it.
+* `BatMiniboss` did not attack in 40 beats when spawned. A natural one hit
+  the player for 3 on the beat the player stepped next to it, and two dagger
+  hits killed it. It guards the level's stairs (see
+  [zone-one-cadence.md](./zone-one-cadence.md#beyond-the-first-level)).
+
+### Minotaur and Minotaur2
+
+* Natural miniboss pool entries (`Sync_enemyPoolMiniboss`) that sit on the
+  stairs. They have `ai.id` 7 (seek), `activationRange.radius` 7 and
+  `beatDelay.interval` 1. `Minotaur`: 3 health, `innateAttack.damage` 4.
+  `Minotaur2`: 5 health, damage 5.
+* A `Minotaur` with `aggro.active` false started moving toward the player
+  while the player was still 9 tiles away, behind walls, and it moved one
+  tile every beat. It crossed a `DirtWall` tile on the way, so it probably
+  breaks dirt walls as it charges (the wall tile was not re-read).
+* Fighting a `Minotaur` face to face with a dagger: it hit once for 4 on the
+  beat of the first dagger hit, nothing on the next two beats, and the third
+  hit killed it. That is one attack in three adjacent beats, so it is
+  consistent with the every second beat of other attackers, but only one fight
+  was seen. `Minotaur2` was not fought.
 
 ### Ghost, Wraith, Trapchest
 
@@ -200,8 +226,9 @@ kills, in no-beat mode.
 * The chain breaks (`multiplier_lost`, `killCount` back to 0) on an `idle`
   action, even in no-beat mode, and on a failed action such as moving into a
   wall. Moving to an empty tile does not break it.
-* Damage taken did not get tested cleanly: the wall bump broke the chain
-  before the `Skeleton` hit.
+* Taking damage breaks the chain: a `Minotaur` hit at x2 sent
+  `multiplier_lost(because=taking damage)` in the same action. (An earlier test
+  was inconclusive because a wall bump broke the chain first.)
 * `ResourceDiamond` entities in the entity list are part of the level, not
   drops.
 * A third pass measured gold per kill with a fresh run (chain at x1, no
@@ -230,7 +257,7 @@ kills, in no-beat mode.
 
 Not yet re-measured in the second pass:
 
-* Whether taking damage breaks the multiplier, and the coin value of
+* The coin value of
   `Slime2`, `Monkey2`, `Ghost` and the `Bat3` formula at multiplier 2 and 3.
   A test killing three `Bat3` in a row broke the chain between kills, which
   is not explained.
@@ -252,8 +279,9 @@ Not yet re-measured in the second pass:
   slime trial once and did not repeat in a clean run, so it may be a
   harness artifact. Not diagnosed.
 * What wakes a `Wraith`, and what a natural one does.
-* Whether `BatMiniboss` ever attacks, and how many hits kill it.
+* Whether `Minotaur2` attacks as `Minotaur` does, and whether a `Minotaur`
+  really breaks dirt walls.
 * Why `Slime` never moves despite `innateAttack.damage` 100.
-* `Skeleton2Headless` and `Skeleton3Headless` when a natural level spawns
-  them, and what the `charge` components do.
+* `Skeleton3Headless`, and whether a headless skeleton's charge ever hurts
+  the player or other enemies.
 * Everything above was measured as Cadence with a dagger, in no-beat mode.
