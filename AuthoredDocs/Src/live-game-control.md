@@ -104,6 +104,17 @@ What a tracer-bullet POC for `AgentBridge` (issue #11) verified live on CotN
 * `restore N` replays deterministically: the same snapshot gives the same
   state each time (see "Snapshot and restore").
 
+## Waiting for enemies
+
+* To let enemies act, send `step N` (1 to 200) instead of a loop of `input
+  idle` and `entities` calls: it is `input idle` N times in one command, and
+  lists only the beats where something happened (the player moved, a tile
+  changed, an entity within 12 tiles moved or died, or an event fired). Read the
+  reply, then decide the next move.
+* `repeat=N` and `watch=` are options of `scenario`, not of `input` or `step`.
+  They repeat one spawned-enemy experiment and choose which of that enemy's
+  components to report; they do not wait for natural enemies.
+
 ## Missing a beat, and ordering experiments
 
 * In no-beat mode, an `idle` input drops the groove chain; that is what
