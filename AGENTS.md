@@ -39,6 +39,9 @@ than silently overriding it.
 
 * `build-release` runs `nix flake check` and the nix formatting check, and
   also runs `nix run .#itj-impure-tests` since this flake provides it.
+* The impure tests reload the mods and wipe the live game run, so every
+  non-`--no-verify` commit does. During a live run, commit docs-only changes
+  with `--no-verify` and re-run the checks at the end.
 * `nix run .#itj-impure-tests` installs `HelloWorld` and `HelloWorldTests` via
   `install-mods` (see `Mods/AGENTS.md`), forces `HelloWorldTests` to reload so
   its automated test run
