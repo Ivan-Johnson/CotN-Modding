@@ -42,9 +42,11 @@ than silently overriding it.
 
 * `build-release` runs `nix flake check` and the nix formatting check, and
   also runs `nix run .#itj-impure-tests` since this flake provides it.
-* The impure tests reload the mods and wipe the live game run, so every
-  non-`--no-verify` commit does. During a live run, commit docs-only changes
-  with `--no-verify` and re-run the checks at the end.
+* The impure tests reload the mods and wipe the live game run, and the
+  `commit-msg` hook runs `build-release`, so every commit does, except one
+  whose subject starts with `WIP` or one made with `--no-verify`. During a
+  live run, commit docs-only changes with `--no-verify` and re-run the checks
+  at the end.
 * `nix run .#itj-impure-tests` installs `HelloWorld` and `HelloWorldTests` via
   `install-mods` (see `Mods/AGENTS.md`), forces `HelloWorldTests` to reload so
   its automated test run
@@ -64,12 +66,8 @@ than silently overriding it.
 
 ## Learning about the game
 
-Unit tests are the default way to find out how the game works. To answer a
-mechanics question, write a test that reports the values you want with
-`api.observe`, run it alone with `nix run .#itj-impure-tests -- <testName>`,
-and read the `OBSERVED` lines it prints. It starts from a fixed seed and needs
-no per-step turns. See `AuthoredDocs/Src/testing.md` for the workflow, and
-reach for interactive tools only when a test cannot answer the question.
+To find out how the game works, write a unit test that observes it, as
+`AuthoredDocs/Src/testing.md` describes. Why: `Docs/Adr/0007-unit-tests-are-the-default-way-to-learn-the-game.md`.
 
 ## Conventions
 
