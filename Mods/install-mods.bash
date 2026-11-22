@@ -18,6 +18,10 @@
 #   ITJ_BUNDLE_NAME             bundle mod name (default: DevBundle)
 #   ITJ_BUNDLE_RELOAD_TRIGGER   optional "<mod>/<file>" in the bundle to
 #                               append a timestamp comment to, forcing a reload
+#   ITJ_BUNDLE_EXTRA_FILE       optional "<mod>/<file>" in the bundle to create
+#                               holding ITJ_BUNDLE_EXTRA_CONTENT, so the mod
+#                               sees it from its first load; a reinstall
+#                               without it removes the file
 set -euo pipefail
 
 modsRoot="$ITJ_FLAKE_ROOT/Mods"
@@ -62,6 +66,10 @@ bundle-layout rewrite "$stage" "$bundleName" "${mods[@]}"
 
 if [[ -n ${ITJ_BUNDLE_RELOAD_TRIGGER:-} ]]; then
 	echo "-- install-mods trigger $(date +%s%N)" >>"$stage/$ITJ_BUNDLE_RELOAD_TRIGGER"
+fi
+
+if [[ -n ${ITJ_BUNDLE_EXTRA_FILE:-} ]]; then
+	echo "${ITJ_BUNDLE_EXTRA_CONTENT:-}" >"$stage/$ITJ_BUNDLE_EXTRA_FILE"
 fi
 
 rsync -rlt --delete --delay-updates "$stage/" "$COTN_LOCAL_MODS_DIR/$bundleName/"

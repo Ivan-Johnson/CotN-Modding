@@ -2,6 +2,11 @@
 # interactive session; then installs the mods, waits for the suite, and prints
 # its results. This is the only caller that takes the lock.
 #
+# Usage: run-tests [TEST_NAME]
+# With a name, runs only that test (still from the fixed seed) and fails if no
+# registered test has it. Values a test reports with `api.observe` appear as
+# `OBSERVED <test> <key>=<value>` lines in the output.
+#
 # ITJ_GAME_LOCK_FILE: the lock file (default: inside the game's mods directory, the one shared writable path).
 # ITJ_GAME_LOCK_TIMEOUT_SECONDS: how long to wait for the lock (default 120).
 lockFile=${ITJ_GAME_LOCK_FILE:-${COTN_LOCAL_MODS_DIR%/}/itj-game.lock}
@@ -24,7 +29,14 @@ baseline=$(wc -l <"$COTN_LOG")
 # successfully required it - including HelloWorld - re-running
 # their registerTest() calls. This also ensures the suite always
 # reruns even if there are no new changes.
-ITJ_BUNDLE_RELOAD_TRIGGER="HelloWorldTests/api.lua" install-mods HelloWorld HelloWorldTests AgentBridge
+selectedTest=${1:-}
+extraFile=""
+if [ -n "$selectedTest" ]; then
+        extraFile="HelloWorldTests/selected-test.txt"
+fi
+
+ITJ_BUNDLE_EXTRA_FILE="$extraFile" ITJ_BUNDLE_EXTRA_CONTENT="$selectedTest" \
+        ITJ_BUNDLE_RELOAD_TRIGGER="HelloWorldTests/api.lua" install-mods HelloWorld HelloWorldTests AgentBridge
 
 # Wait for the tests mod's completion sentinel, rather than a
 # hardcoded sleep or a quiet-period guess.

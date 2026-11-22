@@ -1,6 +1,7 @@
 local GameSession = require "necro.client.GameSession"
 local ExtraMode = require "necro.game.data.modifier.ExtraMode"
 local Tick = require "necro.cycles.Tick"
+local FileIO = require "system.game.FileIO"
 
 --[[
 Generic, reusable test-running framework. Any mod may contribute test cases
@@ -39,15 +40,49 @@ fixed-seed GameSession. A test is a table:
       generated with; call the builtin assert(condition, reason) once per
       assertion. A failing assert aborts the rest of this test's onLoad
       (later assertions in the same test are skipped, since they may rely on
-      the failed one having held). Any other Lua error raised from onLoad
+      the failed one having held). To report a value, call
+      api.observe(key, value) (see observe above). Any other Lua error raised from onLoad
       (e.g. a bad API call) is caught and treated the same as a failing
       assert
 ]]
 local tests = {}
 local currentTest = nil
 
+-- A mod's own directory is not exposed, but the location prefix of a Lua error
+-- ("<Bundle>/HelloWorldTests/api.lua:N: ...") names it.
+local function findOwnDirectory()
+	local _, message = pcall(function()
+		error("x")
+	end)
+	return "mods/" .. assert(message:match("^(.*)/[^/]*:%d+: x$"))
+end
+
+-- Names the one test to run alone; written by the unit-test entrypoint, absent
+-- (so the whole suite runs) otherwise.
+local SELECTED_TEST_FILE = findOwnDirectory() .. "/selected-test.txt"
+
+local function readSelectedTest()
+	if not FileIO.exists(SELECTED_TEST_FILE) then
+		return nil
+	end
+	local name = FileIO.readFileToString(SELECTED_TEST_FILE, 256):match("^%s*(.-)%s*$")
+	if name == "" then
+		return nil
+	end
+	return name
+end
+
 -- Counts both regular failures and unexpected passes (XPASS)
 local failureCount = 0
+
+-- Reports a value the running test observed, as an "OBSERVED" line beside
+-- the test's PASS/FAIL line, so a test can answer a question about the game
+-- instead of only asserting. Call it from onLoad; value is printed with
+-- tostring().
+local function observe(key, value)
+	assert(currentTest, "observe may only be called from a running test's onLoad")
+	print(string.format("[HelloWorldTests] OBSERVED %s %s=%s", currentTest.name, key, tostring(value)))
+end
 
 local function registerTest(test)
 	assert(type(test.name) == "string", "registerTest requires a name")
@@ -144,11 +179,26 @@ local function start()
 		return
 	end
 	started = true
+	local selected = readSelectedTest()
+	if selected then
+		local kept = {}
+		for _, test in ipairs(tests) do
+			if test.name == selected then
+				table.insert(kept, test)
+			end
+		end
+		if #kept == 0 then
+			failureCount = failureCount + 1
+			log("FAIL", selected, "no registered test has this name")
+		end
+		tests = kept
+	end
 	print("[HelloWorldTests] Starting test suite")
 	runNextTest()
 end
 
 return {
+	observe = observe,
 	registerTest = registerTest,
 	start = start,
 }

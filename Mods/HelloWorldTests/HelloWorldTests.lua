@@ -24,6 +24,15 @@ api.registerTest({
 	end,
 })
 
+-- Exercises observe(): the entrypoint's output must show this value next to
+-- the PASS line. Also the quickest named test to run alone.
+api.registerTest({
+	name = "observesFixedSeed",
+	onLoad = function(fixedSeed)
+		api.observe("seed", fixedSeed)
+	end,
+})
+
 -- Deferred by one tick so that any other mod's own load-time
 -- api.registerTest() call - triggered by this same reload, if this mod's
 -- api.lua changed - has a chance to run first: a reload always finishes an
