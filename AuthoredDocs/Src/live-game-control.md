@@ -87,6 +87,18 @@ What a tracer-bullet POC for `AgentBridge` (issue #11) verified live on CotN
   `bash Mods/agent-bridge.bash` lacks `wait_for_log`). The CLI compares
   a build-time hash of the script with the source and warns on a mismatch.
 
+## Pitfalls
+
+* Never take a `snapshot` inside a test loop: each one overwrites the
+  baseline that `restore` returns to. Take it once, before the loop.
+* Never filter the likely killer (the boss, say) out of a loop's output. A
+  `grep` that drops `KingConga` hides the entity that ends the run.
+* After a multi-step `input`, read `at=` in the reply: a blocked move does not
+  fail the batch, it silently shortens the path.
+* `item1` activates an action item and `spell1` casts the spell.
+* `restore N` replays deterministically: the same snapshot gives the same
+  state each time (see "Snapshot and restore").
+
 ## Missing a beat, and ordering experiments
 
 * In no-beat mode, an `idle` input drops the groove chain; that is what
