@@ -18,13 +18,14 @@ and 2, 4, 6 and 8 are the diagonals. Read from zone one enemy dumps on CotN
 * Every type above has `activationRange.radius` 3 (`Minotaur` and `Minotaur2`:
   7), an `ai.directions` list and `aiBasicSeek`, whatever its `ai.id`.
   `activationRange` is not a limit on movement: far enemies still step.
-* `aggro.active` is not what makes an enemy act: `Skeleton` and `Monkey` start
-  with it false and chase at once. A spawned `Ghost` starts with it false; a
-  natural one in a cell had it true and `stasis.active` true.
+* `aggro.active` is not what makes every enemy act: `Skeleton` and `Monkey`
+  start with it false and chase at once. A `Ghost` starts with it false and
+  stays still until it is true, which happens within two tiles of the player
+  (see [ghost.md](./ghost.md)).
 * A spawned `Wraith` has `ai.id` 7 and never acts; a natural one chases.
 * A headless skeleton has `ai.id` 0 but a `charge` component that makes it run.
-* `Ghost` has `stasisAI` and `freezeAttackableFlags` components, probably the
-  facing rule.
+* A `Ghost`'s `stasis.active` is true while the player faces or is beside it,
+  which is the facing rule in [ghost.md](./ghost.md).
 * A `Monkey`'s grab uses `grabParalyzeVictim`, `grabMoveOntoVictim` and
   `grabIncreaseHealth` (`multiplier` 4, `max` 4 on `Monkey`; `multiplier` 3,
   `max` 6 on `Monkey2`).

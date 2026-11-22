@@ -2,6 +2,9 @@ local GameSession = require "necro.client.GameSession"
 local ExtraMode = require "necro.game.data.modifier.ExtraMode"
 local Tick = require "necro.cycles.Tick"
 local FileIO = require "system.game.FileIO"
+local Action = require "necro.game.system.Action"
+local Input = require "necro.client.Input"
+local Turn = require "necro.cycles.Turn"
 
 --[[
 Generic, reusable test-running framework. Any mod may contribute test cases
@@ -36,7 +39,13 @@ fixed-seed GameSession. A test is a table:
     overall suite success), and an onLoad that runs to completion without
     failing is logged as XPASS (an anomaly worth investigating: either the
     bug this test guards against got fixed, or the test itself broke)
-  onLoad (function(fixedSeed), required)
+  noBeat (boolean?)       - plays in no-beat mode, where time passes only when
+    the player acts, so a test can step enemies one action at a time
+  async (boolean?)        - lets onLoad outlive its own return: the test then
+    ends only when onLoad's second argument, finish, is called (finish() passes,
+    finish(message) fails). Drive the game with afterTicks and play below; an
+    error raised inside any callback they run fails the test
+  onLoad (function(fixedSeed, finish), required)
     - runs once the level has loaded, and is passed the seed the level was
       generated with; call the builtin assert(condition, reason) once per
       assertion. A failing assert aborts the rest of this test's onLoad
@@ -114,6 +123,10 @@ HelloWorldTests_startGameSession = Tick.delay(function()
 		end
 	end
 
+	if currentTest and currentTest.noBeat then
+		ExtraMode.setActive(ExtraMode.Type.NO_BEAT, true)
+	end
+
 	GameSession.start({
 		mode = GameSession.Mode.SingleZone,
 	})
@@ -147,23 +160,17 @@ event.levelGenerate.add("TestHarnessConfigureLevel", {}, function(ev)
 	end
 end)
 
--- Runs one test's onLoad, which asserts its expectations with the builtin
--- assert(condition, reason). Any Lua error it raises (a failing assert, or
--- any other error, e.g. a bad API call) is caught here and logged as FAIL,
--- or XFAIL if the test declares expectFail; otherwise the test passed.
-local function runTest(test)
-	local ok, err = pcall(test.onLoad, FIXED_SEED)
-	if ok then
+-- Logs one test's outcome: err is nil when it passed. An expectFail test logs
+-- XFAIL for a failure and XPASS for a pass.
+local function report(test, err)
+	if err == nil then
 		if test.expectFail then
 			failureCount = failureCount + 1
 			log("XPASS", test.name, "expected this test to fail, but it passed")
 		else
 			log("PASS", test.name)
 		end
-		return
-	end
-
-	if test.expectFail then
+	elseif test.expectFail then
 		log("XFAIL", test.name, tostring(err))
 	else
 		failureCount = failureCount + 1
@@ -171,11 +178,152 @@ local function runTest(test)
 	end
 end
 
-event.levelLoad.add("TestHarnessRunOnLoad", { order = "extraEntities", sequence = 1 }, function()
-	if currentTest then
-		runTest(currentTest)
+-- Ends the running async test, once; later calls (e.g. a stray callback
+-- after a failure) do nothing.
+local function finishAsync(test, err)
+	if currentTest ~= test or test.finished then
+		return
 	end
+	test.finished = true
+	report(test, err)
 	runNextTest()
+end
+
+-- Runs fn; an error in it fails the running test instead of vanishing into the
+-- game's event loop.
+local function guarded(fn, ...)
+	local test = currentTest
+	local ok, err = pcall(fn, ...)
+	if not ok and test and test.async then
+		finishAsync(test, err)
+	end
+end
+
+local timers = {}
+
+-- Runs fn after at least n ticks. Ticks run over 1000 times a second.
+local function afterTicks(n, fn)
+	timers[#timers + 1] = { ticks = n, fn = fn, test = currentTest }
+end
+
+event.tick.add("TestHarnessTimers", { order = "invokeLater" }, function()
+	local due = {}
+	local waiting = {}
+	for _, timer in ipairs(timers) do
+		timer.ticks = timer.ticks - 1
+		-- A timer left by a test that has ended is dropped.
+		if timer.test == currentTest then
+			if timer.ticks <= 0 then
+				due[#due + 1] = timer
+			else
+				waiting[#waiting + 1] = timer
+			end
+		end
+	end
+	timers = waiting
+	for _, timer in ipairs(due) do
+		guarded(timer.fn)
+	end
+end)
+
+local ACTIONS = {
+	right = Action.Direction.RIGHT,
+	up_right = Action.Direction.UP_RIGHT,
+	up = Action.Direction.UP,
+	up_left = Action.Direction.UP_LEFT,
+	left = Action.Direction.LEFT,
+	down_left = Action.Direction.DOWN_LEFT,
+	down = Action.Direction.DOWN,
+	down_right = Action.Direction.DOWN_RIGHT,
+	idle = Action.Special.IDLE,
+	item1 = Action.Special.ITEM_1,
+	item2 = Action.Special.ITEM_2,
+	bomb = Action.Special.BOMB,
+	spell1 = Action.Special.SPELL_1,
+	spell2 = Action.Special.SPELL_2,
+}
+
+-- Ticks to wait after an action resolves before the next one, since enemies
+-- skip moves when inputs are queued back to back.
+local SETTLE_TICKS = 30
+-- Ticks to wait for an action to advance the turn before giving up on it.
+local RESOLVE_TIMEOUT_TICKS = 1500
+
+-- Sends player 1's actions one at a time, naming them as the keys of ACTIONS
+-- (e.g. "right", "idle", "bomb"). After each action resolves and settles,
+-- calls afterEach(index, name, resolved) (resolved is false when the turn never
+-- advanced, e.g. a diagonal input), then finished() after the last.
+local function play(names, afterEach, finished)
+	local index = 0
+	local nextAction
+	local function resolved(didResolve)
+		if afterEach then
+			afterEach(index, names[index], didResolve)
+		end
+		nextAction()
+	end
+	nextAction = function()
+		index = index + 1
+		if index > #names then
+			if finished then
+				finished()
+			end
+			return
+		end
+		local action = assert(ACTIONS[names[index]], "unknown action " .. tostring(names[index]))
+		local turnBefore = Turn.getCurrentTurnID()
+		Input.add(action, 1)
+		local waited = 0
+		local function waitForTurn()
+			waited = waited + 1
+			if Turn.getCurrentTurnID() ~= turnBefore then
+				afterTicks(SETTLE_TICKS, function()
+					resolved(true)
+				end)
+			elseif waited >= RESOLVE_TIMEOUT_TICKS then
+				resolved(false)
+			else
+				afterTicks(1, waitForTurn)
+			end
+		end
+		afterTicks(1, waitForTurn)
+	end
+	-- An input sent on the tick the level loaded is dropped.
+	afterTicks(1, nextAction)
+end
+
+-- Runs one test's onLoad, which asserts its expectations with the builtin
+-- assert(condition, reason). Any Lua error it raises (a failing assert, or
+-- any other error, e.g. a bad API call) is caught here and logged as FAIL,
+-- or XFAIL if the test declares expectFail; otherwise the test passed. An
+-- async test's outcome is logged when it calls finish instead.
+local function runTest(test)
+	if test.async then
+		local ok, err = pcall(test.onLoad, FIXED_SEED, function(message)
+			finishAsync(test, message)
+		end)
+		if not ok then
+			finishAsync(test, err)
+		end
+		return
+	end
+	local ok, err = pcall(test.onLoad, FIXED_SEED)
+	report(test, not ok and err or nil)
+end
+
+event.levelLoad.add("TestHarnessRunOnLoad", { order = "extraEntities", sequence = 1 }, function()
+	local test = currentTest
+	if test and test.started then
+		-- A level change during an async test is part of that test.
+		return
+	end
+	if test then
+		test.started = true
+		runTest(test)
+	end
+	if not (test and test.async) then
+		runNextTest()
+	end
 end)
 
 local started = false
@@ -208,7 +356,9 @@ local function start()
 end
 
 return {
+	afterTicks = afterTicks,
 	observe = observe,
+	play = play,
 	registerTest = registerTest,
 	start = start,
 }

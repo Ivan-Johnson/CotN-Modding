@@ -29,7 +29,7 @@ every repeat):
 | Type | Gold at x1 |
 |------|-----------|
 | `Slime`, `Zombie` | 2 |
-| `Slime3`, `Skeleton`, `Bat` | 4 |
+| `Slime3`, `Skeleton`, `Bat`, `Ghost` | 4 |
 | `Skeleton2`, `Bat2` | 6 |
 | `Skeleton3` | 8 |
 | `Bat3` | 40 |
@@ -39,7 +39,7 @@ Six `Slime` kills in a row gave +2, +3, +3, +3, +3, +4 gold.
 A fit for both measurements (`guess` for every type but `Slime`, the only one
 seen above x1) is gold = base x (multiplier at the kill + 1), with the
 multiplier before the kill's own increase, and a base of 1 for `Slime` and
-`Zombie`, 2 for `Slime3`, `Skeleton` and `Bat`, 3 for `Skeleton2` and `Bat2`,
+`Zombie`, 2 for `Slime3`, `Skeleton`, `Bat` and `Ghost`, 3 for `Skeleton2` and `Bat2`,
 4 for `Skeleton3` and 20 for `Bat3`.
 
 Eight enemies killed at once by `HolyWater` (see
@@ -49,7 +49,7 @@ gives `Slime2` a base of 2 (6 gold) and `Monkey2` a base of 3 (9 gold), and
 `Skeleton3` 8, `Zombie` 3, `Slime3` 6, `Slime` 4 and `Bat` 8 matched. The
 enemies were spawned by hand, so this is one measurement per type.
 
-Not measured: `Ghost` and `Wraith`. A `Trapchest` leaves an item instead.
+Not measured: `Wraith`. A `Trapchest` leaves an item instead.
 
 A `ResourceHoardGoldSmall` gave 25 gold on being walked onto (once, natural).
 The chain is not broken by a bounce trap; see [traps.md](./traps.md).

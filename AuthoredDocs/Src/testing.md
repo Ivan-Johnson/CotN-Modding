@@ -43,6 +43,17 @@ it as a regression test with real assertions.
   entrypoint hands the name to the framework in a
   `HelloWorldTests/selected-test.txt` file that `install-mods` creates (the
   Lua sandbox has no environment variables); the next plain run removes it.
+* To play the game step by step, mark the test `noBeat = true` (time passes
+  only when the player acts) and `async = true`. Its `onLoad(seed, finish)`
+  then drives the run with `api.play({"up", "idle", ...}, afterEach, finish)`,
+  which sends one action at a time and calls `afterEach(index, name,
+  resolved)` once the game has settled. `finish()` passes the test and
+  `finish(message)` fails it; an error in any callback fails it too. Use
+  `api.afterTicks(n, fn)` to wait. An action that does not advance the turn,
+  such as a bump into a wall, reports `resolved` false after 1500 ticks.
+  `HelloWorldTests.fixtures` clears the level's enemies, opens an arena of
+  floor, and spawns entities. `Mods/HelloWorld/ghost-tests.lua` is a worked
+  example.
 * If an assertion needs a handler to run before or after the mod-under-test's
   handler within the same event and order key, set `sequence` on the test's
   handler, not the mod's. Timing that exists only to make an assertion
