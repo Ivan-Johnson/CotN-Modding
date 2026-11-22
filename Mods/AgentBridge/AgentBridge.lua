@@ -318,19 +318,60 @@ local MAP_FLOOR = "."
 local MAP_STAIRS = ">"
 local MAP_PLAYER = "@"
 
+-- Common types keep one glyph for every call and level; lower case marks a
+-- variant of the upper-case type.
+local MAP_GLYPHS = {
+	Slime = "g",
+	Slime2 = "b",
+	Slime3 = "y",
+	Skeleton = "S",
+	Skeleton2 = "s",
+	Skeleton3 = "K",
+	Zombie = "Z",
+	Bat = "V",
+	Bat2 = "v",
+	Monkey = "M",
+	Monkey2 = "m",
+	Ghost = "O",
+	Armadillo = "D",
+	Shopkeeper = "$",
+	Crate = "X",
+	ChestBlack = "C",
+	ChestRed = "R",
+	ChestPurple = "P",
+	ChestLocked = "L",
+}
+
+-- Glyphs given to types outside MAP_GLYPHS, kept until the mod reloads.
+local assignedGlyphs = {}
+local takenGlyphs = { [MAP_PLAYER] = true, [MAP_STAIRS] = true, [MAP_WALL] = true, [MAP_FLOOR] = true }
+for _, glyph in pairs(MAP_GLYPHS) do
+	takenGlyphs[glyph] = true
+end
+
 -- The first unused letter of the type's name, uppercase, so legends read
 -- naturally; then any unused letter or digit. Falls back to "?".
-local function pickSymbol(typeName, used)
+local function glyphFor(typeName)
+	local glyph = MAP_GLYPHS[typeName] or assignedGlyphs[typeName]
+	if glyph then
+		return glyph
+	end
+	glyph = "?"
 	for letter in (typeName:upper() .. ALPHABET):gmatch("%w") do
-		if not used[letter] then
-			return letter
+		if not takenGlyphs[letter] then
+			glyph = letter
+			break
 		end
 	end
-	return "?"
+	if glyph ~= "?" then
+		assignedGlyphs[typeName] = glyph
+		takenGlyphs[glyph] = true
+	end
+	return glyph
 end
 
 -- `map [N]` draws the tiles within N of the player (default 8, up to 20) as
--- text: `#` solid, `.` floor, `>` stairs, `@` the player, a letter for each
+-- text: `#` solid, `.` floor, `>` stairs, `@` the player, a fixed glyph for each
 -- other entity type (see `legend`), and a space beyond the level's edge. Items
 -- in the player's inventory, wall decorations and anything on the player's own
 -- tile are left out.
@@ -359,8 +400,7 @@ commands.map = {
 				cells[key] = MAP_STAIRS
 			end
 		end
-		local used = { [MAP_PLAYER] = true, [MAP_STAIRS] = true, [MAP_WALL] = true, [MAP_FLOOR] = true }
-		local symbols = {}
+		local seen = {}
 		local legend = {}
 		for entity in Entities.entitiesWithComponents({ "position" }) do
 			local pos = entity.position
@@ -374,11 +414,9 @@ commands.map = {
 				and math.abs(pos.x - px) <= radius
 				and math.abs(pos.y - py) <= radius
 			then
-				local symbol = symbols[entity.name]
-				if not symbol then
-					symbol = pickSymbol(entity.name, used)
-					symbols[entity.name] = symbol
-					used[symbol] = true
+				local symbol = glyphFor(entity.name)
+				if not seen[entity.name] then
+					seen[entity.name] = true
 					legend[#legend + 1] = { symbol = symbol, type = entity.name }
 				end
 				if cells[pos.y * 65536 + pos.x] ~= " " then
@@ -395,7 +433,16 @@ commands.map = {
 			end
 			rows[#rows + 1] = table.concat(row)
 		end
-		return { x = px, y = py, radius = radius, rows = rows, legend = legend, stairs = allStairs }
+		return {
+			x = px,
+			y = py,
+			x0 = px - radius,
+			y0 = py - radius,
+			radius = radius,
+			rows = rows,
+			legend = legend,
+			stairs = allStairs,
+		}
 	end,
 }
 

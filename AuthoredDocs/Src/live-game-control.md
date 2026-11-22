@@ -104,6 +104,14 @@ What a tracer-bullet POC for `AgentBridge` (issue #11) verified live on CotN
   level. No tile is named for the exit: its position comes from
   `Marker.lookUpAll(Marker.Type.STAIRS)` (`necro.game.tile.Marker`), a list of
   `{x, y}`. Y grows downward, as `up` moves to `y - 1`.
+* The grid's top-left tile is `(x0, y0)` = the player's position minus the
+  radius, so column C and row R are tile `(x0 + C, y0 + R)`; the CLI prints it
+  in the header. Verified: a Skeleton at `(2,0)` showed at column 6, row 4 of
+  a radius-4 map.
+* Each entity type has one glyph, the same on every call and level. A table
+  covers the common types; the rest get the first free letter of their name,
+  remembered until the mod reloads (a reload may hand out different letters).
+  Verified: `Skeleton` was `S` and `Skeleton2` `s` on levels 1 and 2 of one run.
 * Entities with a `position` include the player's inventory items (at the
   player's tile) and a `WallTorch` per wall; `map` skips both.
 

@@ -28,9 +28,12 @@
 #                                   resistance a shovel must beat
 #   map [N]                         ASCII grid of the tiles within N (default 8,
 #                                   up to 20) of the player: # solid, . floor,
-#                                   > stairs, @ the player, a letter per entity
-#                                   type (legend below the grid), a space beyond
-#                                   the level's edge
+#                                   > stairs, @ the player, a fixed glyph per
+#                                   entity type, the same on every call and level
+#                                   (legend, one per line, below the grid), a
+#                                   space beyond the level's edge. The header
+#                                   gives the top-left tile, so column C and row
+#                                   R are tile (x0+C, y0+R)
 #   spawn TYPE [X Y] [force]        next to the player by default; refuses a solid
 #                                   or off-level tile unless `force` is given
 #   convert ID TYPE
@@ -135,9 +138,9 @@ elif has("results") then
 		"watched \(.watched.before.type)#\(.watched.before.id) after:  \(.watched.after | if .gone then "gone" else .components | tojson end)"
 	else empty end)
 elif has("rows") then
-	"player at \(pos), radius \(.radius); y grows downward",
+	"player at \(pos), top-left (\(.x0),\(.y0)), radius \(.radius); y grows downward",
 	.rows[],
-	(.legend | map("\(.symbol)=\(.type)") | join("  ")),
+	(.legend[] | "\(.symbol) = \(.type)"),
 	"stairs at: " + (.stairs | map("(\(.[0]),\(.[1]))") | join(" "))
 elif has("tiles") then
 	(.tiles[] | "\(pos) \(tile)")

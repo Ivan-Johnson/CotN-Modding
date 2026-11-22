@@ -108,6 +108,9 @@ commands and conventions.
   the game run from the tick, never via a queued input: an `IDLE` input costs
   the groove chain. See
   `Docs/Adr/0006-agent-bridge-uses-command-file-and-log.md`.
+* `map` draws each entity type with the same glyph on every call and level,
+  and prints its top-left tile, so rows and columns convert to tile
+  coordinates without the player's position.
 * For fights, take a `snapshot` first and use `scenario ... repeat=N` to
   compare runs, rather than single-stepping; an `=` outcome with
   `damage_dealt` means the attack landed.
