@@ -51,6 +51,10 @@ Synchrony API 4.2.1, unless a bullet bounds it further.
   and ends up where it began, minus changes made outside actions. Call
   `Rollback.loadSnapshot(turnID)`, then `ClientActionBuffer.clear()`, so
   nothing is replayed.
+* Save a snapshot before an experiment that can kill the player (traps,
+  angering a shopkeeper, a bomb beside you) and restore between trials. Each
+  save overwrites the baseline a restore returns to, so save once, before
+  the loop.
 * Clearing the buffer drops the pinned snapshot, so save and pin it again;
   without that a second restore landed on an earlier turn. With it, one
   snapshot restored three times in a row. A spawn made after the snapshot is
@@ -64,7 +68,16 @@ Synchrony API 4.2.1, unless a bullet bounds it further.
 * A `levelGenerate` handler that sets `ev.options.seed` pins the level's
   layout: two runs with one seed gave identical tiles, another seed did not.
   The `Starting Single Zone run with seed` log line still shows a random
-  number, so compare tiles.
+  number, so compare tiles. Entity ids differ between such runs, so match
+  entities by type and tile.
+* Inputs queued back to back made enemies skip a move about every 24 beats (a
+  `Slime3`, which moves every beat, did so in 40 batched 8-beat runs and never
+  in 49 beats sent one at a time); waiting 25 ticks after each input
+  resolved stopped it and 10 did not. The cause is unknown. Deterministic
+  enemies (`Slime2`, `Slime3`, `Skeleton`) act on the same beats either way.
+* The diagonal inputs (`up_left` and the like) did nothing as Cadence on one
+  1-1 level: the input never resolved and the turn did not advance. Tried
+  once.
 * No API steps N beats; `Turn.process(target)` did nothing. N `IDLE` inputs
   advance about one beat each, faster than real time.
 * After an input that steps onto stairs or a `Trapdoor`, the level changes
@@ -108,6 +121,9 @@ Synchrony API 4.2.1, unless a bullet bounds it further.
 
 ## Entities
 
+* `Object.spawn(type, x, y)` takes absolute tile coordinates, not offsets from
+  the player. Spawning into a wall succeeds and the enemy just sits there, so
+  check the tile first.
 * `Object.spawn(type, x, y)` and `Object.convert(entity, type)` work from tick
   and turn handlers; so does `Object.convertImmediately`. Converting to an
   unknown type does not throw; it logs `[Object] [warning] Invalid target type

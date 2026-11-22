@@ -35,6 +35,12 @@ Each stats table has the same columns:
 
 ## Shared behaviour
 
+* Deterministic enemies (`Slime2`, `Slime3`, `Skeleton`) act on the same beats
+  on every run. Random movers (`Zombie`, `Bat`) vary, so compare them over
+  many runs, never one trace against another.
+* An enemy that never moves while its `aggro.active` is true is probably
+  blocked, not asleep: check the tiles and entities around it.
+
 * A seeker moves along x first and only then along y, even when the vertical
   distance is larger.
 * An attack takes the attacker's move slot: once adjacent, a speed-2 enemy hits
