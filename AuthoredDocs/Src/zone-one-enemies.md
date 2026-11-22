@@ -39,7 +39,7 @@ pass, this page now states the second pass. Pitfalls when repeating it:
 | 1 | straight line, reverses at an obstacle | `Zombie` |
 | 2 | fixed loop (`aiPattern.moves`) | `Slime2`, `Slime3` |
 | 3 | random walk | `Bat`, `Bat2`, `Bat3`, `BatMiniboss` |
-| 7 | seeks the player | `Skeleton`, `Skeleton2`, `Skeleton3`, `Monkey`, `Monkey2`, `Ghost`, `Wraith` |
+| 7 | seeks the player | `Skeleton`, `Skeleton2`, `Skeleton3`, `Monkey`, `Monkey2`, `Ghost`, `Wraith`, `Dragon`, `Minotaur`, `Minotaur2` |
 
 `Wraith` has `ai.id` 7 but never acts; see below.
 
@@ -77,7 +77,8 @@ pass, this page now states the second pass. Pitfalls when repeating it:
 | `Bat2` | 1 | 1 | 2 | 1 |
 | `Bat3` | 1 | 1 | 3 | 1 |
 | `BatMiniboss` | 2 | 2 | 3 | 2 |
-| `Minotaur` | 3 | 1 | 4 | 3 |
+| `Minotaur` | 3 | 1 | 4 | 3, or one bomb |
+| `Dragon` | 4 | 2 | 4 | 4 |
 | `Minotaur2` | 5 | 1 | 5 | not fought |
 | `Ghost` | 1 | 1 | 2 | 1, only on the turn that faces it |
 | `Wraith` | 1 | 1 | 1 | cannot be hit |
@@ -185,6 +186,34 @@ Damage is the `innateAttack.damage`. Observed damage matched it for
   consistent with the every second beat of other attackers, but only one fight
   was seen. `Minotaur2` was not fought.
 
+### Dragon
+
+* A natural miniboss on a 1-1 stairs tile: `ai.id` 7 (seek), 4 health,
+  `beatDelay.interval` 2, `innateAttack.damage` 4, `aggro.active` false at
+  the start. It stayed put while the player walked up to about 3 tiles away
+  and dug a wall toward it, then walked toward the player one tile every
+  second beat.
+* Fought with the dagger at the end of a one-tile corridor: the dragon
+  stepped adjacent, the player hit it four times in a row, it hit once for 4
+  (on the second of those beats), and the fourth hit killed it. One fight
+  only; no fire or other ranged attack was seen.
+* `Dragon2` (a 1-3 stairs room, a 1-4 start room) was only listed, not
+  fought.
+
+### Bombs
+
+* The starting `Bomb` (`bomb` action) drops a lit bomb on the player's tile.
+  It exploded on the third beat after the one that placed it: placed on
+  beat 1, and the blast came with the idle on beat 4. The blast dug the two
+  `DirtWall`s directly above it and up-left of it, hit a `Crate3` for 1 and
+  did 4 damage to a `Minotaur`.
+* A `Minotaur` charging along the player's row at one tile a beat, 5 tiles
+  away, was undamaged when the player placed the bomb at once and retreated 2
+  tiles: it was still 2 tiles from the bomb when it went off, and the blast
+  came before its move. Placing the bomb one beat later (a leading `idle`)
+  left it 1 tile from the bomb, and it died. In both tries it never hit the
+  player.
+
 ### Ghost, Wraith, Trapchest
 
 * `Ghost` reacts to which way the player faces. It moves toward the player,
@@ -201,6 +230,11 @@ Damage is the `innateAttack.damage`. Observed damage matched it for
   killed it in one hit. It starts with `aggro.active` false, and it has
   `stasisAI` and `freezeAttackableFlags` components, which probably
   implement the freeze.
+* A natural `Ghost` (1-3) sat in a one-tile cell behind a `DirtWall` with
+  `aggro.active` true and `stasis.active` true (so the `aggro` note above is
+  for spawned ghosts). Adjacent and faced, it did nothing and pressing toward
+  it did nothing; one step away (it followed into the player's old tile) and
+  one press back toward it killed it with no damage taken.
 * `Wraith`: inert and not solid, even though `ai.id` is 7. It never moved or
   attacked in any test, including adjacent to the player for 6 beats while the
   player faced away. The player walks through its tile without hitting it, so
