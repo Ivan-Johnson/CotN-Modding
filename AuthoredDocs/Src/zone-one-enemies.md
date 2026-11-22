@@ -41,7 +41,8 @@ pass, this page now states the second pass. Pitfalls when repeating it:
 | 3 | random walk | `Bat`, `Bat2`, `Bat3`, `BatMiniboss` |
 | 7 | seeks the player | `Skeleton`, `Skeleton2`, `Skeleton3`, `Monkey`, `Monkey2`, `Ghost`, `Wraith`, `Dragon`, `Minotaur`, `Minotaur2` |
 
-`Wraith` has `ai.id` 7 but never acts; see below.
+A spawned `Wraith` has `ai.id` 7 but never acts; a natural one chases the
+player. See below.
 
 ## Shared components
 
@@ -81,7 +82,7 @@ pass, this page now states the second pass. Pitfalls when repeating it:
 | `Dragon` | 4 | 2 | 4 | 4 |
 | `Minotaur2` | 5 | 1 | 5 | not fought |
 | `Ghost` | 1 | 1 | 2 | 1, only on the turn that faces it |
-| `Wraith` | 1 | 1 | 1 | cannot be hit |
+| `Wraith` | 1 | 1 | 1 | spawned: cannot be hit; natural: 1 |
 | `Trapchest` | 1 | 1 | 2 | 3 bumps |
 
 Damage is the `innateAttack.damage`. Observed damage matched it for
@@ -199,8 +200,23 @@ Damage is the `innateAttack.damage`. Observed damage matched it for
   only; no fire or other ranged attack was seen.
 * `Dragon2` (a 1-3 stairs room, a 1-4 start room) was only listed, not
   fought.
+* A bomb kills a `Dragon` with no damage taken: place it when the dragon is
+  2 tiles from the bomb's tile, walk 2 or 3 tiles away, and the dragon walks
+  into the blast (4 damage). Done once on 1-1 from a snapshot.
+* With a `FollowerSnowbro` (from `FamiliarIceSpirit`) on the dragon's tile,
+  4 or more dagger hits did no damage and the dragon killed the player: an
+  ally on an enemy's tile blocks the player's melee.
 
 ### Bombs
+
+* The 1-3 stairs room held a `Minotaur2`, two `Skeleton2`, two `Skeleton3`, a
+  `Ghost`, a `Bat`, a `Monkey2` and slimes, all with `aggro.active` false.
+  The player walking to 3 tiles from its corridor mouth woke the lot: within
+  3 beats the `Minotaur2` dug through a `DirtWall` at (14,6) and stood
+  adjacent. The enemies came down the 2-wide corridor in a column, so a bomb
+  placed in it (the player 3 tiles away) killed a `Ghost` and destroyed
+  `ResourceCoin30` and `ResourceCoin10` lying on its blast tiles: a bomb
+  costs the coins in its blast.
 
 * The starting `Bomb` (`bomb` action) drops a lit bomb on the player's tile.
   It exploded on the third beat after the one that placed it: placed on
@@ -213,6 +229,12 @@ Damage is the `innateAttack.damage`. Observed damage matched it for
   came before its move. Placing the bomb one beat later (a leading `idle`)
   left it 1 tile from the bomb, and it died. In both tries it never hit the
   player.
+
+* A bomb placed in a dead end blasts the 3 by 3 around it and clears
+  `StoneWall` (`digResistance` 2) as well as `DirtWall`: one placed in a
+  corridor opened a way into a guarded stairs room that the basic shovel
+  could not. It went off on the fourth action counting the placing one, after
+  the player had walked 2 tiles away.
 
 ### Ghost, Wraith, Trapchest
 
@@ -235,11 +257,16 @@ Damage is the `innateAttack.damage`. Observed damage matched it for
   for spawned ghosts). Adjacent and faced, it did nothing and pressing toward
   it did nothing; one step away (it followed into the player's old tile) and
   one press back toward it killed it with no damage taken.
-* `Wraith`: inert and not solid, even though `ai.id` is 7. It never moved or
+* A spawned `Wraith`: inert and not solid, even though `ai.id` is 7. It never moved or
   attacked in any test, including adjacent to the player for 6 beats while the
   player faced away. The player walks through its tile without hitting it, so
-  it cannot be hit. `aggro.active` stayed false. What a natural `Wraith` does
-  is unknown.
+  it cannot be hit. `aggro.active` stayed false.
+* A natural `Wraith` (a 1-2 skeleton room) walked toward the player one tile
+  a beat and died to one dagger hit, so the spawned one's inertness is not
+  how wraiths behave in a level.
+* Another natural `Wraith` (1-3) went from (3,4) to (-2,0) in one beat with
+  the player at (-2,5), then walked 1 tile a beat down to the player and died
+  to one hit. Why it jumped is unknown.
 * `Trapchest` never moves. Bumping it once does nothing, the second bump
   deals 2 to the player, and the third kills it. It leaves a random item
   (`HeadSpikedEars`, `WeaponHarp` and `Torch1` in three tries), not coins.
@@ -312,7 +339,7 @@ Not yet re-measured in the second pass:
   `Slime2` and `Slime3` on open floor, until `new-run`. It followed a blocked
   slime trial once and did not repeat in a clean run, so it may be a
   harness artifact. Not diagnosed.
-* What wakes a `Wraith`, and what a natural one does.
+* What wakes a spawned `Wraith`, and what a natural one does besides chase.
 * Whether `Minotaur2` attacks as `Minotaur` does, and whether a `Minotaur`
   really breaks dirt walls.
 * Why `Slime` never moves despite `innateAttack.damage` 100.
