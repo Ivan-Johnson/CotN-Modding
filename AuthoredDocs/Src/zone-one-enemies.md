@@ -226,8 +226,8 @@ kills, in no-beat mode.
   `Skeleton3` and 20 for `Bat3`. Only `Slime` was seen at a higher
   multiplier, so the formula is a guess for the other types. `Trapchest`
   leaves an item, and `Slime2`, `Monkey2`, `Ghost` and `Wraith` were not
-  measured. The earlier "30" for `Bat3` was a higher multiplier, not a
-  random value.
+  measured. The earlier "30" for `Bat3` does not fit the formula and is
+  unexplained.
 
 ## Unverified and still to do
 
