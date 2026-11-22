@@ -139,54 +139,41 @@ let
                 '';
         };
 
-        # Drives the game's live-reload and asserts on the resulting log
-        # output. Impure (needs a running, native Steam/Proton CotN
-        # instance and a live mods directory), so it lives in `apps`
-        # rather than `checks`: exposed as `nix run .#itj-impure-tests`.
+        # The single unit-test entrypoint: takes the game-instance lock,
+        # installs the mods, runs the tests and prints the results. Impure
+        # (needs a running, native Steam/Proton CotN instance and a live mods
+        # directory), so it lives in `apps` rather than `checks`: exposed as
+        # `nix run .#itj-impure-tests`. See `Mods/itj-impure-tests.bash`.
         impureTests = pkgs.writeShellApplication {
                 name = "run-tests";
                 runtimeInputs = [
                         pkgs.coreutils
                         pkgs.gnugrep
+                        pkgs.util-linux
+                        installMods
                 ];
                 text = ''
                         ${waitForLog}
-
-                        baseline=$(wc -l <"$COTN_LOG")
-
-                        # Installing appends a timestamp comment to api.lua, rather than
-                        # to the entry script. api.lua is the module every mod under test
-                        # requires at load-time to register its tests, so changing it
-                        # (forcing a reload) cascades a reload of every mod that
-                        # successfully required it - including HelloWorld - re-running
-                        # their registerTest() calls. This also ensures the suite always
-                        # reruns even if there are no new changes.
-                        ITJ_BUNDLE_RELOAD_TRIGGER="HelloWorldTests/api.lua" ${installMods}/bin/install-mods HelloWorld HelloWorldTests AgentBridge
-
-                        # Wait for the tests mod's completion sentinel, rather than a
-                        # hardcoded sleep or a quiet-period guess.
-                        timedOut=0
-                        if ! wait_for_log "$baseline" "[HelloWorldTests] Test suite completed"; then
-                                echo "itj-impure-tests: timed out waiting for test suite completion" >&2
-                                timedOut=1
-                        fi
-
-                        newOutput="$(tail -n "+$((baseline + 1))" "$COTN_LOG")"
-                        echo "$newOutput"
-
-                        if ((timedOut)); then
-                                echo "Test suite timed out"
-                                exit 1
-                        fi
-
-                        if grep -qE '\[HelloWorldTests\] Test suite completed: 0 failure\(s\)' <<<"$newOutput"; then
-                                echo All tests pass
-                        else
-                                echo "itj-impure-tests: test suite reported failures" >&2
-                                exit 1
-                        fi
+                        ${builtins.readFile ./itj-impure-tests.bash}
                 '';
         };
+
+        # Tests the entrypoint's lock without a live game; see
+        # `Mods/test-itj-impure-tests-lock.bash`.
+        impureTestsLockTest =
+                pkgs.runCommand "cotn-impure-tests-lock-test"
+                        {
+                                nativeBuildInputs = [
+                                        impureTests
+                                        pkgs.coreutils
+                                        pkgs.gnugrep
+                                        pkgs.util-linux
+                                ];
+                        }
+                        ''
+                                bash ${./test-itj-impure-tests-lock.bash}
+                                touch "$out"
+                        '';
 in
 {
         # What other modules need to drive the live game; not merged into the
@@ -204,6 +191,7 @@ in
                 bytecode-api = bytecodeApiTest;
                 bundle-layout = bundleLayoutTest;
                 route = routeTest;
+                impure-tests-lock = impureTestsLockTest;
         };
 
         apps = {

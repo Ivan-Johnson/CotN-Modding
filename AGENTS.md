@@ -53,6 +53,12 @@ than silently overriding it.
   run `nix run .#itj-impure-tests`, read the result. It's an `app`, not a
   `check`, because it's impure: it needs a running, native Steam/Proton CotN
   instance.
+* `nix run .#itj-impure-tests` first takes an advisory `flock` on the one game
+  instance (`ITJ_GAME_LOCK_FILE`, default `itj-game.lock` inside the game's
+  mods directory). If another run holds it, it waits up to 120 s
+  (`ITJ_GAME_LOCK_TIMEOUT_SECONDS`), then fails naming the holder before
+  installing anything. Everything that runs the tests, hooks included, goes
+  through it. `nix flake check` tests the lock without a game.
 * `build-format` formats all code. Typically this does not need to be used; it
   is done automatically as part of a pre-commit hook.
 
