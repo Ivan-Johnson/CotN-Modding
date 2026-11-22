@@ -15,9 +15,16 @@
 # uses no-beat mode, so time passes only when you act):
 #   state                           the player's position, health, facing, coin
 #                                   multiplier, kill count, gold and items
-#   entities [type=T] [component=C] [id=N] [show=C1,C2|@preset|all]
+#   entities [type=T] [component=C] [id=N] [near=R] [exclude=T1,T2] [all=true]
+#            [show=C1,C2|@preset|all]
 #                                   entities with a position (or component C);
-#                                   `show` adds their components' fields.
+#                                   near=R keeps those within R tiles of the
+#                                   player; exclude drops those types. Without
+#                                   type, component or id, items the player
+#                                   holds and wall decorations (torches) are
+#                                   hidden and counted in `hidden`; all=true
+#                                   lists them. `show` adds their components'
+#                                   fields.
 #                                   `@ai` expands to the components that decide
 #                                   how an enemy moves and attacks (also usable
 #                                   in scenario's `watch=`). Replies are ASCII:
@@ -81,6 +88,7 @@
 #                                   snapshot are undone; the enemies `clear`
 #                                   removed before it stay gone
 #   level N
+#   help [COMMAND]                  this index; a command's full description
 #
 # Events (damage taken and dealt, kills, deaths, level loads, song ending or
 # ended, coin multiplier lost) go to stderr as `event: {JSON}` lines after the
@@ -147,7 +155,7 @@ elif has("tiles") then
 elif has("tile") or has("solid") then
 	"\(pos) \(tile)"
 elif has("entities") then
-	"count=\(.count)",
+	"count=\(.count)" + (if .hidden > 0 then " hidden=\(.hidden) (all=true shows them)" else "" end),
 	(.entities[] | "\(.type)#\(.id) \(pos)"
 		+ (if .components then " \(.components | tojson)" else "" end))
 elif has("inventory") then
@@ -170,9 +178,59 @@ if [[ -n ${builtScriptHash:-} && -f $sourceScript ]]; then
 	fi
 fi
 
-if [[ ${1:-} == "" || ${1:-} == help || ${1:-} == --help || ${1:-} == -h ]]; then
-	sed -n '2,/^set -euo/p' "${BASH_SOURCE[0]}" | sed '$d; s/^# \{0,1\}//' >&2
+# The header comment is the one source of the help. The index keeps each
+# command's signature (its first line up to the description column, plus its
+# continuation lines) and the paragraphs around the commands; `help COMMAND`
+# prints that command's whole block. A block starts at `#   word` and its
+# description is indented 35 columns, which tells the two apart.
+printHelp() {
+	sed -n '2,/^set -euo/p' "${BASH_SOURCE[0]}" | sed '$d' | awk -v want="${1:-}" '
+		function strip(line) { sub(/^# ?/, "", line); return line }
+		/^#   [a-z]/ {
+			state = 1
+			active = (want == $2)
+			if (want == "") {
+				sig = $0
+				sub(/^#   /, "", sig)
+				sub(/   +.*/, "", sig)
+				print "  " sig
+			} else if (active) {
+				found = 1
+				print strip($0)
+			}
+			next
+		}
+		state == 1 && $0 == "#" {
+			state = 2
+			active = 0
+			if (want == "") { print "" }
+			next
+		}
+		state == 1 {
+			if (want == "" && $0 !~ /^# {35}/) {
+				sig = $0
+				sub(/^# +/, "", sig)
+				print "      " sig
+			} else if (active) {
+				print strip($0)
+			}
+			next
+		}
+		want == "" { print strip($0) }
+		END { exit(want != "" && !found) }
+	' >&2
+}
+
+if [[ ${1:-} == "" || ${1:-} == --help || ${1:-} == -h ]]; then
+	printHelp
 	[[ ${1:-} == "" ]] && exit 2
+	exit 0
+fi
+if [[ ${1:-} == help ]]; then
+	if ! printHelp "${2:-}"; then
+		echo "agent-bridge: no command '${2:-}'; run 'agent-bridge help'" >&2
+		exit 1
+	fi
 	exit 0
 fi
 

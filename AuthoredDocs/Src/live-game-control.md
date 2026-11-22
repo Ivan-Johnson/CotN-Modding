@@ -113,7 +113,10 @@ What a tracer-bullet POC for `AgentBridge` (issue #11) verified live on CotN
   remembered until the mod reloads (a reload may hand out different letters).
   Verified: `Skeleton` was `S` and `Skeleton2` `s` on levels 1 and 2 of one run.
 * Entities with a `position` include the player's inventory items (at the
-  player's tile) and a `WallTorch` per wall; `map` skips both.
+  player's tile) and a `WallTorch` per wall; `map` skips both, and so does
+  `entities` unless it is given `type`, `component` or `id`, or `all=true`
+  (the reply counts what it hid in `hidden`). Verified on a 1-1 level: 49
+  shown plus 52 hidden equalled the 101 of `all=true`.
 
 ## Spawning and converting
 

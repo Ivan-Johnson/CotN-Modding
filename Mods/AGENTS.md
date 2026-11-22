@@ -86,7 +86,10 @@ commands and conventions.
   and drive the running game to learn mechanics by experiment, e.g.
   `agent-bridge new-run Dove`, `agent-bridge spawn Skeleton`, `agent-bridge
   entities type=Skeleton show=health`; run it with no arguments for the
-  command list. Any command installs `AgentBridge` first when it is missing.
+  command index and `agent-bridge help COMMAND` for one command's full
+  description. `entities` hides held items and wall torches unless given
+  `type`, `component` or `id`, or `all=true`; `near=R` and `exclude=T1,T2`
+  narrow it further. Any command installs `AgentBridge` first when it is missing.
   Replies are compact text (`--json` for the raw JSON; the mod reports
   entities within 12 tiles, the text shows those within 6) and take about a
   second. `input` takes several actions and replies once

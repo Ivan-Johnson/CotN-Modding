@@ -250,16 +250,54 @@ commands.state = {
 	end,
 }
 
+-- Items the player holds and wall decorations (torches): the entities that
+-- bury the ones an agent asks about.
+local function isBackgroundEntity(entity)
+	local holder = entity.item and entity.item.holder
+	local held = holder and holder ~= 0 and Entities.entityExists(holder)
+	return held or entity.name:find("Wall") ~= nil
+end
+
+local function parseTypeSet(text)
+	local set = {}
+	for name in (text or ""):gmatch("[^,]+") do
+		set[name] = true
+	end
+	return set
+end
+
 commands.entities = {
 	run = function(args)
 		local options = parseOptions(args)
+		local near = options.near and tonumber(options.near)
+		assert(not options.near or (near and near >= 0), "near must be a number of tiles")
+		local exclude = parseTypeSet(options.exclude)
+		local showBackground = options.all == "true" or options.type or options.component or options.id
+		local center = near and requirePlayer().position
 		local found = {}
+		local hidden = 0
+		local function consider(entity)
+			local position = entity.position
+			if exclude[entity.name] then
+				return
+			end
+			if near and not (position
+					and math.abs(position.x - center.x) <= near
+					and math.abs(position.y - center.y) <= near) then
+				return
+			end
+			if not showBackground and isBackgroundEntity(entity) then
+				hidden = hidden + 1
+				return
+			end
+			found[#found + 1] = entity
+		end
 		if options.id then
-			found[1] = requireEntity(options.id)
+			consider(requireEntity(options.id))
 		else
 			for entity in Entities.entitiesWithComponents({ options.component or "position" }) do
 				if not options.type or entity.name == options.type then
-					found[#found + 1] = entity
+					consider(entity)
 				end
 			end
 		end
@@ -271,7 +309,7 @@ commands.entities = {
 				results[i].components = dumpEntity(entity, show).components
 			end
 		end
-		return { count = #results, entities = results }
+		return { count = #results, hidden = hidden, entities = results }
 	end,
 }
 
@@ -404,13 +442,10 @@ commands.map = {
 		local legend = {}
 		for entity in Entities.entitiesWithComponents({ "position" }) do
 			local pos = entity.position
-			local holder = entity.item and entity.item.holder
-			local held = holder and holder ~= 0 and Entities.entityExists(holder)
 			if
 				entity.id ~= player.id
 				and not (pos.x == px and pos.y == py)
-				and not held
-				and not entity.name:find("Wall")
+				and not isBackgroundEntity(entity)
 				and math.abs(pos.x - px) <= radius
 				and math.abs(pos.y - py) <= radius
 			then
