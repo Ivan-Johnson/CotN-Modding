@@ -56,7 +56,9 @@
 #                                   gives the top-left tile, so column C and row
 #                                   R are tile (x0+C, y0+R)
 #   spawn TYPE [X Y] [force]        next to the player by default; refuses a solid
-#                                   or off-level tile unless `force` is given
+#                                   or off-level tile unless `force` is given.
+#                                   X Y are absolute tile coordinates, not
+#                                   offsets from the player
 #   convert ID TYPE
 #   clear [arena=N]                 remove every enemy (anything with an `ai`),
 #                                   so spawn tests see only what they spawn;
@@ -74,7 +76,9 @@
 #            [repeat=N] ACTION...
 #                                   one whole experiment on the current level:
 #                                   optionally carve an arena and clear the
-#                                   enemies, spawn TYPE at X Y, perform the
+#                                   enemies, spawn TYPE at X Y (absolute tile
+#                                   coordinates, not offsets from the player),
+#                                   perform the
 #                                   actions, and reply like `input` plus the
 #                                   spawned entity's `watch` components
 #                                   (default position, health, aggro) before
