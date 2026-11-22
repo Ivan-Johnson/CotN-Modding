@@ -1,6 +1,6 @@
 -- Lets an AI agent drive a live game; dev-only. See
 -- Docs/Adr/0006-agent-bridge-uses-command-file-and-log.md and
--- AuthoredDocs/Src/live-game-control.md.
+-- AuthoredDocs/Src/synchrony-game-control.md.
 --
 -- Commands arrive as one line in cmd.txt beside this script:
 --   <id> <command> [args...]
@@ -1192,7 +1192,7 @@ end)
 
 -- Pins a snapshot of the current turn so `restore` can return to it. Entities
 -- the bridge spawned or converted since do not survive a restore (see
--- AuthoredDocs/Src/live-game-control.md).
+-- AuthoredDocs/Src/synchrony-game-control.md).
 commands.snapshot = {
 	run = function()
 		requirePlayer()

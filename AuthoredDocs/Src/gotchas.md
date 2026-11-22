@@ -1,5 +1,8 @@
 # Lua gotchas
 
+For mod authors. Behaviour of Synchrony's Lua sandbox and event system that the
+official docs do not state, on CotN 4.2.1.
+
 ## Reverse-engineering
 
 To find which components/fields drive an existing entity's behavior, temporarily
@@ -40,12 +43,12 @@ the API docs don't spell out its payload.
 
 ## Events and game state
 
-* When two handlers share an order key and neither specifies `sequence`, the
-  tie does not necessarily break in dependency-load order: empirically, a
-  dependent mod's handler ran before the mod it depends on's handler at the
-  same order/sequence, the opposite of a literal reading of the "mods sorted
-  by load order" doc wording. Don't assume; confirm actual firing order with
-  temporary debug `print()`s before relying on it.
+* When two handlers share an order key and neither specifies `sequence`, do
+  not rely on load order: in one test a dependent mod's handler ran before
+  the handler of the mod it depends on, the opposite of the official docs'
+  "mods sorted by load order". One observation, so `guess` that this is the
+  general rule. Confirm firing order with temporary `print()`s before relying
+  on it.
 * `Marker.Type.STAIRS` markers aren't unique to a level's exit: "All
   Characters Mode" reuses them for its post-run character-select room (one
   staircase per remaining character), and the game lobby reuses them for its

@@ -1,7 +1,9 @@
 # Authored docs
 
-Index of the docs written by hand for this repo. Read the one whose trigger
-matches your task.
+Index of the docs written by hand for this repo. Each page says whether it is
+for players or for mod authors; read the one whose trigger matches your task.
+
+## Mod authors
 
 * [gotchas.md](./gotchas.md): Lua errors at load time, event ordering,
   `Tick.delay`, stairs markers, or reverse-engineering an entity's behavior
@@ -10,13 +12,28 @@ matches your task.
   not reload.
 * [game-data-sources.md](./game-data-sources.md): which game data a running
   mod can read (`GameXML`, `FileIO`, versions), and which APIs fail.
-* [live-game-control.md](./live-game-control.md): getting commands into and
-  output out of a running game, running code in-turn, moving the player,
-  spawning or converting entities, and dumping an entity.
-* [zone-one-cadence.md](./zone-one-cadence.md): what a single-zone zone one
-  run as Cadence starts with and contains, enemy stats, and open questions
-  about combat and damage.
-* [zone-one-enemies.md](./zone-one-enemies.md): per-type health, damage,
-  speed, movement and hits to kill for the zone one enemies.
-* [dove.md](./dove.md): the Dove character's components, items and traits, and
-  what is still unverified about how it works.
+* [synchrony-game-control.md](./synchrony-game-control.md): getting data out
+  of a mod, running code in a turn, snapshot and restore, level changes,
+  tiles, and spawning or converting entities.
+* [enemy-ai-ids.md](./enemy-ai-ids.md): an enemy's `ai.id` and the components
+  behind its movement.
+
+## Players
+
+A wiki of linked pages about the game's things, measured as Cadence on zone one.
+
+* [enemies.md](./enemies.md): any zone one enemy, with a page per type and the
+  stats tables; start here for enemies.
+* [minibosses.md](./minibosses.md) and [king-conga.md](./king-conga.md): the
+  stairs guards and the 1-4 boss fight.
+* [coin-multiplier.md](./coin-multiplier.md): gold per kill and what breaks the
+  chain.
+* [bombs.md](./bombs.md), [digging.md](./digging.md),
+  [traps.md](./traps.md), [shrines.md](./shrines.md): the level's tools and
+  hazards.
+* [weapons.md](./weapons.md), [action-items.md](./action-items.md),
+  [chests-and-loot.md](./chests-and-loot.md): what the player can pick up and
+  use.
+* [stairs-and-levels.md](./stairs-and-levels.md): leaving a level, trapdoors,
+  the boss level and shops.
+* [cadence.md](./cadence.md) and [dove.md](./dove.md): the characters.

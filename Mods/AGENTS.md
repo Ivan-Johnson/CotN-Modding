@@ -57,6 +57,22 @@ commands and conventions.
 * Load-time Lua registers handlers — `event.<name>.add(id, phase, fn)`, as in
   `HelloWorld.lua` — and run-time code handles gameplay. Load order and event
   sequence numbers resolve priority when mods touch the same event.
+* `HelloWorldTests` drives itself: on load it starts a fixed-seed
+  `GameSession.start` run and feeds scripted input
+  (`necro.client.Input.add`) from `event.<name>.add` handlers, then asserts on
+  game state. Its entry script (`HelloWorldTests.lua`) registers the
+  framework's own self-tests, which exercise the expectFail and crash-recovery
+  machinery of `api.lua`, then starts the suite from a `Tick.delay`-deferred
+  call. Deferring by one tick gives every mod under test its load-time
+  `registerTest()` call first, since a reload finishes a whole batch of
+  scripts before the next tick; it does not guarantee the entry script runs
+  last within that batch.
+* `nix run .#itj-impure-tests` always changes `HelloWorldTests/api.lua`'s
+  content (a trailing timestamp comment) so the loader remounts it and the run
+  re-fires. Mods under test `require` `api.lua`, so the remount also reloads
+  them and re-runs their `registerTest()` calls. A mod's first-ever install
+  beside the test mod can fail that `require` if `HelloWorldTests` has not
+  loaded yet; the forced reload heals it.
 
 ## Installing
 
@@ -126,6 +142,46 @@ commands and conventions.
 * For fights, take a `snapshot` first and use `scenario ... repeat=N` to
   compare runs, rather than single-stepping; an `=` outcome with
   `damage_dealt` means the attack landed.
+
+### Experiment pitfalls
+
+* The mod waits 30 ticks after each input resolves before queuing the next.
+  Without the wait, enemies skipped a move about every 24 beats (a `Slime3`,
+  which moves every beat, did so in 40 batched 8-beat runs and never in 49
+  beats sent one `idle` per command); 10 ticks still skipped and 25 did not.
+  The cause is unknown; the wait is a measured workaround.
+* Take a `snapshot` once, before a test loop: each one overwrites the baseline
+  that `restore` returns to.
+* Read the whole output of a loop. A `grep` that drops the likely killer (the
+  boss, say) hides the entity that ends the run.
+* After a multi-step `input`, read `at=`: a blocked move does not fail the
+  batch, it silently shortens the path.
+* Level layouts are random, so use `scenario ... arena=N` for a clean room.
+  `spawn ... force` into a wall succeeds and the enemy just sits there, so
+  check the tile first. A spawned enemy's first action can come one beat late.
+* Deterministic enemies (`Slime2`, `Slime3`, `Skeleton`) act on the same beats
+  whether `idle`s are batched or sent singly. Random movers (`Zombie`, `Bat`)
+  vary, so compare them with `scenario repeat=N`, never one trace against
+  another.
+* An enemy that never moves while `aggro.active` is true is probably blocked,
+  not asleep: check the tiles and entities around it.
+* The diagonal inputs (`up_left` and the like) did nothing as Cadence on one
+  1-1 level: `input down_right` came back `TIMED-OUT` with no move and no
+  turn. Tried once.
+* After a win or death the run-summary screen swallows every action: `input`
+  replies `TIMED-OUT` after about 5000 ticks and `turn` never moves, though
+  `restore` still works. `state` prints `RUN SUMMARY SCREEN UP` while
+  `RunSummary.getActiveSummary()` is truthy. When an `input` times out and
+  `turn` is unchanged, check `state` for that line instead of polling or
+  listing processes; if it is absent, ask the user what is on screen.
+  Finish boss-fight experiments before taking the exit stairs, which ends the
+  run.
+* `idle` is the no-op beat and drops the groove chain, so it is also how a
+  beat is "missed" in no-beat mode.
+* `route` crosses a `ShrineOfBlood` as if it were floor (no `ai`, `health`,
+  `trap` or `item`; collision mask 2), costing 10 health in one action. It
+  treats chests the same way (untested). Check the `map` legend and `entities`
+  before running a route you cannot afford to lose.
 
 ## Read when needed
 

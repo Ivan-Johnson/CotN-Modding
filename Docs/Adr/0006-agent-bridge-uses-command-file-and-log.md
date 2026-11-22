@@ -32,7 +32,7 @@ neither is a generic channel. Reading files works, and so does `print()`.
   that idle turn dropped the player's groove chain and used up a spawned
   enemy's spawn invincibility. Effects do not survive rollback, which is
   acceptable only because the mod is single-player. See
-  `AuthoredDocs/Src/live-game-control.md`.
+  `AuthoredDocs/Src/synchrony-game-control.md`.
 * `AgentBridge` is dev-only. It logs a warning on load and refuses commands
   outside a single-player session.
 * Starting and stopping the game is out of scope; the CLI reports a timeout

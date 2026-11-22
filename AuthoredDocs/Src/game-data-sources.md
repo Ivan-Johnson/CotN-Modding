@@ -1,110 +1,61 @@
 # Game data sources
 
-What a mod can read out of a running game, found by probing it live. Every
-entry was tried in CotN with Synchrony API 4.2.1 at run-time (inside an
-`event.levelLoad` handler), and results were read from `NecroDancer.log`.
+For mod authors. What a mod can read from the running game at run-time (in an
+`event.levelLoad` handler), on CotN 4.2.1 with Synchrony API 4.2.1.
 
-## Confirmed to work and useful
+## Readable
 
-* **`GameXML.getXMLString()`**: returns the game's own `necrodancer.xml` as one
-  string (about 250 KB). It describes items, enemies and characters in the
-  game's original data format, including localization-tagged names, hints, and
-  per-zone drop weights. This looks like the richest source of design-level
-  data.
-* **`GameXML.getItemData(name)`**: returns a parsed table for one XML item.
-  Tried on `food_1`: `coinCost`, `slot`, `isFood`, `hint`, `shopChance` and
-  `chestChance` (both pipe-separated, probably one value per zone), `texture`
-  and `unlocked`. Values are strings, so numbers need parsing. `getEnemyData`
-  and `getCharacterData` exist with the same idea but are untried.
-* **`Components.getComponentDefaults()`**: returns every registered component
-  (2,105) mapped to its fields and default values. Tried on `consumableHeal`:
-  `health`, `maxHealth`, `cursedHealth`, `overheal`, `invincibility`,
-  `silent`, `noParticles`. This is the authoritative field list, which the
-  mirrored docs lack.
-* **`Entities.listComponentNames()` and
-  `Entities.getEntityTypesWithComponents({})`**: enumerate all component names
-  and all 1,064 entity type names. An empty component list matches every type.
-* **`Entities.getEntityPrototype(typeName)`**: returns a type's component table
-  with its constant field values. Reading a field a component doesn't have
-  throws and suggests the closest name ("Did you mean health?"). My probe
-  used the wrong field, `consumableHeal.heal`, and only learned the real names
-  from the defaults above.
-* **`FileIO.listFiles("scripts", FILES + RECURSIVE)`**: lists all 1,066 of the
-  game's Lua files (e.g. `necro/game/item/Currency.lua`), which gives a
-  complete module inventory. `listFiles("")` and `listFiles("mods")` also
-  return entries. Directories come back as entries when `DIRECTORIES` is set.
-* **`entitySchemaLoadEntity` event**: already documented in
-  `gotchas.md`. Printing `ev` dumps every entity type with its full
-  component table to the log.
-* **`GameMod.getPatchVersion()`**: returns the game's patch version (`"4.2.1"`
-  here). It is the only version a mod can read: `Session.getVersion()` and
-  `necro.mod.Mods` can't be required (Permission denied), `_VERSION` is
-  absent, and `Netplay` has no `getVersion`. There is no build number.
+* **`GameXML.getXMLString()`** returns the game's own `necrodancer.xml` as one
+  string of about 250 KB. It describes items, enemies and characters in the
+  game's original data format, including localization-tagged names, hints and
+  per-zone drop weights.
+* **`GameXML.getItemData(name)`** returns a parsed table for one XML item. Its
+  values are strings, so numbers need parsing. `shopChance` and `chestChance`
+  are pipe-separated, probably one value per zone (`guess`). `getEnemyData`
+  and `getCharacterData` exist; their arguments and results are untried.
+* **`Components.getComponentDefaults()`** maps every registered component to
+  its fields and default values. It is the authoritative field list; the
+  official docs lack one.
+* **`Entities.listComponentNames()`** and
+  **`Entities.getEntityTypesWithComponents({})`** enumerate component names and
+  entity type names. An empty component list matches every type.
+* **`Entities.getEntityPrototype(typeName)`** returns a type's components with
+  their constant field values. Reading a field a component lacks throws and
+  suggests the closest name ("Did you mean health?").
+* **`FileIO.listFiles("scripts", FILES + RECURSIVE)`** lists the game's Lua
+  files, which gives a module inventory. `listFiles("")` and
+  `listFiles("mods")` also return entries; directories appear when
+  `DIRECTORIES` is set.
+* **`entitySchemaLoadEntity`**: printing `ev` dumps every entity type with its
+  component table (see [gotchas.md](./gotchas.md)).
+* **`GameMod.getPatchVersion()`** returns the patch version (`"4.2.1"`). It is
+  the only version a mod can read: `Session.getVersion()` and `necro.mod.Mods`
+  cannot be required (Permission denied), `_VERSION` is absent and `Netplay`
+  has no `getVersion`.
+* **Module APIs** come from bytecode, because `pairs()` over a module returns
+  nothing. `FileIO.readFileToString` on `scripts/*.lua` returns LuaJIT bytecode
+  (header `\27LJ`) that is not stripped, so function parameter names survive.
+  `Mods/ScrapeGameData/BytecodeApi.lua` recovers each module's public API from
+  it and publishes `module-apis.json`; it also lists functions the official
+  docs lack (for example `Currency.lookUpEntityType`) and the commands of
+  `DebugCommands`, which only work as `DebugCommands.commands.<name>(...)`.
+  Two scripts, `necro/audio/Beatmap.lua` and
+  `necro/patch/SkinSupporterHotfix.lua`, ship as plain source, and the game has
+  no `load`, `loadstring` or `lpeg` for mods, so those are scanned with Lua
+  patterns.
 
-* **Module APIs from bytecode**: `Mods/ScrapeGameData/BytecodeApi.lua` reads
-  each compiled script's bytecode inside the game and recovers its public
-  API: the `require`s, plus every member assigned to the returned table, with
-  function signatures (parameter names come from the debug info) and the
-  type or constant value of the rest. Names starting with `_` and anything
-  not on the returned table are skipped. The result is `module-apis.json`.
-  Against the 4.2.1 official docs it recovers 3,641 of 3,701 documented
-  functions, and finds functions the docs lack (for example
-  `Currency.lookUpEntityType`). Tables a module fills in but never
-  returns are published as `privateTables`. That recovers the commands of
-  `DebugCommands`, which the docs list as module functions even though they
-  only work as `DebugCommands.commands.<name>(...)`. The two
-  scripts shipped as plain source (`Beatmap`) are scanned heuristically and
-  flagged `source: true`. `Platform.checkProfanityFilter` is found, but as a re-export of another module's function (`kind: "unknown"`). Modules' tables can't be iterated at run-time
-  (`pairs` returns nothing), which is why this reads bytecode instead.
+## Not available
 
-## Confirmed not to work or not be useful
+Each item below came from one probe on 4.2.1, not a systematic check:
 
-TODO - fact check. This is all AI generated. Just because the AI said it's
-"confirmed not to work or not be useful" doesn't mean we can't/shouldn't use
-these options.
-
-* **Enumerating modules, `_G` or `event` with `pairs()`/`next()`**: all return
-  nothing. `Entities`, `_G` and `event` are all empty to iteration, though
-  their members work when named. Use the file listing and the docs to learn
-  what exists.
-* **Lua introspection globals**: `getmetatable`, `rawget`, `debug`, `package`,
-  `load`, `loadstring`, `os`, `io` and `collectgarbage` are all absent.
-  Reading an undefined global throws. Only `math`, `string`, `table`, `next`,
-  `select`, `setmetatable` and `require` were present.
-* **`Localization.get("entity.Food1.name", ...)`**: returned only my fallback,
-  and `getLoadedLanguageID()` returned nil. The key was a guess, so this isn't
-  proof that localization is unreadable (see below).
-* **`FileIO.listFiles("data")` and `("data/xml")`**: both returned zero
-  entries. Those paths don't exist in the virtual filesystem.
-* **Game install directory on disk**: it holds only `NecroDancer.log`. There
-  is nothing to read from outside the game.
-* **Writing output files**: `FileIO` is read-only, and
-  `DebugDump.writeTextFile` is documented as internal-only. The log is the
-  only output channel found so far.
-* **`FileIO.readFileToString` on `scripts/*.lua`**: it works, but the files
-  are LuaJIT bytecode (header `\27LJ`), so they aren't readable source. They
-  are not stripped, though; see "Module APIs from bytecode" above. Two files
-  (`necro/audio/Beatmap.lua`, `necro/patch/SkinSupporterHotfix.lua`) are
-  plain source. The game has no `load`, `loadstring` or `lpeg` for mods, so
-  they are scanned with Lua patterns for top-level function declarations.
-
-## Worth investigating further
-
-* **`GameXML.getEnemyData(name, type)` and `getCharacterData(id)`**: should
-  yield enemy stats and character starting items. Their argument and return
-  shapes are undocumented, so each needs a live probe.
-* **`XMLMapping` getters** (`getEnemyTypeByID`, `getPlayerTypeByID`,
-  `getTrapTypeByID` and so on): map XML IDs to entity type names, which would
-  join the XML data to the ECS data.
-* **`ItemGeneration`, `PriceTag`, `ItemSlot`, `EnemySubstitutions`,
-  `LevelSequence`, `ProgressionXML`**: probably hold loot pools, shop prices,
-  slot capacities, enemy swaps and level order. All untried.
-* **Localization keys**: find the real key format (e.g. by dumping the
-  `friendlyName` fields from entity prototypes, or `Components.getLocalizableFields`)
-  and read the English text.
-* **Enum tables** (damage types, item slots, extra modes, and so on): the
-  docs list these, but reading the live values would confirm them. Their
-  members may not be iterable (see the `pairs()` result above).
-* **Log volume**: resolved. 4,000-character base64 chunk lines carried the
-  250 KB XML and the other dumps through the log intact (byte counts matched
-  the mod's `emitted` lines). `nix run .#scrape-game-data` reassembles them.
+* `pairs()` or `next()` over a module, `_G`, `event` or `Entities` returns
+  nothing, though their members work when named.
+* `getmetatable`, `rawget`, `debug`, `package`, `load`, `loadstring`, `os`,
+  `io` and `collectgarbage` are absent, and reading an undefined global
+  throws. `math`, `string`, `table`, `next`, `select`, `setmetatable` and
+  `require` are present.
+* `FileIO.listFiles("data")` and `("data/xml")` return zero entries.
+* `FileIO` is read-only and `DebugDump.writeTextFile` is documented as
+  internal-only, so the log is the only output channel found (see
+  [synchrony-game-control.md](./synchrony-game-control.md)).
+* The game install directory holds only `NecroDancer.log`.

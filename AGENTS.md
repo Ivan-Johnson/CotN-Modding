@@ -19,6 +19,9 @@ under `_Avoid_`.
 * `AuthoredDocs/`: the docs written by hand, and the docs tree that publishes
   them beside the official docs and the game data.
 
+Each context has two audiences. Its **maintainer** is whoever changes the
+context itself, human or agent. Its **user** is defined in its `GLOSSARY.md`.
+
 Relationships between contexts:
 
 * **GameData → Mods**: the `ScrapeGameData` mod in `Mods/` is the source of
