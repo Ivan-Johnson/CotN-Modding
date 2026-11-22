@@ -62,6 +62,15 @@ than silently overriding it.
 * `build-format` formats all code. Typically this does not need to be used; it
   is done automatically as part of a pre-commit hook.
 
+## Learning about the game
+
+Unit tests are the default way to find out how the game works. To answer a
+mechanics question, write a test that reports the values you want with
+`api.observe`, run it alone with `nix run .#itj-impure-tests -- <testName>`,
+and read the `OBSERVED` lines it prints. It starts from a fixed seed and needs
+no per-step turns. See `AuthoredDocs/Src/testing.md` for the workflow, and
+reach for interactive tools only when a test cannot answer the question.
+
 ## Conventions
 
 * Flake inputs `follows` nixpkgs, so pin bumps go through `flake.lock` rather

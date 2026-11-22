@@ -16,8 +16,9 @@ commands and conventions.
 * Look modules and events up there rather than guessing at signatures; the API
   is large and undocumented outside these pages. Where the docs are silent
   on a detail (return shapes, field names, actual runtime behavior), prefer
-  a debug `print()` in a live game session over guessing — a guess that's
-  wrong costs a full install/reload/log-tail cycle to discover.
+  a test that reports the value with `api.observe` (see "Dev loop") over
+  guessing — a guess that's wrong costs a full install/reload/log-tail cycle
+  to discover.
 * These mirrored docs cover only the in-game Lua API, not `mod.json`'s
   manifest/dependency schema (e.g. what `"dependencies": {"X": true}` means).
   For that, there's no authoritative doc source; rely on empirical testing
@@ -36,9 +37,10 @@ commands and conventions.
   repo-root `AGENTS.md`) is the whole inner dev loop: it installs the mods,
   forces a fresh test run, waits for it to finish, and prints only the new
   log output — no manual reload or log-tailing needed.
-* `nix run .#itj-impure-tests -- <testName>` runs one test alone, and a test
-  reports values with `api.observe(key, value)`; see
-  `AuthoredDocs/Src/testing.md`.
+* Unit tests are the default way to learn about the game (repo-root
+  `AGENTS.md`). `nix run .#itj-impure-tests -- <testName>` runs one test
+  alone, and a test reports values with `api.observe(key, value)`; the
+  write, observe, run, read workflow is in `AuthoredDocs/Src/testing.md`.
 * The game runs outside this sandbox, so `pgrep`/`ps` won't see its process
   even while it's running and live-reloading normally. If you need to check
   liveness by hand (rather than via `nix run .#itj-impure-tests`), judge it
@@ -101,6 +103,9 @@ commands and conventions.
 
 ## Driving the live game
 
+* Prefer a unit test that reports values (see "Dev loop") over driving the
+  game by hand; use the rest of this section only when a test cannot answer
+  the question.
 * `agent-bridge` (a flake app, also in the dev shell) lets an agent observe
   and drive the running game to learn mechanics by experiment, e.g.
   `agent-bridge new-run Dove`, `agent-bridge spawn Skeleton`, `agent-bridge
