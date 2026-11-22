@@ -21,9 +21,10 @@ pass, this page now states the second pass. Pitfalls when repeating it:
 
 * The level is random. Check with `tile` that the spawn tile is open; `force`
   places an enemy inside a wall without complaint, and it then just sits.
-* Send at most about 20 idles per `input`. Cadence over longer batches
-  looked shifted by one beat; single-action calls did not show that. The
-  cause is not known.
+* Early on, cadence over batches of more than about 20 idles looked shifted
+  by one beat. That was the bridge's missing settle wait (see
+  `live-game-control.md`); with it, `Slime3` moved on 40 of 40 batched beats
+  and `Slime2` on 20 of 20, so batch freely.
 * A spawned enemy's first action can come one beat late, so beat 1 is not
   always a move.
 
@@ -201,12 +202,8 @@ kills, in no-beat mode.
   wall. Moving to an empty tile does not break it.
 * Damage taken did not get tested cleanly: the wall bump broke the chain
   before the `Skeleton` hit.
-* One kill each, with the coin picked up, gave 2 gold (`Zombie`, `Monkey`)
-  and 4 gold (`Skeleton`, `Bat`). Pickups were not confirmed individually,
-  so treat those as rough. A `Skeleton2` kill left a `ResourceCoin6`.
 * `ResourceDiamond` entities in the entity list are part of the level, not
   drops.
-
 * A third pass measured gold per kill with a fresh run (chain at x1, no
   kills), one enemy spawned at (1,0) in a cleared arena, killed with the
   dagger and its coin walked onto. The gold was the same on every repeat
@@ -249,8 +246,7 @@ Not yet re-measured in the second pass:
   enemy in its way.
 * What decides a pattern slime's starting step. `Slime2` and `Slime3` start at
   an index that is the same for the same tile but differs between tiles.
-* Whether a bat's lost beats come from walls or something else, and the
-  one-beat shift seen on 40-beat batches.
+* Whether a bat's lost beats come from walls or something else.
 * After some trial sequences, newly spawned enemies stood still, including
   `Slime2` and `Slime3` on open floor, until `new-run`. It followed a blocked
   slime trial once and did not repeat in a clean run, so it may be a

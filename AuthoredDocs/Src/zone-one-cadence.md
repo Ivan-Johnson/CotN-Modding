@@ -3,7 +3,9 @@
 What a first exploration with `agent-bridge` found on CotN 4.2.1 (see
 `live-game-control.md` for the bridge itself). Everything below was observed
 live unless it is under "Unverified". Gathered with `agent-bridge new-run
-Cadence`, then `state`, `entities`, `spawn`, `input` and `step`.
+Cadence`, then `state`, `entities`, `spawn`, `input` and `step`. Written
+before the second-pass measurements; where this page and
+[zone-one-enemies.md](zone-one-enemies.md) disagree, trust that page.
 
 ## What a run starts with
 
@@ -44,20 +46,11 @@ tiles from the start.
 
 ## Enemy stats
 
-Read from `innateAttack`, `health` and `beatDelay`:
-
-| Type     | Health | `innateAttack.damage` | `beatDelay.interval` |
-| -------- | ------ | --------------------- | -------------------- |
-| Slime    | 1      | 100                   | 1                    |
-| Slime2   | 2      | 2                     | 2                    |
-| Skeleton | 1      | 1                     | 2                    |
-| Zombie   | 1      | 2                     | 2                    |
-| Monkey   | 1      | 0                     | 1                    |
-| BatMiniboss | 2   | 3                     | 2                    |
+Per-type health, damage, interval, movement and hits to kill are in
+[zone-one-enemies.md](zone-one-enemies.md).
 
 * `Slime2` showed `maxHealth` 4 in one early run; every later measurement
   gave 2.
-* Full per-type stats and movement are in [zone-one-enemies.md](zone-one-enemies.md).
 * `Slime`'s damage of 100 is as read; I never let one hit me, so I do not know
   what it does in play.
 * Dagger kills take one hit per health point: a spawned `Slime2` went from 2 to
@@ -65,13 +58,14 @@ Read from `innateAttack`, `health` and `beatDelay`:
 
 ## Behavior
 
-* Enemies in the starting level mostly stayed put while I idled because most
-  types do not seek the player (see
-  [zone-one-enemies.md](zone-one-enemies.md#movement-ai)). A spawned `Skeleton` or `Zombie` next to the player
-  attacked at once.
+* Enemies move only when you act in no-beat mode, and then each follows its
+  own movement style, most of them not toward the player (see
+  [zone-one-enemies.md](zone-one-enemies.md#movement-ai)). A spawned
+  `Skeleton` or `Zombie` next to the player attacked at once.
 * A spawned `Skeleton` placed at (3, 0) was adjacent (1, 0) after the one beat
   the spawn took. A spawned `Monkey` moved onto the player's tile. A spawned
-  `Slime2` at (3, 0) did not move in three beats.
+  `Slime2` at (3, 0) did not move in three beats, probably its interval
+  of 2 plus the spawn delay; the enemies page has its bounce.
 * Moving into a `DirtWall` digs it with `ShovelBasic`: the first input leaves
   the player in place and turns the tile into `Floor` (confirmed with the
   `tile` command), and the next input walks through.
@@ -88,7 +82,8 @@ Read from `innateAttack`, `health` and `beatDelay`:
 
 ## Damage taken
 
-The first run used real-time rhythm, and one `step 1` sample cost 3 to 4 times
+The first run used real-time rhythm (still available as `new-run
+rhythm=regular`), and one `step 1` sample cost 3 to 4 times
 `innateAttack.damage`: `Zombie` (`damage` 2) took 12, 6, 0 and `Skeleton`
 (`damage` 1) took 12, 8, 5, 1. Several beats passed between commands at about
 1 s latency. `new-run` now uses no-beat mode (#18), and the same setup behaves:
@@ -102,16 +97,12 @@ not come to you: time passes only when you act.
 
 ## Unverified
 
-* Whether real-time rhythm, which the bridge no longer uses, behaves differently.
+* Whether real-time rhythm behaves differently from no-beat mode.
 * Whether a non-moving input is always a dig, and whether a better shovel
   breaks `StoneWall`.
 * What chests, the shop, traps and the `BatMiniboss` do when engaged.
 * What `AddchestBlack`, `AddchestRed`, `AddchestWhite`, `CoinsX15` and
   `CoinsX2` do in the starting kit.
-* Whether gold from a kill is collected automatically.
-* Why enemies idle, such as an aggro range.
 
-## What would help next
-
-The `tile` command (#23) now reads walls and floor. An ASCII map view (#24)
-would make it easier still.
+Kills leave a coin on the tile that the player collects by walking onto it;
+see the gold section of [zone-one-enemies.md](zone-one-enemies.md).
