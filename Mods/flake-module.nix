@@ -161,7 +161,7 @@ let
                         # successfully required it - including HelloWorld - re-running
                         # their registerTest() calls. This also ensures the suite always
                         # reruns even if there are no new changes.
-                        ITJ_BUNDLE_RELOAD_TRIGGER="HelloWorldTests/api.lua" ${installMods}/bin/install-mods HelloWorld HelloWorldTests
+                        ITJ_BUNDLE_RELOAD_TRIGGER="HelloWorldTests/api.lua" ${installMods}/bin/install-mods HelloWorld HelloWorldTests AgentBridge
 
                         # Wait for the tests mod's completion sentinel, rather than a
                         # hardcoded sleep or a quiet-period guess.

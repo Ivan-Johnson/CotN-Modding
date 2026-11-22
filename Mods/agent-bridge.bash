@@ -69,7 +69,10 @@
 #                                   item1, item2, bomb, throw, spell1, spell2.
 #                                   Up to 50 in one call; replies once all have
 #                                   resolved, with each action's outcome: where
-#                                   the player moved from and to, tiles that
+#                                   the player moved from and to, what blocked
+#                                   a move that went nowhere (`blocked-by
+#                                   Shopkeeper#12`, `Dagger#40(price)` for a
+#                                   ware, or the wall tile), tiles that
 #                                   changed nearby (a dug wall), entities within
 #                                   12 tiles that moved or died, and its events
 #   scenario TYPE X Y [watch=C1,C2] [clear=true] [arena=N] [force=true]
@@ -140,6 +143,7 @@ def entity: "\(.type)#\(.id)" + (if .gone then " gone" else " \(.from | pos)>\(.
 def action($i): . as $r
 	| ["\($i + 1) \(.action)\(if .moved then "+" + (.to | pos) else "=" end)"]
 	+ ((.tilesChanged // []) | map("\(.from)>\(.to)@\(pos)"))
+	+ ((.blockedBy // []) | map("blocked-by \(.type)" + (if .id then "#\(.id)" else "" end) + (if .priceTag then "(price)" else "" end)))
 	+ ((.events // []) | map(ev))
 	+ ((.entitiesMoved // []) | map(select(near($r.to))) | map(entity))
 	+ (if .timedOut then ["TIMED-OUT" + (if .runSummary then " (run summary screen is up)" else "" end)] else [] end)

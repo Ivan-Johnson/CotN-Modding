@@ -19,6 +19,7 @@ local FileIO = require "system.game.FileIO"
 local GameSession = require "necro.client.GameSession"
 local GrooveChain = require "necro.game.character.GrooveChain"
 local Input = require "necro.client.Input"
+local Blockers = require "AgentBridge.Blockers"
 local Json = require "AgentBridge.Json"
 local Move = require "necro.game.system.Move"
 local Marker = require "necro.game.tile.Marker"
@@ -890,12 +891,16 @@ local function recordOutcome()
 		events = #job.events > 0 and job.events or nil,
 		timedOut = not job.resolved or nil,
 	}
+	if not outcome.moved then
+		outcome.blockedBy = job.blockers
+	end
 	if outcome.timedOut then
 		outcome.runSummary = runSummaryScreen()
 	end
 	if
 		not job.onlyNoteworthy
 		or outcome.moved
+		or outcome.blockedBy
 		or outcome.tilesChanged
 		or outcome.entitiesMoved
 		or outcome.events
@@ -933,6 +938,7 @@ local function advanceJob()
 	job.from = { x = position.x, y = position.y }
 	job.tiles = snapshotTiles(position)
 	job.entities = snapshotEntities(position)
+	job.blockers = Blockers.at(job.from, DIRECTIONS[job.names[job.index]])
 	job.turnBefore = Turn.getCurrentTurnID()
 	job.events = {}
 	job.ticks = 0

@@ -122,7 +122,8 @@ commands and conventions.
   rhythm=regular` keeps the real-time beat and lets the song end. Installing
   `AgentBridge` replaces the bundle's other mods, and
   `nix run .#itj-impure-tests` (which the pre-commit hook also runs) replaces
-  `AgentBridge` with the test mods; the next command reinstalls it, taking a few
+  the bundle with the test mods and `AgentBridge` (so its own test runs), which
+  leaves the bridge installed; the next command then reloads it, taking a few
   seconds. Bridge commands that change
   the game run from the tick, never via a queued input: an `IDLE` input costs
   the groove chain. See
@@ -150,12 +151,16 @@ commands and conventions.
   which moves every beat, did so in 40 batched 8-beat runs and never in 49
   beats sent one `idle` per command); 10 ticks still skipped and 25 did not.
   The cause is unknown; the wait is a measured workaround.
-* Take a `snapshot` once, before a test loop: each one overwrites the baseline
-  that `restore` returns to.
+* `snapshot` before any experiment that can kill you (traps, angering a
+  shopkeeper, a bomb beside you), then `restore` between trials. Each
+  `snapshot` overwrites the baseline `restore` returns to, so take it once,
+  before the loop.
 * Read the whole output of a loop. A `grep` that drops the likely killer (the
   boss, say) hides the entity that ends the run.
 * After a multi-step `input`, read `at=`: a blocked move does not fail the
-  batch, it silently shortens the path.
+  batch, it silently shortens the path. The `=` line names what blocked it
+  (`blocked-by Shopkeeper#12`, `blocked-by Dagger#40(price)` for a ware you
+  cannot buy, or the wall tile).
 * Level layouts are random, so use `scenario ... arena=N` for a clean room.
   `spawn ... force` into a wall succeeds and the enemy just sits there, so
   check the tile first. A spawned enemy's first action can come one beat late.
