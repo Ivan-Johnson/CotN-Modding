@@ -1,14 +1,12 @@
 # Takes the game-instance lock, so a test run never overlaps another run or an
 # interactive session; then installs the mods, waits for the suite, and prints
-# its results. This is the only caller that takes the lock.
+# its results. This is the only caller that takes the lock; the root AGENTS.md
+# describes the lock and its ITJ_GAME_LOCK_* variables.
 #
 # Usage: run-tests [TEST_NAME]
 # With a name, runs only that test (still from the fixed seed) and fails if no
 # registered test has it. Values a test reports with `api.observe` appear as
 # `OBSERVED <test> <key>=<value>` lines in the output.
-#
-# ITJ_GAME_LOCK_FILE: the lock file (default: inside the game's mods directory, the one shared writable path).
-# ITJ_GAME_LOCK_TIMEOUT_SECONDS: how long to wait for the lock (default 120).
 lockFile=${ITJ_GAME_LOCK_FILE:-${COTN_LOCAL_MODS_DIR%/}/itj-game.lock}
 lockTimeout=${ITJ_GAME_LOCK_TIMEOUT_SECONDS:-120}
 
@@ -22,24 +20,30 @@ echo "pid=$$ command=itj-impure-tests started=$(date -Is)" >"$lockFile"
 
 baseline=$(wc -l <"$COTN_LOG")
 
-# Installing appends a timestamp comment to api.lua, rather than
-# to the entry script. api.lua is the module every mod under test
-# requires at load-time to register its tests, so changing it
-# (forcing a reload) cascades a reload of every mod that
-# successfully required it - including HelloWorld - re-running
-# their registerTest() calls. This also ensures the suite always
-# reruns even if there are no new changes.
 selectedTest=${1:-}
-extraFile=""
+
+# The framework reads the name of the one test to run from this file in the
+# bundle. install-mods can create any file with any content, so it takes the
+# path and content in its generic ITJ_BUNDLE_EXTRA_* variables; with no file
+# it removes any left by an earlier named run.
+selectedTestFile=""
 if [ -n "$selectedTest" ]; then
-        extraFile="HelloWorldTests/selected-test.txt"
+        selectedTestFile="HelloWorldTests/selected-test.txt"
 fi
+export ITJ_BUNDLE_EXTRA_FILE="$selectedTestFile"
+export ITJ_BUNDLE_EXTRA_CONTENT="$selectedTest"
 
-ITJ_BUNDLE_EXTRA_FILE="$extraFile" ITJ_BUNDLE_EXTRA_CONTENT="$selectedTest" \
-        ITJ_BUNDLE_RELOAD_TRIGGER="HelloWorldTests/api.lua" install-mods HelloWorld HelloWorldTests
+# Installing appends a timestamp comment to api.lua, rather than to the entry
+# script. api.lua is the module every mod under test requires at load-time to
+# register its tests, so changing it (forcing a reload) cascades a reload of
+# every mod that successfully required it - including HelloWorld - re-running
+# their registerTest() calls. This also ensures the suite always reruns even
+# if there are no new changes.
+export ITJ_BUNDLE_RELOAD_TRIGGER="HelloWorldTests/api.lua"
+install-mods HelloWorld HelloWorldTests
 
-# Wait for the tests mod's completion sentinel, rather than a
-# hardcoded sleep or a quiet-period guess.
+# Wait for the tests mod's completion sentinel, rather than a hardcoded sleep
+# or a quiet-period guess.
 timedOut=0
 if ! wait_for_log "$baseline" "[HelloWorldTests] Test suite completed"; then
         echo "itj-impure-tests: timed out waiting for test suite completion" >&2
