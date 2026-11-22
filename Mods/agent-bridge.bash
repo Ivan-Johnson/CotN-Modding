@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
 # Sends one command to the AgentBridge mod in the running game and prints its
-# Sends one command to the AgentBridge mod in the running game and prints its
 # reply as compact text. The mod can only be read from NecroDancer.log, so this
 # writes the command file and waits for the reply lines tagged with its ID.
 #
@@ -168,9 +167,10 @@ if [[ -n ${builtScriptHash:-} && -f $sourceScript ]]; then
 	fi
 fi
 
-if [[ ${1:-} == "" ]]; then
+if [[ ${1:-} == "" || ${1:-} == help || ${1:-} == --help || ${1:-} == -h ]]; then
 	sed -n '2,/^set -euo/p' "${BASH_SOURCE[0]}" | sed '$d; s/^# \{0,1\}//' >&2
-	exit 2
+	[[ ${1:-} == "" ]] && exit 2
+	exit 0
 fi
 
 if [[ -z ${COTN_LOG:-} || -z ${COTN_LOCAL_MODS_DIR:-} ]]; then
