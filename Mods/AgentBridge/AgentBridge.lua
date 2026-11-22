@@ -21,6 +21,7 @@ local GrooveChain = require "necro.game.character.GrooveChain"
 local Input = require "necro.client.Input"
 local Json = require "AgentBridge.Json"
 local Move = require "necro.game.system.Move"
+local Marker = require "necro.game.tile.Marker"
 local Music = require "necro.audio.Music"
 local Object = require "necro.game.object.Object"
 local Player = require "necro.game.character.Player"
@@ -306,6 +307,95 @@ commands.tile = {
 			end
 		end
 		return { count = #tiles, tiles = tiles }
+	end,
+}
+
+local MAX_MAP_RADIUS = 20
+local DEFAULT_MAP_RADIUS = 8
+local ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+local MAP_WALL = "#"
+local MAP_FLOOR = "."
+local MAP_STAIRS = ">"
+local MAP_PLAYER = "@"
+
+-- The first unused letter of the type's name, uppercase, so legends read
+-- naturally; then any unused letter or digit. Falls back to "?".
+local function pickSymbol(typeName, used)
+	for letter in (typeName:upper() .. ALPHABET):gmatch("%w") do
+		if not used[letter] then
+			return letter
+		end
+	end
+	return "?"
+end
+
+-- `map [N]` draws the tiles within N of the player (default 8, up to 20) as
+-- text: `#` solid, `.` floor, `>` stairs, `@` the player, a letter for each
+-- other entity type (see `legend`), and a space beyond the level's edge. Items
+-- in the player's inventory, wall decorations and anything on the player's own
+-- tile are left out.
+commands.map = {
+	run = function(args)
+		local radius = args[1] and tonumber(args[1]) or DEFAULT_MAP_RADIUS
+		assert(radius and radius >= 1 and radius <= MAX_MAP_RADIUS and radius % 1 == 0,
+			"radius must be a whole number from 1 to " .. MAX_MAP_RADIUS)
+		local player = requirePlayer()
+		local px, py = player.position.x, player.position.y
+		local cells = {}
+		for y = py - radius, py + radius do
+			for x = px - radius, px + radius do
+				local info = Tile.getInfo(x, y)
+				local symbol = " "
+				if info and info.name then
+					symbol = Tile.isSolid(x, y) and MAP_WALL or MAP_FLOOR
+				end
+				cells[y * 65536 + x] = symbol
+			end
+		end
+		local allStairs = Marker.lookUpAll(Marker.Type.STAIRS)
+		for _, stairs in ipairs(allStairs) do
+			local key = stairs[2] * 65536 + stairs[1]
+			if cells[key] then
+				cells[key] = MAP_STAIRS
+			end
+		end
+		local used = { [MAP_PLAYER] = true, [MAP_STAIRS] = true, [MAP_WALL] = true, [MAP_FLOOR] = true }
+		local symbols = {}
+		local legend = {}
+		for entity in Entities.entitiesWithComponents({ "position" }) do
+			local pos = entity.position
+			local holder = entity.item and entity.item.holder
+			local held = holder and holder ~= 0 and Entities.entityExists(holder)
+			if
+				entity.id ~= player.id
+				and not (pos.x == px and pos.y == py)
+				and not held
+				and not entity.name:find("Wall")
+				and math.abs(pos.x - px) <= radius
+				and math.abs(pos.y - py) <= radius
+			then
+				local symbol = symbols[entity.name]
+				if not symbol then
+					symbol = pickSymbol(entity.name, used)
+					symbols[entity.name] = symbol
+					used[symbol] = true
+					legend[#legend + 1] = { symbol = symbol, type = entity.name }
+				end
+				if cells[pos.y * 65536 + pos.x] ~= " " then
+					cells[pos.y * 65536 + pos.x] = symbol
+				end
+			end
+		end
+		cells[py * 65536 + px] = MAP_PLAYER
+		local rows = {}
+		for y = py - radius, py + radius do
+			local row = {}
+			for x = px - radius, px + radius do
+				row[#row + 1] = cells[y * 65536 + x]
+			end
+			rows[#rows + 1] = table.concat(row)
+		end
+		return { x = px, y = py, radius = radius, rows = rows, legend = legend, stairs = allStairs }
 	end,
 }
 

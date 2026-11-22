@@ -27,6 +27,11 @@
 #                                   rectangle (up to 400): its name, whether it
 #                                   is solid, a wall or a floor, and the dig
 #                                   resistance a shovel must beat
+#   map [N]                         ASCII grid of the tiles within N (default 8,
+#                                   up to 20) of the player: # solid, . floor,
+#                                   > stairs, @ the player, a letter per entity
+#                                   type (legend below the grid), a space beyond
+#                                   the level's edge
 #   spawn TYPE [X Y] [force]        next to the player by default; refuses a solid
 #                                   or off-level tile unless `force` is given
 #   convert ID TYPE
@@ -130,6 +135,11 @@ elif has("results") then
 		"watched \(.watched.before.type)#\(.watched.before.id) before: \(.watched.before.components | tojson)",
 		"watched \(.watched.before.type)#\(.watched.before.id) after:  \(.watched.after | if .gone then "gone" else .components | tojson end)"
 	else empty end)
+elif has("rows") then
+	"player at \(pos), radius \(.radius); y grows downward",
+	.rows[],
+	(.legend | map("\(.symbol)=\(.type)") | join("  ")),
+	"stairs at: " + (.stairs | map("(\(.[0]),\(.[1]))") | join(" "))
 elif has("tiles") then
 	(.tiles[] | "\(pos) \(tile)")
 elif has("tile") or has("solid") then

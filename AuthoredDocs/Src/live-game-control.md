@@ -96,6 +96,16 @@ What a tracer-bullet POC for `AgentBridge` (issue #11) verified live on CotN
 * An enemy that never moves while `aggro.active` is true is probably
   blocked, not asleep: check the tiles and the entities around it first.
 
+## Reading the map
+
+* `AgentBridge`'s `map [N]` draws the tiles around the player: `Tile.isSolid`
+  gives walls and floor, and `Tile.getInfo(x, y).name` is nil outside the
+  level. No tile is named for the exit: its position comes from
+  `Marker.lookUpAll(Marker.Type.STAIRS)` (`necro.game.tile.Marker`), a list of
+  `{x, y}`. Y grows downward, as `up` moves to `y - 1`.
+* Entities with a `position` include the player's inventory items (at the
+  player's tile) and a `WallTorch` per wall; `map` skips both.
+
 ## Spawning and converting
 
 * `Object.spawn(type, x, y)` and `Object.convert(entity, type)` work from both
