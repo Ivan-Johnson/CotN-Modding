@@ -207,20 +207,36 @@ kills, in no-beat mode.
 * `ResourceDiamond` entities in the entity list are part of the level, not
   drops.
 
-* A second pass saw these coin entities after one kill each, with the
-  multiplier not controlled: `Slime` 2, `Slime3` 4, `Skeleton` 4, `Zombie` 2,
-  `Monkey` 2, `Bat` 4, `Bat2` 6, `Bat3` 30 (suspiciously high), `Skeleton2` 6
-  and `Skeleton3` 8 (both left by the headless form). Do not read these as
-  per-type values yet. `Trapchest` leaves an item and `Ghost` and `Wraith` were
-  not measured.
+* A third pass measured gold per kill with a fresh run (chain at x1, no
+  kills), one enemy spawned at (1,0) in a cleared arena, killed with the
+  dagger and its coin walked onto. The gold was the same on every repeat
+  (Bat3 three times, Slime and Bat twice):
+
+  | Type | Gold at x1 |
+  |------|-----------|
+  | `Slime`, `Zombie` | 2 |
+  | `Slime3`, `Skeleton`, `Bat` | 4 |
+  | `Skeleton2`, `Bat2` | 6 |
+  | `Skeleton3` | 8 |
+  | `Bat3` | 40 |
+
+  Read together with the six-slime run, a fit is gold = base x (multiplier
+  at the kill + 1), with a base of 1 for `Slime` and `Zombie`, 2 for
+  `Slime3`, `Skeleton` and `Bat`, 3 for `Skeleton2` and `Bat2`, 4 for
+  `Skeleton3` and 20 for `Bat3`. Only `Slime` was seen at a higher
+  multiplier, so the formula is a guess for the other types. `Trapchest`
+  leaves an item, and `Slime2`, `Monkey2`, `Ghost` and `Wraith` were not
+  measured. The earlier "30" for `Bat3` was a higher multiplier, not a
+  random value.
 
 ## Unverified and still to do
 
 Not yet re-measured in the second pass:
 
-* Per-type coin value with the chain reset first (`idle`, then kill), and
-  whether taking damage breaks the multiplier. The run that was meant to
-  measure this was stopped.
+* Whether taking damage breaks the multiplier, and the coin value of
+  `Slime2`, `Monkey2`, `Ghost` and the `Bat3` formula at multiplier 2 and 3.
+  A test killing three `Bat3` in a row broke the chain between kills, which
+  is not explained.
 * `Ghost` movement from diagonal positions, and whether it uses the same x
   first rule when blocked.
 * How seekers path around obstacles. Every seeker test had a clear line.
