@@ -37,8 +37,4 @@ different things near the start.
 
 ## Shops
 
-A shop sits a few tiles from the start on 1-1 and another on 1-3. A 1-3 shop
-sold `Food4` for 65 gold, and a different one sold `Sync_WeaponOnyxBroadsword`
-(50), `MiscHeartContainer2` (200) and `TorchInfernal`; the player had 41 gold
-and bought nothing. Shop walls are `ShopWall`, which the basic shovel cannot dig
-(see [digging.md](./digging.md)).
+See [shops.md](./shops.md).

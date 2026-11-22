@@ -176,6 +176,11 @@ commands and conventions.
   listing processes; if it is absent, ask the user what is on screen.
   Finish boss-fight experiments before taking the exit stairs, which ends the
   run.
+* `clear` removes every enemy with an `ai`, shopkeepers included, and a
+  dead shopkeeper makes shop wares free. Do not `clear` before a shop test.
+* `spawn X Y` takes absolute tile coordinates, not offsets from the player.
+* `new-run seed=N` reproduced the same level and entity list on a second run;
+  use it so a death does not lose the level. Entity ids differ between runs.
 * `idle` is the no-op beat and drops the groove chain, so it is also how a
   beat is "missed" in no-beat mode.
 * `route` crosses a `ShrineOfBlood` as if it were floor (no `ai`, `health`,

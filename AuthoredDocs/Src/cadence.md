@@ -6,8 +6,14 @@ Other characters: [dove.md](./dove.md).
 * The player starts at (0,0) with 12 health.
 * The inventory holds `Bomb`, `WeaponDagger` and `ShovelBasic`, plus
   `AddchestBlack`, `AddchestRed`, `AddchestWhite`, `CoinsX15` and `CoinsX2`.
-  The last five are not in Cadence's normal starting items, so they are
-  probably a single-zone starting kit (`guess`); what they do is untested.
+  The last five sit in the `innate` slot and are not in Cadence's normal
+  starting items. Their names say what they are: "+1 Black Chest Per Run",
+  "+1 Red Chest Per Run", "+1 Purple Chest Per Run" (`AddchestWhite`), "Coin
+  Multiplier +0.5" and "Coin Multiplier +1". The chest items set a run flag
+  (`addChestBlack` and so on). That they are the lobby's unlockable bonuses
+  is a `guess`. The coin items did not change gold per kill: the gold
+  measurements in [coin-multiplier.md](./coin-multiplier.md) were taken with
+  them.
 * The runs measured in these docs are `SingleZone` runs in no-beat mode: the
   song never ends, a beat cannot be missed, and enemies do not come to you,
   since time passes only when the player acts. Whether real-time rhythm

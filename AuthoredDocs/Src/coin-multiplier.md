@@ -42,7 +42,16 @@ multiplier before the kill's own increase, and a base of 1 for `Slime` and
 `Zombie`, 2 for `Slime3`, `Skeleton` and `Bat`, 3 for `Skeleton2` and `Bat2`,
 4 for `Skeleton3` and 20 for `Bat3`.
 
-Not measured: `Slime2`, `Monkey2`, `Ghost` and `Wraith`. A `Trapchest` leaves
-an item instead.
+Eight enemies killed at once by `HolyWater` (see
+[action-items.md](./action-items.md)) fit the same formula, with the
+multiplier rising 1, 2, 2, 2, 2, 3, 3, 3 over the kills in event order. That
+gives `Slime2` a base of 2 (6 gold) and `Monkey2` a base of 3 (9 gold), and
+`Skeleton3` 8, `Zombie` 3, `Slime3` 6, `Slime` 4 and `Bat` 8 matched. The
+enemies were spawned by hand, so this is one measurement per type.
+
+Not measured: `Ghost` and `Wraith`. A `Trapchest` leaves an item instead.
+
+A `ResourceHoardGoldSmall` gave 25 gold on being walked onto (once, natural).
+The chain is not broken by a bounce trap; see [traps.md](./traps.md).
 
 A bomb's blast destroys coins lying on its tiles; see [bombs.md](./bombs.md).

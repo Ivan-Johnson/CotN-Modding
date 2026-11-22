@@ -34,6 +34,7 @@ A wiki of linked pages about the game's things, measured as Cadence on zone one.
 * [weapons.md](./weapons.md), [action-items.md](./action-items.md),
   [chests-and-loot.md](./chests-and-loot.md): what the player can pick up and
   use.
-* [stairs-and-levels.md](./stairs-and-levels.md): leaving a level, trapdoors,
-  the boss level and shops.
+* [stairs-and-levels.md](./stairs-and-levels.md): leaving a level, trapdoors
+  and the boss level.
+* [shops.md](./shops.md): prices, buying, and the shopkeeper.
 * [cadence.md](./cadence.md) and [dove.md](./dove.md): the characters.

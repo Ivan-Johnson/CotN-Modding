@@ -10,8 +10,12 @@ loot pools.
   `Sync_WeaponOnyxDagger`, `ArmorLeather`, `FeetGlassSlippers`,
   `Sync_ShieldObsidian`, `Sync_WeaponTitaniumTrident` and
   `WeaponTitaniumBroadsword`.
-* `ChestRed` gave `FamiliarIceSpirit` and `BloodDrum`. `ChestPurple` gave
+* `ChestRed` gave `FamiliarIceSpirit`, `BloodDrum` and `HolyWater`. `ChestPurple` gave
   `SpellEarth`.
+* `ChestLocked` opened by bumping it while holding a `MiscKey` (found
+  on the floor 3 tiles from it); the key was used up and the chest dropped
+  `HeadSunglasses`. Bumping it without a key was not tried.
+* `agent-bridge route` crosses a chest as if it were floor and opens it.
 * A weapon drop is swapped in for the current weapon when the player picks it
   up (`Sync_WeaponOnyxDagger` replaced `WeaponDagger`, whose entity then
   vanished). Armor and other drops lie on the chest's tile until the player
@@ -25,6 +29,8 @@ loot pools.
   enemies untested).
 * `FeetGlassSlippers` ("Ignore terrain, breakable") left the inventory after
   the player took damage.
+* `HeadSunglasses` ("+1 dmg, strange vision"): the dagger did 2 damage
+  instead of 1 while worn.
 * `Sync_ShieldObsidian` is described as "Multiplier hit protection"; it was
   not tested.
 
