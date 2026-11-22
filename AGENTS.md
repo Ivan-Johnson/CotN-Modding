@@ -59,6 +59,10 @@ than silently overriding it.
   the name is unconstrained, so `game-data-README.md` and `Mods/Foo-Bar/` are
   fine. This is not always possible; e.g. `README.md` files and the nix
   `result` symlink.
+* Each commit cleans up the docs that relate to its main purpose: update or
+  remove any claim it supersedes, in every page that states it (grep for the
+  old wording). If you notice stale docs unrelated to the commit, don't fix
+  them there; flag them for the user's review.
 
 ## Agent skills
 
