@@ -111,6 +111,10 @@ commands and conventions.
   the game run from the tick, never via a queued input: an `IDLE` input costs
   the groove chain. See
   `Docs/Adr/0006-agent-bridge-uses-command-file-and-log.md`.
+* An `input` that steps onto the stairs or a trapdoor replies before the new
+  level loads (up to about 2.5 s later, measured), so a `state` right after
+  it can still show the old level. Wait about 3 s (or repeat `state` until
+  `lvl` changes) before reading the new level.
 * `map` draws each entity type with the same glyph on every call and level,
   and prints its top-left tile, so rows and columns convert to tile
   coordinates without the player's position.

@@ -84,6 +84,28 @@ What a tracer-bullet POC for `AgentBridge` (issue #11) verified live on CotN
   `bash Mods/agent-bridge.bash` lacks `wait_for_log`). The CLI compares
   a build-time hash of the script with the source and warns on a mismatch.
 
+## Level changes lag the reply
+
+Tracer for holding an `input` reply until the next level loads (measured with
+`print()` of the tick count in `levelComplete`, `levelLoad`, a per-tick
+`LevelTransition.isPending()` and the job finish; one stairs descent and one
+`Trapdoor` fall on levels 1 and 2, no beat mode):
+
+* Verified: the job's turn ID advances for the move onto the stairs or
+  trapdoor, so the reply comes after the usual 30-tick settle, not after
+  `JOB_TIMEOUT_TICKS`. It describes the old level.
+* Verified: `event.levelComplete` fires after that reply, not before it.
+  Stairs: 0.36 s later, `levelLoad` 0.23 s after that. Trapdoor: a
+  `TRAPDOOR` groove-chain loss 0.16 s later, `levelComplete` 2.2 s later,
+  `levelLoad` 0.25 s after that. So it cannot tell the mod, in time, that a
+  change is coming.
+* Verified: `LevelTransition.isPending()` stayed false for the whole run,
+  both times.
+* So a `state` sent right after such an `input` can show the old level.
+  Verified: after `sleep 3` it showed the new one. The mod has no early
+  signal other than guessing from the player's tile (stairs marker, trapdoor
+  entity), which no design chose; `Mods/AGENTS.md` tells the agent to wait.
+
 ## Enemy cadence
 
 * A spawned enemy's `beatDelay.counter` starts at 0, and an enemy with
