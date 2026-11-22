@@ -87,6 +87,18 @@ What a tracer-bullet POC for `AgentBridge` (issue #11) verified live on CotN
   `bash Mods/agent-bridge.bash` lacks `wait_for_log`). The CLI compares
   a build-time hash of the script with the source and warns on a mismatch.
 
+## Missing a beat, and ordering experiments
+
+* In no-beat mode, an `idle` input drops the groove chain; that is what
+  "missing a beat" means here. The other way to lose the chain, several
+  actions in one beat, is believed impossible in no-beat mode (not tested).
+* On a 1-4 King Conga run, a failed press at the throne (which logged
+  `multiplier_lost(because=a failed action)`) was followed by the King leaving
+  his throne; that is the one observation tying a missed beat to the fight.
+* Run every boss-fight experiment before taking the exit stairs: killing the
+  boss and descending ends the run, and the bridge's inputs time out at the
+  run summary (`restore` still loads a snapshot, but no action is accepted).
+
 ## Level changes lag the reply
 
 Tracer for holding an `input` reply until the next level loads (measured with
