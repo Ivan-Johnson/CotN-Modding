@@ -123,9 +123,27 @@ What a tracer-bullet POC for `AgentBridge` (issue #11) verified live on CotN
 * On a 1-4 King Conga run, a failed press at the throne (which logged
   `multiplier_lost(because=a failed action)`) was followed by the King leaving
   his throne; that is the one observation tying a missed beat to the fight.
-* Run every boss-fight experiment before taking the exit stairs: killing the
-  boss and descending ends the run, and the bridge's inputs time out at the
-  run summary (`restore` still loads a snapshot, but no action is accepted).
+* Finish boss-fight experiments before taking the exit stairs: that ends the
+  run and brings up the run-summary screen (see below).
+
+## Run-summary screen
+
+* After a win or death the game shows a run-summary screen. It swallows every
+  action: `input` replies `TIMED-OUT` (after about 5000 ticks) and `turn` never
+  moves. `restore` still loads a snapshot.
+* `state` prints `RUN SUMMARY SCREEN UP` and a `TIMED-OUT` reply says
+  `(run summary screen is up)` when `RunSummary.getActiveSummary()` is truthy.
+* Verified live: after dying on 1-1, `getPendingSummary`, `getActiveSummary`
+  and `getDecisiveSummary` were all truthy (`victory` nil), the player entity
+  still existed and `state` still answered; in normal play all three were
+  false. Not verified: that a victory summary makes `getActiveSummary` truthy,
+  and that the line disappears once the screen is dismissed.
+* `ended=` in older `state` output meant the level's song ended, not the run.
+  It is now `song_end=`.
+* When `input` times out and `turn` is unchanged, do not poll or list
+  processes. Check `state` for the summary line; if it is absent, ask the user
+  what is on screen. A diagonal action in Cadence also times out (see above)
+  without a summary.
 
 ## Level changes lag the reply
 

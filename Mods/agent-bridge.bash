@@ -138,8 +138,9 @@ def action($i): . as $r
 	+ ((.tilesChanged // []) | map("\(.from)>\(.to)@\(pos)"))
 	+ ((.events // []) | map(ev))
 	+ ((.entitiesMoved // []) | map(select(near($r.to))) | map(entity))
-	+ (if .timedOut then ["TIMED-OUT"] else [] end)
+	+ (if .timedOut then ["TIMED-OUT" + (if .runSummary then " (run summary screen is up)" else "" end)] else [] end)
 	| join("  ");
+def summaryLine: "RUN SUMMARY SCREEN UP (victory=\(.runSummary.victory // "?")): ask the user to dismiss it";
 def tile: "\(.tile // "none") solid=\(.solid) wall=\(.wall) floor=\(.floor)"
 	+ (if .digResistance then " dig=\(.digResistance)" else "" end);
 def counts: to_entries | sort_by(.key) | map("\(.key):\(.value)") | join(" ");
@@ -174,8 +175,11 @@ elif has("entities") then
 	"count=\(.count)" + (if .hidden > 0 then " hidden=\(.hidden) (all=true shows them)" else "" end),
 	(.entities[] | "\(.type)#\(.id) \(pos)"
 		+ (if .components then " \(.components | tojson)" else "" end))
+elif has("runSummary") and (has("inventory") | not) then
+	summaryLine
 elif has("inventory") then
-	"\(.player.type) hp=\(.player.components.health.health)/\(.player.components.health.maxHealth) at=\(.player.components.position | pos) facing=\(.facing // "?") lvl=\(.level) turn=\(.turnID) rhythm=\(.rhythmMode) song=\(.song.time | floor)/\(.song.length | floor)s ended=\(.song.endReached)",
+	(if .runSummary then summaryLine else empty end),
+	"\(.player.type) hp=\(.player.components.health.health)/\(.player.components.health.maxHealth) at=\(.player.components.position | pos) facing=\(.facing // "?") lvl=\(.level) turn=\(.turnID) rhythm=\(.rhythmMode) song=\(.song.time | floor)/\(.song.length | floor)s song_end=\(.song.endReached)",
 	"chain: x\(.player.components.grooveChain.multiplier) kills=\(.player.components.grooveChain.killCount) gold=\(.player.components.goldCounter.amount)",
 	"inv: " + (.inventory | map("\(.type)#\(.id)") | join(" "))
 elif has("id") and has("type") then

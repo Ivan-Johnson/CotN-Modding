@@ -26,6 +26,7 @@ local Music = require "necro.audio.Music"
 local Object = require "necro.game.object.Object"
 local Player = require "necro.game.character.Player"
 local Rollback = require "necro.client.Rollback"
+local RunSummary = require "necro.client.RunSummary"
 local Route = require "AgentBridge.Route"
 local RhythmMode = require "necro.game.data.modifier.RhythmMode"
 local Tile = require "necro.game.tile.Tile"
@@ -233,10 +234,25 @@ local function rhythmModeName()
 	return enumName(RhythmMode.Type, RhythmMode.getMode())
 end
 
+-- The post-game screen swallows every action, so inputs time out with the
+-- turn stuck. Reports the summary that is up, or nil.
+local function runSummaryScreen()
+	local summary = RunSummary.getActiveSummary()
+	if summary then
+		return { victory = summary.victory, level = summary.level, turnID = summary.turnID }
+	end
+end
+
 commands.state = {
 	run = function()
-		local player = requirePlayer()
+		local runSummary = runSummaryScreen()
+		local player = Player.getPlayerEntity(PLAYER_ID)
+		if not player and runSummary then
+			return { runSummary = runSummary }
+		end
+		player = requirePlayer()
 		local result = {
+			runSummary = runSummary,
 			turnID = Turn.getCurrentTurnID(),
 			level = CurrentLevel.getNumber(),
 			rhythmMode = rhythmModeName(),
@@ -874,6 +890,9 @@ local function recordOutcome()
 		events = #job.events > 0 and job.events or nil,
 		timedOut = not job.resolved or nil,
 	}
+	if outcome.timedOut then
+		outcome.runSummary = runSummaryScreen()
+	end
 	if
 		not job.onlyNoteworthy
 		or outcome.moved
