@@ -10,6 +10,7 @@
 -- `agent-bridge` (a flake app) hides all of this.
 local Action = require "necro.game.system.Action"
 local Base64 = require "system.utils.serial.Base64"
+local ClientActionBuffer = require "necro.client.ClientActionBuffer"
 local Components = require "necro.game.data.Components"
 local CurrentLevel = require "necro.game.level.CurrentLevel"
 local Entities = require "system.game.Entities"
@@ -23,6 +24,7 @@ local Move = require "necro.game.system.Move"
 local Music = require "necro.audio.Music"
 local Object = require "necro.game.object.Object"
 local Player = require "necro.game.character.Player"
+local Rollback = require "necro.client.Rollback"
 local RhythmMode = require "necro.game.data.modifier.RhythmMode"
 local Tile = require "necro.game.tile.Tile"
 local Turn = require "necro.cycles.Turn"
@@ -84,6 +86,9 @@ local songEndWarned = false
 local lastMultiplier = 1
 -- The input or step command in progress, if any; see `startJob`.
 local job
+-- The seed `new-run seed=N` asked for; every level generated until the next
+-- `new-run` uses it.
+local pendingSeed
 
 
 local function reply(id, kind, payload)
@@ -799,25 +804,67 @@ commands.scenario = {
 
 commands["new-run"] = {
 	run = function(args)
-		local character, regular
+		local character, regular, seed
 		for _, arg in ipairs(args) do
+			local seedText = arg:match("^seed=(.*)$")
 			if arg == "rhythm=regular" then
 				regular = true
+			elseif seedText then
+				seed = assert(tonumber(seedText), "seed must be a whole number")
+				assert(seed % 1 == 0, "seed must be a whole number")
 			else
-				assert(not arg:find("=", 1, true), "unknown option '" .. arg .. "'; the only one is rhythm=regular")
+				assert(
+					not arg:find("=", 1, true),
+					"unknown option '" .. arg .. "'; the options are rhythm=regular and seed=N"
+				)
 				character = arg
 			end
 		end
 		if character then
 			requireEntityType(character)
 		end
+		pendingSeed = seed
 		-- The ~1 s command latency leaves several beats between commands.
 		ExtraMode.setActive(ExtraMode.Type.NO_BEAT, not regular)
 		GameSession.start({ mode = GameSession.Mode.SingleZone })
 		if character then
 			Player.setCharacterType(PLAYER_ID, character)
 		end
-		return { started = "SingleZone", character = character, rhythmMode = rhythmModeName() }
+		return { started = "SingleZone", character = character, rhythmMode = rhythmModeName(), seed = seed }
+	end,
+}
+
+event.levelGenerate.add("AgentBridgeSeed", { sequence = -1 }, function(ev)
+	if pendingSeed and ev.options then
+		ev.options.seed = pendingSeed
+	end
+end)
+
+-- Pins a snapshot of the current turn so `restore` can return to it. Entities
+-- the bridge spawned or converted since do not survive a restore (see
+-- AuthoredDocs/Src/live-game-control.md).
+commands.snapshot = {
+	run = function()
+		requirePlayer()
+		local turnID = Turn.getCurrentTurnID()
+		Rollback.saveSnapshot(turnID)
+		Rollback.pinSnapshot(turnID)
+		return { snapshot = turnID, valid = Rollback.isValidSnapshot(turnID) }
+	end,
+}
+
+-- `Rollback.loadSnapshot` alone rewinds for one tick, then the game replays the
+-- action buffer back to where it was, so the buffer is cleared too.
+commands.restore = {
+	run = function(args)
+		requirePlayer()
+		local turnID = assert(tonumber(args[1]), "expected the turn ID that `snapshot` returned")
+		assert(Rollback.isValidSnapshot(turnID), "no snapshot for turn " .. turnID)
+		Rollback.loadSnapshot(turnID)
+		ClientActionBuffer.clear()
+		Rollback.saveSnapshot(turnID)
+		Rollback.pinSnapshot(turnID)
+		return { restored = turnID, turnID = Turn.getCurrentTurnID() }
 	end,
 }
 

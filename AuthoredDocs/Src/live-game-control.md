@@ -37,11 +37,33 @@ What a tracer-bullet POC for `AgentBridge` (issue #11) verified live on CotN
   was gone. Anything that must survive would have to travel as an action with
   args.
 
+## Snapshot and restore
+
+* `Rollback.saveSnapshot(turnID)` then `Rollback.pinSnapshot(turnID)` keeps a
+  snapshot of the current turn. Save explicitly: the snapshot the game took at
+  the start of the turn predates anything a bridge command changed since, so
+  restoring it undid a `clear` done earlier in the same turn.
+* `Rollback.perform(turnID)` and `Rollback.loadSnapshot(turnID)` both rewind,
+  but the game then resimulates the player's actions from the action buffer
+  and ends up where it began, minus mutations made outside actions. So
+  `AgentBridge`'s `restore` calls `Rollback.loadSnapshot(turnID)`, then
+  `ClientActionBuffer.clear()` so nothing is replayed.
+* Clearing the buffer drops the pinned snapshot, so `restore` saves and pins
+  it again; without that a second `restore` landed on an earlier turn. With
+  it, the same snapshot restored three times in a row.
+* Verified: a spawn made after the snapshot is gone after `restore`, and
+  enemies cleared before it stay cleared.
+
 ## Driving the game
 
 * `Input.add(Action.Direction.RIGHT, 1)` moves player 1.
 * `GameSession.start({mode = GameSession.Mode.SingleZone})` starts a run, even
   from a tick handler.
+* A `levelGenerate` handler that sets `ev.options.seed` pins the level's
+  layout; `AgentBridge`'s `new-run seed=N` does this. Two runs with the same
+  seed gave identical tiles, a different seed did not. The `Starting Single
+  Zone run with seed` log line still shows a random number, so judge by the
+  tiles.
 * There is no "step N beats" API; `Turn.process(target)` did nothing. N
   `IDLE` inputs advance about one beat each, faster than real time.
 * `AgentBridge` queues one input at a time and waits for

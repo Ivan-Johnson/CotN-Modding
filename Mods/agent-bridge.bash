@@ -61,9 +61,18 @@
 #                                   multiplier is not reset. Run `new-run` first
 #   step N                          like `input idle` N times, but lists only
 #                                   the beats where something happened
-#   new-run [CHARACTER] [rhythm=regular]
+#   new-run [CHARACTER] [rhythm=regular] [seed=N]
 #                                   start a SingleZone run; rhythm=regular keeps
-#                                   the real-time beat, e.g. to see the song end
+#                                   the real-time beat, e.g. to see the song end;
+#                                   seed=N (a whole number) makes the level
+#                                   layout repeatable
+#   snapshot                        save the game as it is now and print its
+#                                   turn ID, for `restore`
+#   restore TURN                    put the game back as `snapshot` left it, so
+#                                   a fight can be retried. Entities spawned or
+#                                   converted, and tiles changed, after the
+#                                   snapshot are undone; the enemies `clear`
+#                                   removed before it stay gone
 #   level N
 #
 # Events (damage taken and dealt, kills, deaths, level loads, song ending or
