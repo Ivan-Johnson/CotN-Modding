@@ -26,6 +26,7 @@ local Music = require "necro.audio.Music"
 local Object = require "necro.game.object.Object"
 local Player = require "necro.game.character.Player"
 local Rollback = require "necro.client.Rollback"
+local Route = require "AgentBridge.Route"
 local RhythmMode = require "necro.game.data.modifier.RhythmMode"
 local Tile = require "necro.game.tile.Tile"
 local Turn = require "necro.cycles.Turn"
@@ -34,6 +35,8 @@ local CHUNK_SIZE = 4000
 local MAX_STEPS = 200
 local MAX_TILES = 400
 local MAX_INPUTS = 50
+-- The basic shovel digs dirt walls (resistance 1) but not stone (2) or shop walls (4).
+local DIG_STRENGTH = 1
 local JOB_TIMEOUT_TICKS = 5000
 -- Ticks to wait after a turn advances before the next action. Queuing the next
 -- one right away made enemies skip a move about every 24 beats (measured with
@@ -477,6 +480,138 @@ commands.map = {
 			rows = rows,
 			legend = legend,
 			stairs = allStairs,
+		}
+	end,
+}
+
+-- Costs in actions: a floor tile 1; a dirt wall 2 (dig, then move); a door 2
+-- (open, then move); an enemy or a crate 3, since the first action attacks it;
+-- other traps 5, to walk around them. Trapdoors and shopkeepers are never
+-- entered.
+local ENEMY_COST = 3
+local TRAP_COST = 5
+
+local ROUTE_ACTIONS = { ["0,-1"] = "up", ["0,1"] = "down", ["-1,0"] = "left", ["1,0"] = "right" }
+
+-- What stands on each tile that changes the cost of entering it.
+local function routeObstacles(player)
+	local obstacles = {}
+	for entity in Entities.entitiesWithComponents({ "position" }) do
+		local pos = entity.position
+		local at = pos.y * 65536 + pos.x
+		local kind
+		if entity.id == player.id or entity.item or entity.attachment then
+			kind = nil
+		elseif entity.trapDescend or entity.name:find("^Shopkeeper") then
+			kind = "blocked"
+		elseif entity.ai or entity.health then
+			kind = "enemy"
+		elseif entity.trap then
+			kind = "trap"
+		end
+		local previous = obstacles[at]
+		if kind == "blocked" or (kind and not previous) then
+			obstacles[at] = { kind = kind, entity = entity }
+		end
+	end
+	return obstacles
+end
+
+-- `route [stairs|X Y] [dig=true]` finds the cheapest orthogonal route from the
+-- player to the stairs (the default) or to X Y, and returns the actions that
+-- walk it, at most MAX_INPUTS; `partial` says it was cut short.
+commands.route = {
+	run = function(args)
+		local player = requirePlayer()
+		local dig = false
+		local target = {}
+		for _, arg in ipairs(args) do
+			if arg == "dig=true" then
+				dig = true
+			elseif arg ~= "stairs" then
+				target[#target + 1] = assert(tonumber(arg), "expected stairs, X Y or dig=true, got '" .. arg .. "'")
+			end
+		end
+		assert(#target == 0 or #target == 2, "give both X and Y, or neither for the stairs")
+		local goals = {}
+		if #target == 2 then
+			goals[1] = { x = target[1], y = target[2] }
+		else
+			for _, stairs in ipairs(Marker.lookUpAll(Marker.Type.STAIRS)) do
+				goals[#goals + 1] = { x = stairs[1], y = stairs[2] }
+			end
+			assert(#goals > 0, "this level has no stairs")
+		end
+		local isGoal = {}
+		for _, goal in ipairs(goals) do
+			isGoal[goal.y * 65536 + goal.x] = true
+		end
+		local obstacles = routeObstacles(player)
+		local function enterCost(x, y)
+			local info = Tile.getInfo(x, y)
+			if not (info and info.name) then
+				return nil
+			end
+			local at = y * 65536 + x
+			local cost = 1
+			if Tile.isSolid(x, y) then
+				local resistance = info.digResistance
+				if resistance and resistance < 0 then
+					cost = 2
+				elseif dig and resistance and resistance > 0 and resistance <= DIG_STRENGTH then
+					cost = 2
+				else
+					return nil
+				end
+			end
+			local obstacle = obstacles[at]
+			if obstacle and not isGoal[at] then
+				if obstacle.kind == "blocked" then
+					return nil
+				end
+				cost = cost + (obstacle.kind == "enemy" and ENEMY_COST - 1 or TRAP_COST - 1)
+			end
+			return cost
+		end
+		local position = player.position
+		local found = Route.find(enterCost, { x = position.x, y = position.y }, goals)
+		if not found then
+			local where = #target == 2 and string.format("(%d,%d)", target[1], target[2]) or "the stairs"
+			error("no path to " .. where .. (dig and " even with dig=true" or "; try dig=true"), 0)
+		end
+		local actions = {}
+		local digs = 0
+		local enemies = {}
+		local partial = false
+		local previous = { x = position.x, y = position.y }
+		for _, tile in ipairs(found.tiles) do
+			local name = ROUTE_ACTIONS[(tile.x - previous.x) .. "," .. (tile.y - previous.y)]
+			local info = Tile.getInfo(tile.x, tile.y)
+			local solid = Tile.isSolid(tile.x, tile.y)
+			local count = solid and 2 or 1
+			if #actions + count > MAX_INPUTS then
+				partial = true
+				break
+			end
+			for _ = 1, count do
+				actions[#actions + 1] = name
+			end
+			if solid and info.digResistance > 0 then
+				digs = digs + 1
+			end
+			local obstacle = obstacles[tile.y * 65536 + tile.x]
+			if obstacle and obstacle.kind == "enemy" then
+				local entity = obstacle.entity
+				enemies[#enemies + 1] = { id = entity.id, type = entity.name, x = tile.x, y = tile.y }
+			end
+			previous = tile
+		end
+		return {
+			target = { x = found.goal.x, y = found.goal.y },
+			actions = actions,
+			digs = digs,
+			enemies = enemies,
+			partial = partial,
 		}
 	end,
 }

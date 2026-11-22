@@ -78,6 +78,14 @@ let
                                 touch "$out"
                         '';
 
+        # Runs the route search behind `agent-bridge route` under plain
+        # LuaJIT; see `Mods/test-route.lua`.
+        routeTest = pkgs.runCommand "cotn-route-test" { nativeBuildInputs = [ pkgs.luajit ]; } ''
+                cd ${./.}
+                luajit test-route.lua
+                touch "$out"
+        '';
+
         # Installs mods from the source tree (not the store, which only
         # sees git-tracked files) into the game as one bundle mod. See
         # `Mods/install-mods.bash`.
@@ -195,6 +203,7 @@ in
                 mods-layout = modsLayout;
                 bytecode-api = bytecodeApiTest;
                 bundle-layout = bundleLayoutTest;
+                route = routeTest;
         };
 
         apps = {

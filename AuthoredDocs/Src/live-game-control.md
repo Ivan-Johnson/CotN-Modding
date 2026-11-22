@@ -105,6 +105,39 @@ Tracer for holding an `input` reply until the next level loads (measured with
   Verified: after `sleep 3` it showed the new one. The mod has no early
   signal other than guessing from the player's tile (stairs marker, trapdoor
   entity), which no design chose; `Mods/AGENTS.md` tells the agent to wait.
+* Observed once: in a batch whose sixth action stepped onto a trapdoor, the
+  remaining three actions all reported `=` (no move). Keep the stairs or
+  trapdoor step last in a batch.
+
+## Routing
+
+What the tracer for `AgentBridge`'s `route` verified on CotN 4.2.1, level 1-1
+with seed 1 and basic-shovel Dove:
+
+* Verified: moving into a `DirtWall` (`Tile.getInfo(x, y).digResistance` 1)
+  digs it without moving, so a dug wall takes two actions. A `StoneWall` reads
+  2 and a `LevelBorder` has no resistance; `route` never enters them. The
+  stone and shop-wall (4) behaviour of the shovel was not tried; it is taken
+  from the resistance numbers.
+* Verified: a door (`DoorVertical`, `DoorHorizontal`) is a solid wall with
+  resistance -2; moving into it opens it without moving, so it also takes two
+  actions, and needs no `dig=true`.
+* Verified: a spawned `Trapdoor` has the components `trap` and `trapDescend`;
+  stepping on one dropped the player to the next level. Spikes, bounce traps
+  and tempo traps have `trap` without `trapDescend`. Enemies, the shopkeeper
+  and `Crate`s have `health`; enemies and the shopkeeper also have `ai`.
+  `route` refuses `trapDescend` tiles and shopkeepers, charges 3 for tiles
+  with `ai` or `health` (moving into them attacks), and 5 for other traps. A
+  route that had to cross two trapdoors was reported unreachable.
+* Verified: scanning every tile of a 1-1 level (24 by 42, 1,008 tiles) with
+  `Tile.getInfo` in one command added no time that showed against the
+  roughly 1 s round trip. Bigger levels were not measured.
+* Verified: `Marker.lookUpAll(Marker.Type.STAIRS)` returned one entry on
+  1-1. Whether locked or boss exits are listed was not checked.
+* Verified: `agent-bridge input $(agent-bridge route stairs dig=true)` ended
+  on the stairs tile after `clear`. Untested: chests (`ChestLocked` has
+  collision mask 2 and neither `ai` nor `health`, so `route` treats it as
+  floor).
 
 ## Enemy cadence
 

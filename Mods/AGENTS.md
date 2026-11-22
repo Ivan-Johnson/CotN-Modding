@@ -111,6 +111,11 @@ commands and conventions.
   the game run from the tick, never via a queued input: an `IDLE` input costs
   the groove chain. See
   `Docs/Adr/0006-agent-bridge-uses-command-file-and-log.md`.
+* `agent-bridge route [stairs|X Y] [dig=true]` prints the actions to the
+  stairs or a tile, so `agent-bridge input $(agent-bridge route stairs)`
+  walks there; use it rather than searching the map by hand. It lists enemies
+  on the way on stderr and stops at 50 actions (run it again). Put a step
+  onto stairs or a trapdoor last in a batch: after a trapdoor, later actions did not move.
 * An `input` that steps onto the stairs or a trapdoor replies before the new
   level loads (up to about 2.5 s later, measured), so a `state` right after
   it can still show the old level. Wait about 3 s (or repeat `state` until

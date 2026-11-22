@@ -33,6 +33,16 @@
 #                                   rectangle (up to 400): its name, whether it
 #                                   is solid, a wall or a floor, and the dig
 #                                   resistance a shovel must beat
+#   route [stairs|X Y] [dig=true]   the actions that walk the player to the
+#                                   stairs (default) or to X Y, as one line for
+#                                   `input`: agent-bridge input $(agent-bridge
+#                                   route stairs). dig=true also digs dirt
+#                                   walls (dig resistance 1); stone and shop
+#                                   walls are never dug. Enemies on the way
+#                                   are attacked by moving into them; they
+#                                   are listed on stderr. At most 50 actions:
+#                                   when the route is longer, run it again
+#                                   from where you stopped
 #   map [N]                         ASCII grid of the tiles within N (default 8,
 #                                   up to 20) of the player: # solid, . floor,
 #                                   > stairs, @ the player, a fixed glyph per
@@ -145,6 +155,8 @@ elif has("results") then
 		"watched \(.watched.before.type)#\(.watched.before.id) before: \(.watched.before.components | tojson)",
 		"watched \(.watched.before.type)#\(.watched.before.id) after:  \(.watched.after | if .gone then "gone" else .components | tojson end)"
 	else empty end)
+elif has("actions") then
+	.actions | join(" ")
 elif has("rows") then
 	"player at \(pos), top-left (\(.x0),\(.y0)), radius \(.radius); y grows downward",
 	.rows[],
@@ -165,6 +177,15 @@ elif has("inventory") then
 elif has("id") and has("type") then
 	"\(.type)#\(.id) \(pos)"
 else tojson end
+EOF
+
+# The line `route` prints to stderr, so that stdout is just the actions.
+read -r -d '' routeSummaryFilter <<'EOF' || true
+"route to (\(.target.x),\(.target.y)): \(.actions | length) actions, \(.digs) digs"
+	+ (if .partial then ", partial: run route again after moving" else "" end)
+	+ (if (.enemies | length) > 0
+		then ", enemies on route: " + (.enemies | map("\(.type)#\(.id) (\(.x),\(.y))") | join(", "))
+		else "" end)
 EOF
 
 # The dev shell holds a built copy of this script, but `install-mods` installs
@@ -314,6 +335,9 @@ while ((SECONDS < deadline)); do
 				cat "$replyFile"
 			else
 				jq -r "$compactFilter" "$replyFile"
+				if [[ ${1:-} == route ]]; then
+					jq -r "$routeSummaryFilter" "$replyFile" >&2
+				fi
 			fi
 			exit 0
 		fi
