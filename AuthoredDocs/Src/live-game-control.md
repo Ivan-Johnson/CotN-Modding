@@ -57,6 +57,11 @@ What a tracer-bullet POC for `AgentBridge` (issue #11) verified live on CotN
 ## Driving the game
 
 * `Input.add(Action.Direction.RIGHT, 1)` moves player 1.
+* The bridge's `input` accepts these names: `bomb`, `down`, `down_left`,
+  `down_right`, `idle`, `item1`, `item2`, `left`, `right`, `spell1`, `spell2`,
+  `throw`, `up`, `up_left`, `up_right`. `idle` is the no-op beat (there is no
+  `wait`) and drops the groove chain. An unknown name makes the reply list
+  these.
 * The bridge's diagonal actions (`up_left` and the like) do nothing as
   Cadence: `input down_right` came back `TIMED-OUT` with no move and no turn
   passing (`turn` unchanged). Tried once, on a 1-1 level, as Cadence only.

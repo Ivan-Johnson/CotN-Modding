@@ -734,8 +734,23 @@ commands.convert = {
 
 local PENDING = {}
 
+local function validActionNames()
+	local names = {}
+	for name in pairs(DIRECTIONS) do
+		names[#names + 1] = name
+	end
+	for name in pairs(SPECIALS) do
+		names[#names + 1] = name
+	end
+	table.sort(names)
+	return table.concat(names, ", ")
+end
+
 local function resolveAction(name)
-	return assert(DIRECTIONS[name] or SPECIALS[name], "unknown input '" .. tostring(name) .. "'")
+	return assert(
+		DIRECTIONS[name] or SPECIALS[name],
+		"unknown input '" .. tostring(name) .. "'; the inputs are " .. validActionNames()
+	)
 end
 
 local function snapshotTiles(center)
