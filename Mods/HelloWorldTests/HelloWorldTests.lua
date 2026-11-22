@@ -1,3 +1,4 @@
+local CurrentLevel = require "necro.game.level.CurrentLevel"
 local Map = require "necro.game.object.Map"
 local Tick = require "necro.cycles.Tick"
 
@@ -30,6 +31,7 @@ api.registerTest({
 	name = "observesFixedSeed",
 	onLoad = function(fixedSeed)
 		api.observe("seed", fixedSeed)
+		assert(CurrentLevel.getSeed() == fixedSeed, "the level was not generated from the fixed seed")
 	end,
 })
 
