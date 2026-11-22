@@ -170,10 +170,15 @@ with seed 1 and basic-shovel Dove:
   and tempo traps have `trap` without `trapDescend`. Enemies, the shopkeeper
   and `Crate`s have `health`; enemies and the shopkeeper also have `ai`.
   `route` refuses `trapDescend` tiles and shopkeepers, charges 3 for tiles
-  with `ai` or `health` (moving into them attacks), and 5 for other traps. A
-  route that had to cross two trapdoors was reported unreachable.
+  with `ai` or `health` (moving into them attacks), and 100 for other traps
+  and floor items, so a route crosses one only when no way around exists, and
+  then lists it on stderr (`CROSSES ...`). Not yet verified live; a dropped
+  weapon's `holder == 0` is also unverified. A route that had to cross two
+  trapdoors was reported unreachable.
+* Verified (before this change): `route` treated floor weapons as floor and
+  picked up and swapped a weapon, and walked a `SpikeTrap` for 4 damage.
 * Verified: `route` does not know `ShrineOfBlood` (collision mask 2, no `ai`,
-  `health` or `trap`), so it plans straight through one. Walking `route
+  `health`, `trap` or `item`), so it plans straight through one. Walking `route
   stairs` into it on a 1-1 level cost 10 health in one action (see
   [zone-one-cadence.md](./zone-one-cadence.md#shrines)). Look at the `map`
   legend and `entities` before running a route you cannot afford to lose.

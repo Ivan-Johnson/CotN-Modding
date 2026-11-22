@@ -40,9 +40,13 @@
 #                                   walls (dig resistance 1); stone and shop
 #                                   walls are never dug. Enemies on the way
 #                                   are attacked by moving into them; they
-#                                   are listed on stderr. At most 50 actions:
-#                                   when the route is longer, run it again
-#                                   from where you stopped
+#                                   are listed on stderr. Traps and floor
+#                                   items (walking onto an item picks it
+#                                   up) are avoided; when the only way
+#                                   crosses one, stderr lists it: check it
+#                                   before running the actions. At most 50
+#                                   actions: when the route is longer, run
+#                                   it again from where you stopped
 #   map [N]                         ASCII grid of the tiles within N (default 8,
 #                                   up to 20) of the player: # solid, . floor,
 #                                   > stairs, @ the player, a fixed glyph per
@@ -185,6 +189,9 @@ read -r -d '' routeSummaryFilter <<'EOF' || true
 	+ (if .partial then ", partial: run route again after moving" else "" end)
 	+ (if (.enemies | length) > 0
 		then ", enemies on route: " + (.enemies | map("\(.type)#\(.id) (\(.x),\(.y))") | join(", "))
+		else "" end)
+	+ (if (.hazards // [] | length) > 0
+		then ", CROSSES traps/items: " + (.hazards | map("\(.type)#\(.id) (\(.x),\(.y))") | join(", "))
 		else "" end)
 EOF
 

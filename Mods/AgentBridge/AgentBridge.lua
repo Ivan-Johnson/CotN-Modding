@@ -255,10 +255,13 @@ commands.state = {
 
 -- Items the player holds and wall decorations (torches): the entities that
 -- bury the ones an agent asks about.
-local function isBackgroundEntity(entity)
+local function isHeld(entity)
 	local holder = entity.item and entity.item.holder
-	local held = holder and holder ~= 0 and Entities.entityExists(holder)
-	return held or entity.name:find("Wall") ~= nil
+	return holder and holder ~= 0 and Entities.entityExists(holder)
+end
+
+local function isBackgroundEntity(entity)
+	return isHeld(entity) or entity.name:find("Wall") ~= nil
 end
 
 local function parseTypeSet(text)
@@ -486,10 +489,11 @@ commands.map = {
 
 -- Costs in actions: a floor tile 1; a dirt wall 2 (dig, then move); a door 2
 -- (open, then move); an enemy or a crate 3, since the first action attacks it;
--- other traps 5, to walk around them. Trapdoors and shopkeepers are never
--- entered.
+-- other traps and floor items 100, so a route crosses one only when no way
+-- around exists; the route lists each one it crosses. Trapdoors and
+-- shopkeepers are never entered.
 local ENEMY_COST = 3
-local TRAP_COST = 5
+local HAZARD_COST = 100
 
 local ROUTE_ACTIONS = { ["0,-1"] = "up", ["0,1"] = "down", ["-1,0"] = "left", ["1,0"] = "right" }
 
@@ -500,14 +504,14 @@ local function routeObstacles(player)
 		local pos = entity.position
 		local at = pos.y * 65536 + pos.x
 		local kind
-		if entity.id == player.id or entity.item or entity.attachment then
+		if entity.id == player.id or entity.attachment or isHeld(entity) then
 			kind = nil
 		elseif entity.trapDescend or entity.name:find("^Shopkeeper") then
 			kind = "blocked"
 		elseif entity.ai or entity.health then
 			kind = "enemy"
-		elseif entity.trap then
-			kind = "trap"
+		elseif entity.trap or entity.item then
+			kind = "hazard"
 		end
 		local previous = obstacles[at]
 		if kind == "blocked" or (kind and not previous) then
@@ -519,7 +523,8 @@ end
 
 -- `route [stairs|X Y] [dig=true]` finds the cheapest orthogonal route from the
 -- player to the stairs (the default) or to X Y, and returns the actions that
--- walk it, at most MAX_INPUTS; `partial` says it was cut short.
+-- walk it, at most MAX_INPUTS; `partial` says it was cut short. It avoids
+-- traps and floor items unless there is no other way.
 commands.route = {
 	run = function(args)
 		local player = requirePlayer()
@@ -569,7 +574,7 @@ commands.route = {
 				if obstacle.kind == "blocked" then
 					return nil
 				end
-				cost = cost + (obstacle.kind == "enemy" and ENEMY_COST - 1 or TRAP_COST - 1)
+				cost = cost + (obstacle.kind == "enemy" and ENEMY_COST - 1 or HAZARD_COST - 1)
 			end
 			return cost
 		end
@@ -582,6 +587,7 @@ commands.route = {
 		local actions = {}
 		local digs = 0
 		local enemies = {}
+		local hazards = {}
 		local partial = false
 		local previous = { x = position.x, y = position.y }
 		for _, tile in ipairs(found.tiles) do
@@ -600,9 +606,11 @@ commands.route = {
 				digs = digs + 1
 			end
 			local obstacle = obstacles[tile.y * 65536 + tile.x]
+			local entity = obstacle and obstacle.entity
 			if obstacle and obstacle.kind == "enemy" then
-				local entity = obstacle.entity
 				enemies[#enemies + 1] = { id = entity.id, type = entity.name, x = tile.x, y = tile.y }
+			elseif obstacle and obstacle.kind == "hazard" then
+				hazards[#hazards + 1] = { id = entity.id, type = entity.name, x = tile.x, y = tile.y }
 			end
 			previous = tile
 		end
@@ -611,6 +619,7 @@ commands.route = {
 			actions = actions,
 			digs = digs,
 			enemies = enemies,
+			hazards = hazards,
 			partial = partial,
 		}
 	end,
