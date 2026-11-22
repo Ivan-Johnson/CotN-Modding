@@ -39,3 +39,5 @@ second derivation: `Docs/Adr/0002-*` at the repo root.
 * Before committing a numeric claim or formula to `Src/`, re-check it
   against every recorded data point, label anything not measured as a guess,
   and say which cases were tested.
+* State the setup behind every "never does X" claim (spawned or natural, open
+  floor or walls), and re-check negative claims on natural enemies.
