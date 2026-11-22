@@ -36,3 +36,6 @@ second derivation: `Docs/Adr/0002-*` at the repo root.
 * `htmlq --pretty` reflows the `minimal-html` tree onto its own lines, so an
   assertion over it must match within a single line: `<h1>Home` matches where
   `<h1>Home</h1>` does not.
+* Before committing a numeric claim or formula to `Src/`, re-check it
+  against every recorded data point, label anything not measured as a guess,
+  and say which cases were tested.
