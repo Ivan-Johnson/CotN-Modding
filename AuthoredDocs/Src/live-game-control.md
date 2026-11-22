@@ -57,6 +57,9 @@ What a tracer-bullet POC for `AgentBridge` (issue #11) verified live on CotN
 ## Driving the game
 
 * `Input.add(Action.Direction.RIGHT, 1)` moves player 1.
+* The bridge's diagonal actions (`up_left` and the like) do nothing as
+  Cadence: `input down_right` came back `TIMED-OUT` with no move and no turn
+  passing (`turn` unchanged). Tried once, on a 1-1 level, as Cadence only.
 * `GameSession.start({mode = GameSession.Mode.SingleZone})` starts a run, even
   from a tick handler.
 * A `levelGenerate` handler that sets `ev.options.seed` pins the level's
@@ -129,6 +132,11 @@ with seed 1 and basic-shovel Dove:
   `route` refuses `trapDescend` tiles and shopkeepers, charges 3 for tiles
   with `ai` or `health` (moving into them attacks), and 5 for other traps. A
   route that had to cross two trapdoors was reported unreachable.
+* Verified: `route` does not know `ShrineOfBlood` (collision mask 2, no `ai`,
+  `health` or `trap`), so it plans straight through one. Walking `route
+  stairs` into it on a 1-1 level cost 10 health in one action (see
+  [zone-one-cadence.md](./zone-one-cadence.md#shrines)). Look at the `map`
+  legend and `entities` before running a route you cannot afford to lose.
 * Verified: scanning every tile of a 1-1 level (24 by 42, 1,008 tiles) with
   `Tile.getInfo` in one command added no time that showed against the
   roughly 1 s round trip. Bigger levels were not measured.
@@ -167,6 +175,10 @@ with seed 1 and basic-shovel Dove:
   covers the common types; the rest get the first free letter of their name,
   remembered until the mod reloads (a reload may hand out different letters).
   Verified: `Skeleton` was `S` and `Skeleton2` `s` on levels 1 and 2 of one run.
+  Once a type finds no free letter it gets `?`, so on a busy level several
+  types share `?`: on one 1-3 `Wraith`, `Dragon2`, `Trapdoor`, `Crate3`, and
+  more all showed as `?`, and on a 1-4 `Deathmetal`, `PreBossBarrier`,
+  `BossLight` and `Dragon2` did. Read the legend, or use `entities`, for those.
 * Entities with a `position` include the player's inventory items (at the
   player's tile) and a `WallTorch` per wall; `map` skips both, and so does
   `entities` unless it is given `type`, `component` or `id`, or `all=true`
