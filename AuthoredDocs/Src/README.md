@@ -20,7 +20,7 @@ for players or for mod authors; read the one whose trigger matches your task.
 
 ## Players
 
-A wiki of linked pages about the game's things, measured as Cadence on zone one.
+A wiki of linked pages about the game's things, for Cadence.
 
 * [controls.md](./controls.md): what each input does (moving, bumping, facing,
   items, spells, bombs, idling) and what a failed action costs.
