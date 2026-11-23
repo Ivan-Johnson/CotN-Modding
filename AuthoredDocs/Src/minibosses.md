@@ -22,9 +22,8 @@ appears differs between runs. How these were measured:
 ## Minotaur and Minotaur2
 
 * A natural `Minotaur` started moving toward the player while the player was
-  still 9 tiles away behind walls, one tile every beat. It crossed a
-  `DirtWall` tile on the way, so it probably breaks dirt walls as it charges
-  (`guess`: the wall tile was not re-read).
+  still 9 tiles away behind walls, one tile every beat. It digs through
+  walls on the way; see [digging.md](./digging.md).
 * Face to face with a dagger, a `Minotaur` hit once for 4 on the beat of the
   first dagger hit and not on the next two beats; the third hit killed it.
   That is one attack in three adjacent beats. One fight only.

@@ -99,13 +99,8 @@ Synchrony API 4.2.1, unless a bullet bounds it further.
 * Walls and floor are tiles, not entities. `Tile.getInfo(x, y).name` is nil
   outside the level; `Tile.isSolid` tells wall from floor. Y grows downward:
   `up` moves to `y - 1`.
-* `Tile.getInfo(x, y).digResistance` is 1 for `DirtWall`, 2 for `StoneWall`
-  and 4 for a shop wall; a `LevelBorder` has none. Moving into a `DirtWall`
-  digs it without moving, so a dug wall takes two actions. The basic shovel
-  digs resistance 1 only (the stone and shop-wall cases follow from the
-  numbers and were not tried).
-* A door (`DoorVertical`, `DoorHorizontal`) is a solid wall with resistance
-  -2. Moving into it opens it without moving, with no dig.
+* `Tile.getInfo(x, y).digResistance` is a wall's toughness; the values, and
+  what digs what, are in [digging.md](./digging.md).
 * `Marker.lookUpAll(Marker.Type.STAIRS)` lists the stairs as `{x, y}` (1 entry
   on a 1-1 level; locked and boss exits were not checked). No tile is named
   for the exit.
