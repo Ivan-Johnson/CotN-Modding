@@ -1,34 +1,58 @@
 # Bombs
 
-For players. Measured as Cadence in no-beat mode on CotN 4.2.1.
+For players. How bombs are used and what their blast does. The bomb button:
+[controls.md](./controls.md).
 
-* The starting `Bomb` (the `bomb` action) drops a lit bomb on the player's
-  tile and is spent. A `Bomb` or `Bomb3` pickup adds to the inventory. With no
-  bomb left the action logs `multiplier_lost(because=an invalid action)`.
-* The bomb explodes on the third beat after the placing beat: placed on beat
-  1, the blast came with the idle on beat 4 (once; another test counted the
-  fourth action including the placing one, which agrees).
-* The blast covers the 3 by 3 around the bomb. It dug the `DirtWall`s directly
-  above it and up-left of it, hit a `Crate3` for 1 damage, and did 4 damage to
-  a `Minotaur`. It also did 4 damage to a player left 1 tile from it in a King
-  Conga attempt.
-* It clears `StoneWall` as well as `DirtWall`: a bomb placed in a dead-end
-  corridor opened a way into a guarded stairs room that the basic shovel could
-  not.
-* It destroys the coins lying on its tiles: a bomb in a corridor where enemies
-  came in a column killed a `Ghost` and destroyed `ResourceCoin30` and
-  `ResourceCoin10`.
-* A bomb breaks crates, which melee does not; see
-  [chests-and-loot.md](./chests-and-loot.md).
+## Using bombs
 
-## Timing against a charging enemy
+* You start with one bomb. A `Bomb` pickup adds one and a `Bomb3` adds three.
+* The bomb action drops a lit bomb on your own tile and uses one up. It does
+  not block the tile: you can step back onto it, and you can drop another bomb
+  on top of it.
+* With no bomb left, pressing the button still passes the beat and breaks your
+  coin multiplier.
+* A bomb goes off on the third beat after the one you placed it on: placed on
+  beat 1, it explodes on beat 4. Any action that passes a beat counts,
+  including idling.
 
-* A `Minotaur` charging along the player's row at one tile a beat, 5 tiles
-  away, was undamaged when the player placed the bomb at once and retreated
-  2 tiles: it was still 2 tiles from the bomb when it went off, and the blast
-  came before its move. Placing the bomb one beat later (a leading `idle`)
-  left it 1 tile from the bomb, and it died. In both tries it never hit the
-  player.
-* A bomb kills a `Dragon` with no damage taken: place it when the dragon is 2
-  tiles from the bomb's tile, walk 2 or 3 tiles away, and the dragon walks into
-  the blast (4 damage). Done once on 1-1.
+## The blast
+
+* It covers the 3 by 3 around the bomb, diagonals included, and nothing
+  farther. Walls do not shield the corners.
+* It goes off before enemies move on that beat, so a charger has to be within
+  one tile of the bomb already. A `Minotaur` that starts 4 tiles away when you
+  place the bomb and charges is caught; from 5 it steps in just too late. A
+  `Dragon`, which moves every second beat, is caught from 3 tiles and missed
+  from 4.
+* A lit bomb inside another's blast is not set off by it and burns down on its
+  own fuse.
+
+## What it hurts
+
+* Everything with health in the blast takes 4: enemies, the shopkeeper and
+  you. A `Minotaur` (3 health) or `Dragon` (4) dies to one bomb. A frozen
+  `Ghost` is the exception; see [ghost.md](./ghost.md).
+* You are safe from 2 tiles away, and hurt from 1 tile, diagonals included.
+* Armor reduces it like any hit: leather armor to 3, chainmail to 2, platemail
+  to 1.
+* You cannot be hurt on two beats in a row, so blasts on consecutive beats hurt
+  you once. Blasts two beats apart hurt twice.
+* Enemies it kills count towards the coin multiplier and leave their gold
+  where they died; the blast does not destroy it. See
+  [coin-multiplier.md](./coin-multiplier.md).
+* `Crate` and `Crate2` break. A `Crate3` has 3 health and loses 1 per bomb.
+
+## What it destroys
+
+* Dirt walls, stone walls, shop walls, catacomb walls and doors become floor.
+  The level border and unbreakable walls stay. For the shovel see
+  [digging.md](./digging.md).
+* Everything lying on the floor in the blast: coins, diamonds, keys, food,
+  weapons, armor, other bombs and a shop's wares. Chests are untouched.
+* Traps in the blast: spike, bounce, tempo traps and trapdoors.
+
+## In a shop
+
+* A bomb that destroys wares but misses the shopkeeper is harmless.
+* A bomb that hurts the shopkeeper makes him leave his counter, chase you, and
+  hit for 20 every second beat. See [shops.md](./shops.md).
