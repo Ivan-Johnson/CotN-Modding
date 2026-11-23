@@ -61,7 +61,7 @@ fixed-seed GameSession. A test is a table:
     A test with no file matches every file selection (see selected-test.txt)
   timeoutTicks (integer?) - overrides TEST_TIMEOUT_TICKS, the ticks the test
     may take from its "Running" line, level load included, before it fails
-    with "timed out after N ticks" and the next test runs
+    with "timed out" and the next test runs
   onLoad (function(fixedSeed, finish), required)
     - runs once the level has loaded, and is passed the seed the level was
       generated with; call the builtin assert(condition, reason) once per
@@ -277,7 +277,7 @@ event.tick.add("TestHarnessTimers", { order = "invokeLater" }, function()
 	local test = currentTest
 	if test and tickCount - test.startedAt >= (test.timeoutTicks or TEST_TIMEOUT_TICKS) then
 		-- Does nothing for a test that already finished.
-		finishAsync(test, string.format("timed out after %d ticks", tickCount - test.startedAt))
+		finishAsync(test, "timed out")
 	end
 	local due = {}
 	local waiting = {}

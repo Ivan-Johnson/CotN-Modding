@@ -63,7 +63,7 @@ it as a regression test with real assertions.
   resolved)` once the game has settled. `finish()` passes the test and
   `finish(message)` fails it; an error in any callback fails it too. A test
   that has not finished within 18000 ticks of starting, level load included,
-  fails with `timed out after N ticks` and the next test runs; set
+  fails with `timed out` (the line ends with the ticks, as for any result) and the next test runs; set
   `timeoutTicks` on the test to change its limit. Use
   `api.afterTicks(n, fn)` to wait. An action that does not advance the turn,
   such as a bump into a wall, reports `resolved` false after 1500 ticks.
