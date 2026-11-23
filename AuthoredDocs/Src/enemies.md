@@ -1,7 +1,6 @@
 # Zone one enemies
 
-For players. Which enemies zone one can spawn and how each one moves. Each
-type has its own page; follow the links.
+For players. What all enemies have in common; each type has its own page.
 
 * Slimes: [Slime, Slime2, Slime3](./slimes.md)
 * [Skeletons](./skeletons.md): Skeleton, Skeleton2, Skeleton3 and the
@@ -16,35 +15,50 @@ type has its own page; follow the links.
 * [King Conga](./king-conga.md), a 1-4 boss
 
 Stats, damage and drops that cut across types: [coin multiplier](./coin-multiplier.md),
-[bombs](./bombs.md), and [digging](./digging.md). For the AI codes mod authors
-use, see [enemy-ai-ids.md](./enemy-ai-ids.md).
+[bombs](./bombs.md), and [digging](./digging.md).
 
-## How the numbers were measured
+## Stats tables
 
-Every page states what it measured as Cadence (12 health, dagger) in no-beat
-mode on CotN 4.2.1, with the enemy spawned by hand in a cleared open room,
-unless it says *natural* (the enemy came with the level). "Beat" means one
-player action, not a wall-clock beat; in no-beat mode time passes only when
-the player acts.
-
-Each stats table has the same columns:
+Each page's table has the same columns:
 
 * **Speed**: 1 acts every beat, 2 acts every second beat.
 * **HP**: health points; a dagger hit takes 1.
-* **Damage**: health the player loses per hit.
+* **Damage**: health you lose per hit.
 
-## Shared behaviour
+## When enemies act
 
-* Deterministic enemies (`Slime2`, `Slime3`, `Skeleton`) act on the same beats
-  on every run. Random movers (`Zombie`, `Bat`) vary, so compare them over
-  many runs, never one trace against another.
-* An enemy that never moves while its `aggro.active` is true is probably
-  blocked, not asleep: check the tiles and entities around it.
+* **Always active:** Slime2, Slime3 and Zombie act from the first beat and from
+  any distance.
+* **Sleepers:** Skeletons, monkeys and bats do nothing until you come within 3
+  tiles of them, measured in a straight line: a tile 2 across and 2 up is in
+  range, 3 across and 1 up is not. Walls do not matter. Once awake, a skeleton
+  chases and a bat wanders however far you go.
+* **Minotaurs and Dragons:** a Minotaur wakes within 7 tiles, a Dragon2 within
+  10, and walls do not matter for that either. All Minotaurs and Dragons also
+  wake once they have a clear line to you, even from across a room. A Dragon has
+  no distance of its own and sleeps behind a wall at any distance.
+* A [Ghost](./ghost.md) wakes by its own rule.
+* The enemies a level starts with follow the same rules: on a fresh level
+  only the always-active types move, and the sleepers wait for you to come
+  close.
+* Awake enemies keep acting while you stand still.
 
-* A seeker moves along x first and only then along y, even when the vertical
-  distance is larger.
-* An attack takes the attacker's move slot: once adjacent, a speed-2 enemy hits
-  every second beat.
-* Enemies that were more than 8 tiles away still stepped every action while
-  the player idled (seen with `Zombie` and `Slime2`; not re-measured), so
-  distance alone does not keep an enemy still.
+## Timing
+
+* A speed-2 enemy acts on the first beat after it appears and then on every
+  second beat. A speed-1 enemy acts every beat.
+* An attack takes the place of a move, so a speed-2 enemy next to you hits every
+  second beat.
+* Nothing can hurt you on the first beat of a level.
+
+## Movement
+
+* Skeletons, monkeys and Minotaurs chase one step at a time, horizontally
+  first, even when you are farther away vertically.
+* When a wall or another enemy blocks a skeleton's horizontal step it steps
+  vertically instead. It never walks around an obstacle: a skeleton with a
+  wall or an enemy straight between it and you stays where it is.
+* A Minotaur with a wall straight between it and you breaks the stone or dirt
+  wall, which costs it one extra beat.
+* A Skeleton always makes the same moves from the same starting point. A
+  Zombie's first direction and a bat's every step are random.

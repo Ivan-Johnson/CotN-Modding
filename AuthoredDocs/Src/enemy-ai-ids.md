@@ -15,13 +15,14 @@ and 2, 4, 6 and 8 are the diagonals. Read from zone one enemy dumps on CotN
 
 * `beatDelay.interval` is the number of beats between actions; the player-facing
   tables call it speed. A spawned enemy's `beatDelay.counter` starts at 0.
-* Every type above has `activationRange.radius` 3 (`Minotaur` and `Minotaur2`:
-  7), an `ai.directions` list and `aiBasicSeek`, whatever its `ai.id`.
-  `activationRange` is not a limit on movement: far enemies still step.
-* `aggro.active` is not what makes every enemy act: `Skeleton` and `Monkey`
-  start with it false and chase at once. A `Ghost` starts with it false and
-  stays still until it is true, which happens within two tiles of the player
-  (see [ghost.md](./ghost.md)).
+* Every type above has an `ai.directions` list and `aiBasicSeek`, whatever its
+  `ai.id`.
+* `activationRange.radius` is the straight-line distance within which a
+  sleeping enemy wakes, through walls: 3 for most types, 7 for `Minotaur` and
+  `Minotaur2`, 10 for `Dragon2`, none for `Dragon`. `Slime`, `Slime2`, `Slime3`
+  and `Zombie` start with `aggro.active` true and never sleep; every other type
+  starts with it false. A `Ghost` wakes by its own rule (see
+  [ghost.md](./ghost.md)); the rest are in [enemies.md](./enemies.md).
 * A spawned `Wraith` has `ai.id` 7 and never acts; a natural one chases.
 * A headless skeleton has `ai.id` 0 but a `charge` component that makes it run.
 * A `Ghost`'s `stasis.active` is true while the player faces or is beside it,
