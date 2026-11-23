@@ -43,7 +43,7 @@ in
                 shellHook = ''
                         # Rebuild the documentation, then read a page from it.
                         man-crypt() {
-                                local out="$(nix build --no-link --print-out-paths "$ITJ_FLAKE_ROOT#docs")" || return
+                                local out="$(nix build --no-link --print-out-paths "$(git rev-parse --show-toplevel)#docs")" || return
                                 MANPATH="$out/official/man" man "$@"
                         }
                         export -f man-crypt

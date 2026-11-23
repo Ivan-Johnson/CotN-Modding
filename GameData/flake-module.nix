@@ -38,7 +38,7 @@ let
                 text = ''
                         ${liveGame.waitForLog}
 
-                        outDir="$ITJ_FLAKE_ROOT/Tmp/scrape-game-data/$(date +%Y-%m-%d_%H-%M-%S)"
+                        outDir="$(git rev-parse --show-toplevel)/Tmp/scrape-game-data/$(date +%Y-%m-%d_%H-%M-%S)"
                         mkdir -p "$outDir"
 
                         baseline=$(wc -l <"$COTN_LOG")
@@ -65,7 +65,7 @@ let
                 name = "push-game-data";
                 runtimeInputs = pipelineTools;
                 text = ''
-                        REPO_ROOT="$ITJ_FLAKE_ROOT" exec bash ${scripts}/GameData/push-game-data.bash "$@"
+                        REPO_ROOT="$(git rev-parse --show-toplevel)" exec bash ${scripts}/GameData/push-game-data.bash "$@"
                 '';
         };
 in
