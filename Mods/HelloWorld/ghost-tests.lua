@@ -13,6 +13,10 @@ local fixtures = require "HelloWorldTests.fixtures"
 
 -- Backs AuthoredDocs/Src/ghost.md. Each test plays Cadence in no-beat mode on
 -- an open floor, spawning Ghosts by hand; "up" is toward negative y.
+--
+-- Spawn every Ghost in setup, before the first action. A Ghost spawned between
+-- actions never moves, whatever its aggro or stasis, so a test that needs one
+-- to appear mid-scene would silently see a ghost that does nothing.
 
 local function ghostScene(name, setup, actions, checks)
 	testsApi.registerTest({
@@ -107,6 +111,85 @@ end, { "up", "idle", "idle", "idle" }, {
 		assertAt(scene.right, 2, -1, "right")
 		assertAt(scene.left, -1, -1, "left")
 		assert(health() == 12, "a frozen ghost never hits")
+	end,
+})
+
+-- A ghost chasing when a wall blocks its horizontal step slides onto the
+-- player's side line, and keeps chasing from there: it hits from beside the
+-- player while the player stays put, even though a ghost placed there stays
+-- frozen. The wall goes up after the first move, since the player starts on
+-- that tile.
+ghostScene("ghostSlidesBesideAndAttacks", function()
+	return fixtures.spawn("Ghost", 2, 0)
+end, { "down", "idle", "idle", "idle", "idle", "idle" }, {
+	[1] = function(ghost)
+		Tile.setType(0, 0, "StoneWall")
+		assertAt(ghost, 1, 0, "behind the player, diagonally")
+	end,
+	[2] = function(ghost)
+		assertAt(ghost, 1, 1, "slid beside the player when the wall blocked the horizontal step")
+		assert(health() == 12, "it hits on the beat after it arrives")
+	end,
+	[3] = function()
+		assert(health() == 10, "hits from beside the player")
+	end,
+	[4] = function()
+		assert(health() == 10, "no hit on the beat after a hit")
+	end,
+	[5] = function()
+		assert(health() == 8, "a hit every second beat")
+	end,
+})
+
+-- A dagger bump toward a ghost that is chasing from beside the player kills
+-- it, before or after it has hit.
+for _, beats in ipairs({ { "down", "idle", "right" }, { "down", "idle", "idle", "right" } }) do
+	ghostScene("ghostBesideDiesToDaggerBump" .. #beats, function()
+		return fixtures.spawn("Ghost", 2, 0)
+	end, beats, {
+		[1] = function()
+			Tile.setType(0, 0, "StoneWall")
+		end,
+		[#beats] = function(ghost)
+			assertGone(ghost, "dagger bump toward a ghost beside the player")
+		end,
+	})
+end
+
+-- Ghosts that start on the side line or in front stay frozen and never hit.
+ghostScene("ghostSpawnedOnTheLineStaysFrozen", function()
+	return {
+		right = fixtures.spawn("Ghost", 1, 1),
+		left = fixtures.spawn("Ghost", -1, 1),
+		farRight = fixtures.spawn("Ghost", 2, 1),
+		front = fixtures.spawn("Ghost", 0, 2),
+	}
+end, { "down", "idle", "idle", "idle", "idle" }, {
+	[5] = function(scene)
+		assertAt(scene.right, 1, 1, "right")
+		assertAt(scene.left, -1, 1, "left")
+		assertAt(scene.farRight, 2, 1, "farRight")
+		assertAt(scene.front, 0, 2, "front")
+		assert(health() == 12, "frozen ghosts never hit")
+	end,
+})
+
+-- A ghost re-checks which side of the player it is on only when the player
+-- moves to a new tile. Bumping stone turns the player, but a frozen ghost
+-- that is now behind stays frozen until the next move.
+ghostScene("ghostRecheckOnlyWhenThePlayerMoves", function()
+	Tile.setType(-1, 1, "StoneWall")
+	return fixtures.spawn("Ghost", 1, 1)
+end, { "down", "left", "idle", "idle", "up", "idle" }, {
+	[2] = function()
+		assert(fixtures.player().facingDirection.direction == 5, "the bump turns the player left")
+	end,
+	[4] = function(ghost)
+		assertAt(ghost, 1, 1, "still frozen after the turn")
+		assert(health() == 12, "no hit after the turn")
+	end,
+	[5] = function(ghost)
+		assertAt(ghost, 0, 1, "chasing once the player moves")
 	end,
 })
 

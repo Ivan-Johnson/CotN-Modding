@@ -25,8 +25,8 @@ and 2, 4, 6 and 8 are the diagonals. Read from zone one enemy dumps on CotN
   [ghost.md](./ghost.md)); the rest are in [enemies.md](./enemies.md).
 * A spawned `Wraith` has `ai.id` 7 and never acts; a natural one chases.
 * A headless skeleton has `ai.id` 0 but a `charge` component that makes it run.
-* A `Ghost`'s `stasis.active` is true while the player faces or is beside it,
-  which is the facing rule in [ghost.md](./ghost.md).
+* A `Ghost`'s `stasis.active` is true while the player faces or is beside it, as of
+  the player's last move to a new tile; see [ghost.md](./ghost.md).
 * A `Monkey`'s grab uses `grabParalyzeVictim`, `grabMoveOntoVictim` and
   `grabIncreaseHealth` (`multiplier` 4, `max` 4 on `Monkey`; `multiplier` 3,
   `max` 6 on `Monkey2`).
