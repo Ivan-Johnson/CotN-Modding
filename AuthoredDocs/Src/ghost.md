@@ -11,7 +11,8 @@ A ghost only moves while you have your back to it.
 * **Frozen in front or beside you.** Picture a line through you at right angles
   to the way you face. A ghost on your side of it, or on it, never moves or
   attacks, and nothing hurts it: dagger bumps and bomb blasts do nothing. The
-  way you face is set by each move or attack; standing still keeps it.
+  way you face is set by [what you press](./controls.md#facing); standing
+  still keeps it.
 * **Chasing from behind.** A ghost past that line, diagonals included, follows
   one tile a beat. It steps horizontally first, even when it is farther away
   vertically, and steps vertically if a wall or an enemy blocks the horizontal

@@ -22,6 +22,8 @@ for players or for mod authors; read the one whose trigger matches your task.
 
 A wiki of linked pages about the game's things, measured as Cadence on zone one.
 
+* [controls.md](./controls.md): what each input does (moving, bumping, facing,
+  items, spells, bombs, idling) and what a failed action costs.
 * [enemies.md](./enemies.md): any zone one enemy, with a page per type and the
   stats tables; start here for enemies.
 * [minibosses.md](./minibosses.md) and [king-conga.md](./king-conga.md): the
