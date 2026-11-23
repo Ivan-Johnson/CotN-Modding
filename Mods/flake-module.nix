@@ -86,6 +86,7 @@ let
                 runtimeInputs = [
                         pkgs.coreutils
                         bundleLayout
+                        pkgs.git
                         pkgs.jq
                         pkgs.rsync
                 ];

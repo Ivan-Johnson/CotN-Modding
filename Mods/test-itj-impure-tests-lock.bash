@@ -13,11 +13,11 @@ trap '[ -n "$holderPid" ] && kill "$holderPid" 2>/dev/null; rm -rf "$scratch"' E
 
 # An empty repo root makes the entrypoint's install step fail once it has the
 # lock, so it never touches a game.
-export ITJ_FLAKE_ROOT="$scratch/repo"
+export ITJ_MODS_ROOT="$scratch/repo/Mods"
 export ITJ_GAME_LOCK_FILE="$lockFile"
 export COTN_LOCAL_MODS_DIR="$modsDir"
 export COTN_LOG="$scratch/NecroDancer.log"
-mkdir "$ITJ_FLAKE_ROOT"
+mkdir -p "$ITJ_MODS_ROOT"
 
 # Takes the lock in the background, then holds it for $1 seconds. Returns once
 # the holder really holds it, so the test never races the holder's start.
@@ -99,7 +99,7 @@ for mod in HelloWorld HelloWorldTests; do
 	echo "{\"namespace\":\"$mod\",\"name\":\"$mod\"}" >"$goodRepo/Mods/$mod/mod.json"
 done
 touch "$goodRepo/Mods/HelloWorldTests/api.lua"
-export ITJ_FLAKE_ROOT="$goodRepo"
+export ITJ_MODS_ROOT="$goodRepo/Mods"
 export ITJ_SUITE_STALL_SECONDS=2
 export ITJ_GAME_LOCK_TIMEOUT_SECONDS=5
 start=$(date +%s)

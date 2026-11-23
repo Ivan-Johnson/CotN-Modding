@@ -66,6 +66,10 @@ than silently overriding it.
   (`ITJ_SUITE_STALL_SECONDS`) it fails with "game not responding" and frees
   the lock, because a crashed or hung game logs nothing. Restarting the game
   is the user's job; agents cannot reach it from the sandbox.
+* Scripts act on the checkout they are run in, found from `git rev-parse
+  --show-toplevel`, never from the workspace's `ITJ_FLAKE_ROOT`, so a git
+  worktree installs and tests its own mods. `ITJ_MODS_ROOT` overrides the
+  directory `install-mods` copies from.
 * `build-format` formats all code. Typically this does not need to be used; it
   is done automatically as part of a pre-commit hook.
 

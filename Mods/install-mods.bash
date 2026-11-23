@@ -13,7 +13,7 @@
 # Usage: install-mods [MOD...]
 #
 # Environment:
-#   ITJ_FLAKE_ROOT              repo root
+#   ITJ_MODS_ROOT               override; default <git toplevel>/Mods
 #   COTN_LOCAL_MODS_DIR         the game's local mods directory
 #   ITJ_BUNDLE_NAME             bundle mod name (default: DevBundle)
 #   ITJ_BUNDLE_RELOAD_TRIGGER   optional "<mod>/<file>" in the bundle to
@@ -24,7 +24,7 @@
 #                               without it removes the file
 set -euo pipefail
 
-modsRoot="$ITJ_FLAKE_ROOT/Mods"
+modsRoot="${ITJ_MODS_ROOT:-$(git rev-parse --show-toplevel)/Mods}"
 bundleName="${ITJ_BUNDLE_NAME:-DevBundle}"
 synchronyVersion="4.2.1"
 
