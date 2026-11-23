@@ -156,4 +156,27 @@ if ! grep -qF "All tests pass" <<<"$stdout"; then
 	exit 1
 fi
 
+# A run that printed no PASS/FAIL line at all fails with a clear message,
+# rather than exiting silently.
+(
+	sleep 1
+	echo '[HelloWorldTests] Test suite completed: 0 failure(s)' >>"$COTN_LOG"
+) &
+growerPid=$!
+status=0
+stdout=$(run-tests 2>&1) || status=$?
+wait "$growerPid"
+
+if ((status == 0)); then
+	echo "FAIL: a run with no PASS/FAIL lines succeeded; output was:" >&2
+	echo "$stdout" >&2
+	exit 1
+fi
+
+if ! grep -qF "itj-impure-tests: the run printed no PASS/FAIL lines" <<<"$stdout"; then
+	echo "FAIL: a run with no PASS/FAIL lines gave no message; output was:" >&2
+	echo "$stdout" >&2
+	exit 1
+fi
+
 echo "lock test passed"

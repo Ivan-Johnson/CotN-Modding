@@ -81,7 +81,12 @@ fi
 
 # A test that reports twice was queued twice (a reload registered it again),
 # so the run is not the single fixed-seed run the tests assume.
-duplicates=$(grep -oE '\[HelloWorldTests\] (PASS|FAIL|XFAIL|XPASS) [A-Za-z0-9_]+' <<<"$newOutput" | sort | uniq -d)
+resultLines=$(grep -oE '\[HelloWorldTests\] (PASS|FAIL|XFAIL|XPASS) [A-Za-z0-9_]+' <<<"$newOutput" || true)
+if [ -z "$resultLines" ]; then
+        echo "itj-impure-tests: the run printed no PASS/FAIL lines" >&2
+        exit 1
+fi
+duplicates=$(sort <<<"$resultLines" | uniq -d)
 if [ -n "$duplicates" ]; then
         echo "itj-impure-tests: tests reported more than once:" >&2
         echo "$duplicates" >&2
