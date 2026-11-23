@@ -16,13 +16,9 @@ local fixtures = require "HelloWorldTests.fixtures"
 
 local RING = { { 0, -1 }, { 1, -1 }, { 1, 0 }, { 1, 1 }, { 0, 1 }, { -1, 1 }, { -1, 0 }, { -1, -1 } }
 
-local function player()
-	return fixtures.player()
-end
-
-local function health()
-	return player().health.health
-end
+local player = fixtures.player
+local health = fixtures.health
+local tileName = fixtures.tileName
 
 local function bombCount()
 	for entity in Entities.entitiesWithComponents({ "itemStack" }) do
@@ -47,10 +43,6 @@ local function exists(entity)
 	return Entities.entityExists(entity.id)
 end
 
-local function tileName(x, y)
-	return Tile.getInfo(x, y).name
-end
-
 -- An enemy that never acts, so a test can read what the blast alone did.
 local function frozen(typeName, x, y, hp)
 	local entity = fixtures.spawn(typeName, x, y)
@@ -66,21 +58,16 @@ local function frozen(typeName, x, y, hp)
 end
 
 local function scene(name, setup, actions, checks)
-	testsApi.registerTest({
+	fixtures.scene({
 		name = name,
-		noBeat = true,
-		async = true,
-		onLoad = function(_, finish)
-			fixtures.openArena(8)
+		radius = 8,
+		prepare = function()
 			player().health.health = 100
 			player().health.maxHealth = 100
-			local state = setup() or {}
-			testsApi.play(actions, function(index, _, resolved)
-				if checks[index] then
-					checks[index](state, resolved)
-				end
-			end, finish)
 		end,
+		setup = setup,
+		actions = actions,
+		checks = checks,
 	})
 end
 

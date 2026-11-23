@@ -14,10 +14,7 @@ local fixtures = require "HelloWorldTests.fixtures"
 -- an open floor; a wall sits on the tile to the right of the player, so one
 -- "right" either digs it (it becomes Floor, the player stays) or leaves it.
 
-local function tileName(x, y)
-	local info = Tile.getInfo(x, y)
-	return info and info.name or "nil"
-end
+local tileName = fixtures.tileName
 
 local function equip(shovel)
 	for _, item in ipairs(Inventory.getItemsInSlot(fixtures.player(), "shovel")) do
@@ -32,9 +29,7 @@ local function shovelCount()
 	return #Inventory.getItemsInSlot(fixtures.player(), "shovel")
 end
 
-local function health()
-	return fixtures.player().health.health
-end
+local health = fixtures.health
 
 local function gold()
 	return fixtures.player().goldCounter.amount
@@ -45,20 +40,7 @@ local function multiplier()
 end
 
 local function digTest(name, setup, actions, checks)
-	testsApi.registerTest({
-		name = name,
-		noBeat = true,
-		async = true,
-		onLoad = function(_, finish)
-			fixtures.openArena(8)
-			local scene = setup()
-			testsApi.play(actions, function(index)
-				if checks[index] then
-					checks[index](scene)
-				end
-			end, finish)
-		end,
-	})
+	fixtures.scene({ name = name, radius = 8, setup = setup, actions = actions, checks = checks })
 end
 
 -- Runs one bump per trial against a wall on the tile to the right, with the
