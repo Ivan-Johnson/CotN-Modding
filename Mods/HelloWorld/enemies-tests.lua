@@ -13,48 +13,13 @@ local fixtures = require "HelloWorldTests.fixtures"
 -- starts at (0,0); "up" is toward negative y. Enemies spawned in different
 -- quadrants do not interfere within the beats a test watches.
 
-local function idles(count)
-	local actions = {}
-	for index = 1, count do
-		actions[index] = "idle"
-	end
-	return actions
-end
-
 local function scene(name, radius, setup, actions, checks)
-	testsApi.registerTest({
-		name = name,
-		noBeat = true,
-		async = true,
-		onLoad = function(_, finish)
-			fixtures.openArena(radius)
-			local things = setup()
-			testsApi.play(actions, function(index)
-				if checks[index] then
-					checks[index](things)
-				end
-			end, finish)
-		end,
-	})
+	fixtures.scene({ name = name, radius = radius, setup = setup, actions = actions, checks = checks })
 end
 
-local function wallColumn(x, firstY, lastY)
-	for y = firstY, lastY do
-		Tile.setType(x, y, "StoneWall")
-	end
-end
-
-local function assertAt(entity, x, y, what)
-	local position = entity.position
-	assert(
-		position.x == x and position.y == y,
-		string.format("%s: expected %s at (%d,%d), got (%d,%d)", what, entity.name, x, y, position.x, position.y)
-	)
-end
-
-local function health()
-	return fixtures.player().health.health
-end
+local wallColumn = fixtures.wallColumn
+local assertAt = fixtures.assertAt
+local health = fixtures.health
 
 -- Remembers where each entity was, so a check can say whether it has moved.
 local function track(things)
@@ -76,7 +41,7 @@ end
 -- (The player cannot be hurt during the first beat of a level.)
 scene("enemySpeedTwoHitsEverySecondBeat", 10, function()
 	return {}
-end, idles(7), {
+end, fixtures.repeated("idle", 7), {
 	[2] = function()
 		fixtures.spawn("Skeleton", 1, 0)
 	end,
@@ -102,7 +67,7 @@ end, idles(7), {
 -- on beat 4 instead (a Minotaur hits once every three beats).
 scene("enemyPlayerIsUnhurtOnTheFirstBeat", 10, function()
 	return fixtures.spawn("Minotaur", 1, 0)
-end, idles(4), {
+end, fixtures.repeated("idle", 4), {
 	[1] = function()
 		assert(health() == 12, "no damage on beat 1")
 	end,
@@ -117,7 +82,7 @@ end, idles(4), {
 -- A speed-1 Slime3 steps every beat, around a four-tile loop.
 scene("enemySpeedOneStepsEveryBeat", 10, function()
 	return fixtures.spawn("Slime3", 6, 6)
-end, idles(4), {
+end, fixtures.repeated("idle", 4), {
 	[1] = function(slime)
 		assertAt(slime, 7, 6, "first beat")
 	end,
@@ -137,7 +102,7 @@ end, idles(4), {
 local lateZombie = {}
 scene("enemySpeedTwoStartsOnTheNextBeat", 10, function()
 	return lateZombie
-end, idles(4), {
+end, fixtures.repeated("idle", 4), {
 	[1] = function()
 		lateZombie.zombie = fixtures.spawn("Zombie", 6, 6)
 		lateZombie.moved = track(lateZombie)
@@ -162,7 +127,7 @@ scene("enemyAlwaysActiveTypesActFromFarAway", 16, function()
 	}
 	things.moved = track(things)
 	return things
-end, idles(1), {
+end, fixtures.repeated("idle", 1), {
 	[1] = function(things)
 		assert(things.moved("slime2", things.slime2), "Slime2 moved")
 		assert(things.moved("slime3", things.slime3), "Slime3 moved")
@@ -180,7 +145,7 @@ scene("enemySkeletonWakesWithinThreeTiles", 12, function()
 		tooFarWest = fixtures.spawn("Skeleton", -3, 1),
 		tooFarNorth = fixtures.spawn("Skeleton", 0, -4),
 	}
-end, idles(4), {
+end, fixtures.repeated("idle", 4), {
 	[4] = function(things)
 		assertAt(things.east, 1, 0, "woke and closed in")
 		assertAt(things.south, 0, 1, "woke and closed in")
@@ -200,7 +165,7 @@ scene("enemyMonkeysAndBatsWakeWithinThreeTiles", 12, function()
 	}
 	things.moved = track(things)
 	return things
-end, idles(4), {
+end, fixtures.repeated("idle", 4), {
 	[1] = function(things)
 		assertAt(things.monkey, 2, 0, "first step")
 		assert(things.moved("bat", things.bat), "the bat 2.8 tiles away wakes and wanders")
@@ -225,7 +190,7 @@ scene("enemyWakesThroughWalls", 12, function()
 		near = fixtures.spawn("Skeleton", 2, 2),
 		far = fixtures.spawn("Skeleton", 3, -1),
 	}
-end, idles(4), {
+end, fixtures.repeated("idle", 4), {
 	[4] = function(things)
 		assertAt(things.near, 2, 0, "woke behind the wall and slid along it")
 		assertAt(things.far, 3, -1, "stays asleep behind the wall")
@@ -265,7 +230,7 @@ scene("enemyMinibossWakeRadiusThroughWalls", 14, function()
 		sleepingDragon = fixtures.spawn("Dragon", 3, -3),
 		sleepingDragon2 = fixtures.spawn("Dragon2", 9, 5),
 	}
-end, idles(3), {
+end, fixtures.repeated("idle", 3), {
 	[3] = function(things)
 		assert(things.minotaur.position.x < 6, "a Minotaur 6.7 tiles away woke")
 		assertAt(things.sleepingMinotaur2, 6, -4, "a Minotaur2 7.2 tiles away sleeps")
@@ -283,7 +248,7 @@ scene("enemyMinibossWakesOnSightFromFarAway", 16, function()
 		dragon = fixtures.spawn("Dragon", -14, 0),
 		dragon2 = fixtures.spawn("Dragon2", 0, 14),
 	}
-end, idles(4), {
+end, fixtures.repeated("idle", 4), {
 	[4] = function(things)
 		assert(things.minotaur.position.x < 14, "the Minotaur charged")
 		assert(things.dragon.position.x > -14, "the Dragon approached")
@@ -300,7 +265,7 @@ scene("enemySeekersStepHorizontallyFirst", 10, function()
 		monkey = fixtures.spawn("Monkey", 2, -2),
 		minotaur = fixtures.spawn("Minotaur", -4, 3),
 	}
-end, idles(1), {
+end, fixtures.repeated("idle", 1), {
 	[1] = function(things)
 		assertAt(things.diagonal, 1, 2, "diagonal")
 		assertAt(things.longWay, 0, -2, "farther vertically")
@@ -318,7 +283,7 @@ scene("enemySeekersStepVerticallyWhenBlocked", 10, function()
 		wall = fixtures.spawn("Skeleton", 2, 2),
 		enemy = fixtures.spawn("Skeleton", -2, -1),
 	}
-end, idles(1), {
+end, fixtures.repeated("idle", 1), {
 	[1] = function(things)
 		assertAt(things.wall, 2, 1, "wall in the way")
 		assertAt(things.enemy, -2, 0, "enemy in the way")
@@ -334,7 +299,7 @@ scene("enemySeekersDoNotWalkAroundObstacles", 10, function()
 		behindWall = fixtures.spawn("Skeleton", 2, 0),
 		behindEnemy = fixtures.spawn("Skeleton", -2, 0),
 	}
-end, idles(6), {
+end, fixtures.repeated("idle", 6), {
 	[6] = function(things)
 		assertAt(things.behindWall, 2, 0, "behind a wall")
 		assertAt(things.behindEnemy, -2, 0, "behind an enemy")
@@ -350,7 +315,7 @@ scene("enemyMinotaurBreaksWalls", 10, function()
 		stone = fixtures.spawn("Minotaur2", 5, 0),
 		dirt = fixtures.spawn("Minotaur", -5, 0),
 	}
-end, idles(3), {
+end, fixtures.repeated("idle", 3), {
 	[1] = function(things)
 		assertAt(things.stone, 4, 0, "up to the wall")
 		assertAt(things.dirt, -4, 0, "up to the wall")
@@ -379,7 +344,7 @@ local function distinctOutcomes(typeName, x, y, beats, trials, onDone)
 		end
 		fixtures.openArena(10)
 		local enemy = fixtures.spawn(typeName, x, y)
-		testsApi.play(idles(beats), nil, function()
+		testsApi.play(fixtures.repeated("idle", beats), nil, function()
 			outcomes[enemy.position.x .. "," .. enemy.position.y] = true
 			nextTrial()
 		end)
@@ -425,7 +390,7 @@ testsApi.registerTest({
 			watched[entity.id] = { name = entity.name, x = entity.position.x, y = entity.position.y }
 		end
 		local movers = {}
-		testsApi.play(idles(6), function()
+		testsApi.play(fixtures.repeated("idle", 6), function()
 			for id, before in pairs(watched) do
 				if Entities.entityExists(id) then
 					local entity = Entities.getEntityByID(id)

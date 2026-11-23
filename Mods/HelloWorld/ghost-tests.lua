@@ -19,38 +19,12 @@ local fixtures = require "HelloWorldTests.fixtures"
 -- to appear mid-scene would silently see a ghost that does nothing.
 
 local function ghostScene(name, setup, actions, checks)
-	testsApi.registerTest({
-		name = name,
-		noBeat = true,
-		async = true,
-		onLoad = function(_, finish)
-			fixtures.openArena(10)
-			local scene = setup()
-			testsApi.play(actions, function(index)
-				if checks[index] then
-					checks[index](scene)
-				end
-			end, finish)
-		end,
-	})
+	fixtures.scene({ name = name, setup = setup, actions = actions, checks = checks })
 end
 
-local function wallColumn(x, firstY, lastY, tileType)
-	for y = firstY, lastY do
-		Tile.setType(x, y, tileType)
-	end
-end
-
-local function health()
-	return fixtures.player().health.health
-end
-
-local function assertAt(ghost, x, y, what)
-	assert(
-		ghost.position.x == x and ghost.position.y == y,
-		string.format("%s: expected the ghost at (%d,%d), got (%d,%d)", what, x, y, ghost.position.x, ghost.position.y)
-	)
-end
+local wallColumn = fixtures.wallColumn
+local health = fixtures.health
+local assertAt = fixtures.assertAt
 
 local function assertGone(ghost, what)
 	assert(not Entities.entityExists(ghost.id), what .. ": expected the ghost to be dead")
