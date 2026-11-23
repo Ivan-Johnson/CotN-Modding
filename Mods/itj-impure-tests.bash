@@ -3,9 +3,11 @@
 # its results. This is the only caller that takes the lock; the root AGENTS.md
 # describes the lock and its ITJ_GAME_LOCK_* variables.
 #
-# Usage: run-tests [TEST_NAME]
+# Usage: run-tests [TEST_NAME | --files FILE,FILE...]
 # With a name, runs only that test (still from the fixed seed) and fails if no
-# registered test has it. Values a test reports with `api.observe` appear as
+# registered test has it. With --files, runs only the tests registered by the
+# named test files (basenames, e.g. weapon-tests.lua), in registration order.
+# Values a test reports with `api.observe` appear as
 # `OBSERVED <test> <key>=<value>` lines in the output.
 lockFile=${ITJ_GAME_LOCK_FILE:-${COTN_LOCAL_MODS_DIR%/}/itj-game.lock}
 lockTimeout=${ITJ_GAME_LOCK_TIMEOUT_SECONDS:-120}
@@ -20,9 +22,18 @@ echo "pid=$$ command=itj-impure-tests started=$(date -Is)" >"$lockFile"
 
 baseline=$(wc -l <"$COTN_LOG")
 
+# The selection, as the framework's selected-test.txt content: a bare test
+# name, or `file: a-tests.lua b-tests.lua`.
 selectedTest=${1:-}
+if [ "$selectedTest" = "--files" ]; then
+        if [ -z "${2:-}" ]; then
+                echo "itj-impure-tests: --files needs a comma-separated list of test files" >&2
+                exit 1
+        fi
+        selectedTest="file: ${2//,/ }"
+fi
 
-# The framework reads the name of the one test to run from this file in the
+# The framework reads the selection from this file in the
 # bundle. install-mods can create any file with any content, so it takes the
 # path and content in its generic ITJ_BUNDLE_EXTRA_* variables; with no file
 # it removes any left by an earlier named run.

@@ -54,6 +54,11 @@ fixed-seed GameSession. A test is a table:
     ends only when onLoad's second argument, finish, is called (finish() passes,
     finish(message) fails). Drive the game with afterTicks and play below; an
     error raised inside any callback they run fails the test
+  file (string?)          - the basename of the file that registers this test,
+    e.g. "weapon-tests.lua"; registerTest fills it in from its caller, so set
+    it only when a shared helper module registers the test for another file (a
+    helper can pass api.callerFile()).
+    A test with no file matches every file selection (see selected-test.txt)
   timeoutTicks (integer?) - overrides TEST_TIMEOUT_TICKS, the ticks the test
     may take from its "Running" line, level load included, before it fails
     with "timed out after N ticks" and the next test runs
@@ -80,19 +85,54 @@ local function findOwnDirectory()
 	return "mods/" .. assert(message:match("^(.*)/[^/]*:%d+: x$"))
 end
 
--- Names the one test to run alone; written by the unit-test entrypoint, absent
--- (so the whole suite runs) otherwise.
+-- The basename of the file whose code called the function that calls this
+-- (registerTest, or a helper that registers tests for its caller, like
+-- fixtures.scene), from the location prefix of a Lua error, as
+-- findOwnDirectory does. Level 5 is that caller: 1 is the function below, 2 is
+-- pcall, 3 is callerFile, 4 is the function that calls it.
+-- (A caller that tail-calls registerTest drops out of the stack; set `file`
+-- explicitly there.) Returns nil if the message has an unexpected shape, which
+-- makes the test match every selection.
+local function callerFile()
+	local _, message = pcall(function()
+		error("x", 5)
+	end)
+	return message:match("([^/]*):%d+: x$")
+end
+
+-- Selects which tests run; written by the unit-test entrypoint, absent (so the
+-- whole suite runs) otherwise. A bare line is the exact name of one test; a
+-- line `file: a-tests.lua b-tests.lua` selects every test registered by those
+-- files.
 local SELECTED_TEST_FILE = findOwnDirectory() .. "/selected-test.txt"
 
+-- Returns nil, or "name" and a test name, or "files" and a set of basenames.
 local function readSelectedTest()
 	if not FileIO.exists(SELECTED_TEST_FILE) then
 		return nil
 	end
-	local name = FileIO.readFileToString(SELECTED_TEST_FILE, 256):match("^%s*(.-)%s*$")
-	if name == "" then
+	local text = FileIO.readFileToString(SELECTED_TEST_FILE, 4096):match("^%s*(.-)%s*$")
+	if text == "" then
 		return nil
 	end
-	return name
+	local list = text:match("^file:%s*(.*)$")
+	if not list then
+		return "name", text
+	end
+	local files = {}
+	for file in list:gmatch("%S+") do
+		files[file] = true
+	end
+	return "files", files
+end
+
+-- Whether a selection, as readSelectedTest returns it, keeps the test. A test
+-- with no file tag is kept by every file selection (fail safe).
+local function matchesSelection(kind, selected, test)
+	if kind == "name" then
+		return test.name == selected
+	end
+	return test.file == nil or selected[test.file] == true
 end
 
 -- Counts both regular failures and unexpected passes (XPASS)
@@ -110,6 +150,7 @@ end
 local function registerTest(test)
 	assert(type(test.name) == "string", "registerTest requires a name")
 	assert(type(test.onLoad) == "function", "registerTest requires an onLoad callback")
+	test.file = test.file or callerFile()
 	-- A reload can run a mod's load-time registerTest() calls again against
 	-- this same module instance, so a repeated name replaces its earlier
 	-- test instead of queueing a second run of it.
@@ -368,17 +409,21 @@ local function start()
 		return
 	end
 	started = true
-	local selected = readSelectedTest()
-	if selected then
+	local kind, selected = readSelectedTest()
+	if kind then
 		local kept = {}
 		for _, test in ipairs(tests) do
-			if test.name == selected then
+			if matchesSelection(kind, selected, test) then
 				table.insert(kept, test)
 			end
 		end
 		if #kept == 0 then
 			failureCount = failureCount + 1
-			log("FAIL", selected, "no registered test has this name")
+			if kind == "name" then
+				log("FAIL", selected, "no registered test has this name")
+			else
+				log("FAIL", "fileSelection", "no registered test comes from the selected files")
+			end
 		end
 		tests = kept
 	end
@@ -389,6 +434,8 @@ end
 
 return {
 	afterTicks = afterTicks,
+	callerFile = callerFile,
+	matchesSelection = matchesSelection,
 	observe = observe,
 	play = play,
 	registerTest = registerTest,

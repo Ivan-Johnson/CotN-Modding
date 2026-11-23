@@ -48,6 +48,14 @@ it as a regression test with real assertions.
   entrypoint hands the name to the framework in a
   `HelloWorldTests/selected-test.txt` file that `install-mods` creates (the
   Lua sandbox has no environment variables); the next plain run removes it.
+* To run every test registered by some files, pass `--files`: `nix run
+  .#itj-impure-tests -- --files weapon-tests.lua,bomb-tests.lua`. `registerTest`
+  tags each test with the basename of the file that called it, so tests made in
+  a loop belong to that file. A helper that registers tests for its caller, as
+  `fixtures.scene` does, tags them with `api.callerFile()`; a test with no tag
+  runs in every file selection. The file's tests run in the full suite's
+  order, and each test still starts from a fresh fixed-seed session. The
+  commit hook runs this way for a commit that changes only test files.
 * To play the game step by step, mark the test `noBeat = true` (time passes
   only when the player acts) and `async = true`. Its `onLoad(seed, finish)`
   then drives the run with `api.play({"up", "idle", ...}, afterEach, finish)`,

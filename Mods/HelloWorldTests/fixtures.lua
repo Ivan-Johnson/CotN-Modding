@@ -117,11 +117,15 @@ Registers a no-beat test that plays actions on an open arena. Fields:
   prepare (function?): runs after openArena and before setup, e.g. to spawn
     something or change the player;
   setup (function?): runs next; what it returns is passed to every check.
+The test is tagged with the file that called scene, so a file selection keeps
+it, not with this file.
 ]]
 local function scene(spec)
 	local checks = spec.checks or {}
+	local file = testsApi.callerFile()
 	testsApi.registerTest({
 		name = spec.name,
+		file = file,
 		noBeat = true,
 		async = true,
 		onLoad = function(_, finish)

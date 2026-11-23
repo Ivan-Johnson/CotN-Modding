@@ -45,6 +45,45 @@ api.registerTest({
 	end,
 })
 
+-- registerTest tags each test with the file that called it, and a file
+-- selection keeps the tests of its files. Tests registered in a loop share the
+-- tag of the file whose loop made them.
+local selfTagged = {}
+for index = 1, 2 do
+	local test = {
+		name = "fileTagFromLoop" .. index,
+		onLoad = function()
+			api.observe("file", selfTagged[index].file)
+			-- Not a plain "<mod>.lua" string, which install-mods would try to rewrite.
+			assert(selfTagged[index].file == "HelloWorldTests" .. ".lua", "a loop-registered test has the wrong file tag")
+		end,
+	}
+	selfTagged[index] = test
+	api.registerTest(test)
+end
+
+local explicitFileTest
+explicitFileTest = {
+	name = "fileTagExplicit",
+	file = "other-tests.lua",
+	onLoad = function()
+		assert(explicitFileTest.file == "other-tests.lua", "registerTest overwrote an explicit file")
+	end,
+}
+api.registerTest(explicitFileTest)
+
+api.registerTest({
+	name = "fileSelectionMatching",
+	onLoad = function()
+		local files = { ["a-tests.lua"] = true }
+		assert(api.matchesSelection("files", files, { file = "a-tests.lua" }), "tagged file not selected")
+		assert(not api.matchesSelection("files", files, { file = "b-tests.lua" }), "other file selected")
+		assert(api.matchesSelection("files", files, {}), "an untagged test was not selected")
+		assert(api.matchesSelection("name", "x", { name = "x" }), "named test not selected")
+		assert(not api.matchesSelection("name", "x", { name = "y" }), "other name selected")
+	end,
+})
+
 -- Deferred by one tick so that any other mod's own load-time
 -- api.registerTest() call - triggered by this same reload, if this mod's
 -- api.lua changed - has a chance to run first: a reload always finishes an
