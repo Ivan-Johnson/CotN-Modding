@@ -97,12 +97,12 @@ let
         cotnLogPath = "/home/i/.local/share/Steam/steamapps/common/Crypt of the NecroDancer/NecroDancer64/NecroDancer.log";
 
         # Shell function shared by the live-game apps. `wait_for_log BASELINE
-        # SENTINEL` polls the `NecroDancer.log` lines after line BASELINE for
-        # SENTINEL, and returns 1 if it doesn't appear within 60s, so callers
-        # decide how to react.
+        # SENTINEL [TIMEOUT_SECONDS]` polls the `NecroDancer.log` lines after line
+        # BASELINE for SENTINEL, and returns 1 if it doesn't appear within
+        # TIMEOUT_SECONDS (default 60), so callers decide how to react.
         waitForLog = ''
                 wait_for_log() {
-                        local baseline=$1 sentinel=$2 timeoutSeconds=60 start
+                        local baseline=$1 sentinel=$2 timeoutSeconds=''${3:-60} start
                         start=$(date +%s)
                         while ! tail -n "+$((baseline + 1))" "$COTN_LOG" | grep -qF "$sentinel"; do
                                 sleep 0.1

@@ -43,9 +43,11 @@ export ITJ_BUNDLE_RELOAD_TRIGGER="HelloWorldTests/api.lua"
 install-mods HelloWorld HelloWorldTests
 
 # Wait for the tests mod's completion sentinel, rather than a hardcoded sleep
-# or a quiet-period guess.
+# or a quiet-period guess. The whole suite runs about a hundred tests, so the
+# limit is far above wait_for_log's 60 s default.
+suiteTimeoutSeconds=${ITJ_SUITE_TIMEOUT_SECONDS:-900}
 timedOut=0
-if ! wait_for_log "$baseline" "[HelloWorldTests] Test suite completed"; then
+if ! wait_for_log "$baseline" "[HelloWorldTests] Test suite completed" "$suiteTimeoutSeconds"; then
         echo "itj-impure-tests: timed out waiting for test suite completion" >&2
         timedOut=1
 fi
