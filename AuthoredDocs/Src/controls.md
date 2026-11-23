@@ -31,8 +31,9 @@ opening, pushing and picking up all keep the coin chain.
 
 You face the way of your last direction press that did something: a move, an
 attack, a dig, a door, a chest, a crate, or a bump into stone or the level's
-edge. Facing decides which enemies a weapon hits and when a
-[ghost](./ghost.md) moves.
+edge. Facing decides which enemies a weapon hits. A
+[ghost](./ghost.md) reads your facing only when you move to a new tile, so
+the other actions that turn you do not change what a ghost does.
 
 Idling, using an item, casting a spell, placing a bomb, a failed use and an
 ignored diagonal all leave your facing as it was.
