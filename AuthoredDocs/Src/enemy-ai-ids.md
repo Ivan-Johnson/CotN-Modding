@@ -30,6 +30,4 @@ and 2, 4, 6 and 8 are the diagonals. Read from zone one enemy dumps on CotN
 * A `Monkey`'s grab uses `grabParalyzeVictim`, `grabMoveOntoVictim` and
   `grabIncreaseHealth` (`multiplier` 4, `max` 4 on `Monkey`; `multiplier` 3,
   `max` 6 on `Monkey2`).
-* `grooveChain` has `killsForInitMultiplier` 1, `killsPerMultiplier` 4 and
-  `maximumMultiplier` 3.
 * Miniboss entries come from `Sync_enemyPoolMiniboss`.

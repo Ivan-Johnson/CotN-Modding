@@ -1,57 +1,67 @@
 # Coin multiplier and gold
 
-For players. How kills turn into gold, measured as Cadence in no-beat mode on
-CotN 4.2.1, from the player's `grooveChain` and `goldCounter`.
+For players. How kills turn into gold: the chain that raises the multiplier,
+what ends the chain, and what each enemy pays. Basic controls:
+[controls.md](./controls.md).
 
-## The multiplier
+## The chain
 
-* The multiplier starts at 1. It rises with consecutive kills: the first kill
-  gave multiplier 2 and the fifth gave 3, which is the cap. (`grooveChain` has
-  `killsForInitMultiplier` 1, `killsPerMultiplier` 4 and `maximumMultiplier`
-  3, and `killCount` followed it.)
-* The chain breaks (`multiplier_lost`, `killCount` back to 0) on:
-  * an `idle` action, even in no-beat mode;
-  * a failed action, such as moving into a wall;
-  * taking damage: a `Minotaur` hit at x2 logged
-    `multiplier_lost(because=taking damage)` in the same action.
-* Moving to an empty tile does not break it.
+* The chain starts at x1. The first kill makes it x2 and the fifth kill makes
+  it x3, the highest it goes.
+* A kill pays at the multiplier you had before it; its own rise applies to the
+  next kill.
+* Any kill by you extends the chain, bombs included. A bomb that kills several
+  enemies counts each one, and pays them in turn at the multiplier the earlier
+  kills left: three `Slime`s in one blast pay 1, 2 and 2 gold and leave x2.
+* Enemies killed by a floor trap pay nothing and do not extend the chain.
+* A `Monkey` that has grabbed you drops nothing and does not extend the chain
+  when it dies. One killed before it grabs pays normally.
+
+### What ends the chain
+
+Back to x1 with no kills counted, on:
+
+* an `idle` action;
+* a failed move: bumping a wall the shovel cannot dig (`StoneWall`, the level
+  edge);
+* an invalid action, such as `bomb` with none left;
+* any damage, however small: a spike trap, an enemy's hit;
+* falling through a `Trapdoor`.
+
+These leave the chain alone: walking onto empty floor, digging a `DirtWall`,
+opening a door, placing a bomb, picking up a pile of gold or an item, and a
+bounce trap.
 
 ## Gold per kill
 
-A killed enemy leaves a `ResourceCoinN` entity on its tile; the player gets
-the gold by walking onto it. `ResourceDiamond` entities in the entity list are
-part of the level, not drops.
+Gold = base gold × coin multiplier, with halves rounded up. The coin
+multiplier is the chain multiplier plus 0.5 for each coin item held:
 
-Gold at multiplier 1 (fresh run, no kills, one enemy spawned at (1,0) in a
-cleared arena, killed with the dagger and its coin walked onto; the same on
-every repeat):
+* `CoinsX15` ("Coin Multiplier +0.5") adds 0.5.
+* `CoinsX2` ("Coin Multiplier +1") also adds only 0.5.
+* A Ring of Gold (`RingGold`) adds 1 gold per kill after the multiplication.
 
-| Type | Gold at x1 |
+With both coin items the chain's x1 pays like x2 and its x3 like x4.
+Cadence's single-zone start kit has both ([cadence.md](./cadence.md)); the
+table is the pay with neither.
+
+| Type | Base gold |
 |------|-----------|
-| `Slime`, `Zombie` | 2 |
-| `Slime3`, `Skeleton`, `Bat`, `Ghost` | 4 |
-| `Skeleton2`, `Bat2` | 6 |
-| `Skeleton3` | 8 |
-| `Bat3` | 40 |
+| `Slime`, `Zombie`, `Monkey` | 1 |
+| `Slime2`, `Slime3`, `Skeleton`, `Bat`, `Ghost` | 2 |
+| `Skeleton2`, `Bat2`, `Monkey2` | 3 |
+| `Skeleton3` | 4 |
+| `BatMiniboss`, `Minotaur`, `Dragon` | 10 |
+| `Minotaur2` | 15 |
+| `Bat3`, `Dragon2` | 20 |
 
-Six `Slime` kills in a row gave +2, +3, +3, +3, +3, +4 gold.
+An enemy that comes with the level pays the same as one spawned by hand.
+A `Trapchest` leaves an item instead ([trapchest.md](./trapchest.md)).
 
-A fit for both measurements (`guess` for every type but `Slime`, the only one
-seen above x1) is gold = base x (multiplier at the kill + 1), with the
-multiplier before the kill's own increase, and a base of 1 for `Slime` and
-`Zombie`, 2 for `Slime3`, `Skeleton`, `Bat` and `Ghost`, 3 for `Skeleton2` and `Bat2`,
-4 for `Skeleton3` and 20 for `Bat3`.
+## Picking gold up
 
-Eight enemies killed at once by `HolyWater` (see
-[action-items.md](./action-items.md)) fit the same formula, with the
-multiplier rising 1, 2, 2, 2, 2, 3, 3, 3 over the kills in event order. That
-gives `Slime2` a base of 2 (6 gold) and `Monkey2` a base of 3 (9 gold), and
-`Skeleton3` 8, `Zombie` 3, `Slime3` 6, `Slime` 4 and `Bat` 8 matched. The
-enemies were spawned by hand, so this is one measurement per type.
-
-Not measured: `Wraith`. A `Trapchest` leaves an item instead.
-
-A `ResourceHoardGoldSmall` gave 25 gold on being walked onto (once, natural).
-The chain is not broken by a bounce trap; see [traps.md](./traps.md).
-
-A bomb's blast destroys coins lying on its tiles; see [bombs.md](./bombs.md).
+A killed enemy leaves one pile; walk onto it to take the gold. A pile holds
+its whole amount whatever its look, and the multiplier does not touch what a
+pile gives. A small hoard (`ResourceHoardGoldSmall`) holds 25 gold and a large
+one (`ResourceHoardGold`) 50. Diamonds give no gold. A bomb's blast destroys
+the piles lying in it ([bombs.md](./bombs.md)).

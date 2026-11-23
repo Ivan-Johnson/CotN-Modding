@@ -20,5 +20,5 @@ For players. Monkey and Monkey2. How these were measured:
 * Nothing was stolen: the inventory was identical after each kill, and no coin
   was left when a monkey died on the player's tile.
 
-Gold per kill: [coin-multiplier.md](./coin-multiplier.md) (not measured for
-`Monkey2`).
+Gold per kill: [coin-multiplier.md](./coin-multiplier.md), which also covers
+what a grabbing monkey drops.

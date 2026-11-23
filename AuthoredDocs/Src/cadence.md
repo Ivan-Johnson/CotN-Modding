@@ -11,9 +11,8 @@ Other characters: [dove.md](./dove.md).
   "+1 Red Chest Per Run", "+1 Purple Chest Per Run" (`AddchestWhite`), "Coin
   Multiplier +0.5" and "Coin Multiplier +1". The chest items set a run flag
   (`addChestBlack` and so on). That they are the lobby's unlockable bonuses
-  is a `guess`. The coin items did not change gold per kill: the gold
-  measurements in [coin-multiplier.md](./coin-multiplier.md) were taken with
-  them.
+  is a `guess`. Each coin item adds 0.5 to the coin multiplier, so they raise
+  gold per kill ([coin-multiplier.md](./coin-multiplier.md)).
 * The runs measured in these docs are `SingleZone` runs in no-beat mode: the
   song never ends, a beat cannot be missed, and enemies do not come to you,
   since time passes only when the player acts. Whether real-time rhythm
