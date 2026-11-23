@@ -97,16 +97,31 @@ let
         cotnLogPath = "/home/i/.local/share/Steam/steamapps/common/Crypt of the NecroDancer/NecroDancer64/NecroDancer.log";
 
         # Shell function shared by the live-game apps. `wait_for_log BASELINE
-        # SENTINEL [TIMEOUT_SECONDS]` polls the `NecroDancer.log` lines after line
-        # BASELINE for SENTINEL, and returns 1 if it doesn't appear within
-        # TIMEOUT_SECONDS (default 60), so callers decide how to react.
+        # SENTINEL [TIMEOUT_SECONDS [STALL_SECONDS]]` polls the `NecroDancer.log`
+        # lines after line BASELINE for SENTINEL. It returns 1 if SENTINEL
+        # doesn't appear within TIMEOUT_SECONDS (default 60), and 2 if the log
+        # gains no bytes for STALL_SECONDS (default 0, which turns the check
+        # off), so callers decide how to react and can tell a slow game from a
+        # silent one.
         waitForLog = ''
                 wait_for_log() {
-                        local baseline=$1 sentinel=$2 timeoutSeconds=''${3:-60} start
+                        local baseline=$1 sentinel=$2 timeoutSeconds=''${3:-60} stallSeconds=''${4:-0}
+                        local start now lastSize size lastChange
                         start=$(date +%s)
+                        lastChange=$start
+                        lastSize=$(stat -c %s "$COTN_LOG")
                         while ! tail -n "+$((baseline + 1))" "$COTN_LOG" | grep -qF "$sentinel"; do
                                 sleep 0.1
-                                if ((($(date +%s) - start) >= timeoutSeconds)); then
+                                now=$(date +%s)
+                                size=$(stat -c %s "$COTN_LOG")
+                                if ((size != lastSize)); then
+                                        lastSize=$size
+                                        lastChange=$now
+                                fi
+                                if ((stallSeconds > 0 && now - lastChange >= stallSeconds)); then
+                                        return 2
+                                fi
+                                if ((now - start >= timeoutSeconds)); then
                                         return 1
                                 fi
                         done

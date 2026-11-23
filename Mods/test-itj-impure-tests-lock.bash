@@ -90,4 +90,70 @@ if ! grep -qF "command=itj-impure-tests" "$lockFile"; then
 	exit 1
 fi
 
+# A game whose log goes silent mid-run fails the holder fast, with the restart
+# instruction, and frees the lock. Needs an install that succeeds, so the repo
+# holds two minimal mods.
+goodRepo="$scratch/good-repo"
+for mod in HelloWorld HelloWorldTests; do
+	mkdir -p "$goodRepo/Mods/$mod"
+	echo "{\"namespace\":\"$mod\",\"name\":\"$mod\"}" >"$goodRepo/Mods/$mod/mod.json"
+done
+touch "$goodRepo/Mods/HelloWorldTests/api.lua"
+export ITJ_FLAKE_ROOT="$goodRepo"
+export ITJ_SUITE_STALL_SECONDS=2
+export ITJ_GAME_LOCK_TIMEOUT_SECONDS=5
+start=$(date +%s)
+status=0
+stderr=$(run-tests 2>&1 >/dev/null) || status=$?
+elapsed=$(($(date +%s) - start))
+
+if ((status != 1)); then
+	echo "FAIL: a silent log did not exit 1 (status $status); stderr was:" >&2
+	echo "$stderr" >&2
+	exit 1
+fi
+
+if ((elapsed > 6)); then
+	echo "FAIL: a silent log took ${elapsed}s to fail" >&2
+	exit 1
+fi
+
+if ! grep -qF "game not responding" <<<"$stderr"; then
+	echo "FAIL: a silent log did not say the game is not responding; stderr was:" >&2
+	echo "$stderr" >&2
+	exit 1
+fi
+
+if ! flock --nonblock "$lockFile" true; then
+	echo "FAIL: the lock was still held after the stall" >&2
+	exit 1
+fi
+
+# A log that keeps growing is not a stall, even past the stall limit, and the
+# sentinel ends the wait.
+(
+	for _ in 1 2 3 4 5 6; do
+		sleep 1
+		echo "line" >>"$COTN_LOG"
+	done
+	echo '[HelloWorldTests] PASS fakeTest' >>"$COTN_LOG"
+	echo '[HelloWorldTests] Test suite completed: 0 failure(s)' >>"$COTN_LOG"
+) &
+growerPid=$!
+status=0
+stdout=$(run-tests 2>&1) || status=$?
+wait "$growerPid"
+
+if grep -qF "game not responding" <<<"$stdout"; then
+	echo "FAIL: a growing log was reported as not responding; output was:" >&2
+	echo "$stdout" >&2
+	exit 1
+fi
+
+if ! grep -qF "All tests pass" <<<"$stdout"; then
+	echo "FAIL: a growing log did not run to the sentinel (status $status); output was:" >&2
+	echo "$stdout" >&2
+	exit 1
+fi
+
 echo "lock test passed"

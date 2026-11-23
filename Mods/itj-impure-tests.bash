@@ -44,20 +44,26 @@ install-mods HelloWorld HelloWorldTests
 
 # Wait for the tests mod's completion sentinel, rather than a hardcoded sleep
 # or a quiet-period guess. The whole suite runs about a hundred tests, so the
-# limit is far above wait_for_log's 60 s default.
+# limit is far above wait_for_log's 60 s default. A game that crashed or hung
+# stops logging, so a log silent for suiteStallSeconds also ends the wait; the
+# longest gap between two log lines inside a healthy run was 36 s, hence 120.
 suiteTimeoutSeconds=${ITJ_SUITE_TIMEOUT_SECONDS:-900}
-timedOut=0
-if ! wait_for_log "$baseline" "[HelloWorldTests] Test suite completed" "$suiteTimeoutSeconds"; then
-        echo "itj-impure-tests: timed out waiting for test suite completion" >&2
-        timedOut=1
+suiteStallSeconds=${ITJ_SUITE_STALL_SECONDS:-120}
+waitStatus=0
+wait_for_log "$baseline" "[HelloWorldTests] Test suite completed" "$suiteTimeoutSeconds" "$suiteStallSeconds" || waitStatus=$?
+if ((waitStatus == 1)); then
+	echo "itj-impure-tests: timed out waiting for test suite completion" >&2
+elif ((waitStatus == 2)); then
+	echo "itj-impure-tests: game not responding (no new NecroDancer.log line for ${suiteStallSeconds}s); restart the game and re-run. Last log lines:" >&2
+	tail -n 20 "$COTN_LOG" >&2
 fi
 
 newOutput="$(tail -n "+$((baseline + 1))" "$COTN_LOG")"
 echo "$newOutput"
 
-if ((timedOut)); then
-        echo "Test suite timed out"
-        exit 1
+if ((waitStatus != 0)); then
+	echo "Test suite did not complete"
+	exit 1
 fi
 
 # A test that reports twice was queued twice (a reload registered it again),

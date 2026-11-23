@@ -61,6 +61,11 @@ than silently overriding it.
   (`ITJ_GAME_LOCK_TIMEOUT_SECONDS`), then fails naming the holder before
   installing anything. Everything that runs the tests, hooks included, goes
   through it. `nix flake check` tests the lock without a game.
+* The run waits for the suite's completion line, up to 900 s
+  (`ITJ_SUITE_TIMEOUT_SECONDS`). If `NecroDancer.log` gains no line for 120 s
+  (`ITJ_SUITE_STALL_SECONDS`) it fails with "game not responding" and frees
+  the lock, because a crashed or hung game logs nothing. Restarting the game
+  is the user's job; agents cannot reach it from the sandbox.
 * `build-format` formats all code. Typically this does not need to be used; it
   is done automatically as part of a pre-commit hook.
 
