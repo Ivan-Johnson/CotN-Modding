@@ -1,6 +1,6 @@
 # Trapchest
 
-For players. How this was measured: [enemies.md](./enemies.md).
+For players. Stats columns: [enemies.md](./enemies.md#stats-tables).
 
 | Type | Speed | HP | Damage | Hits to kill |
 |------|-------|----|--------|--------------|
@@ -9,8 +9,7 @@ For players. How this was measured: [enemies.md](./enemies.md).
 * A `Trapchest` never moves.
 * Bumping it once does nothing, the second bump deals 2 to the player, and the
   third kills it.
-* It leaves a random item, not coins: `HeadSpikedEars`, `WeaponHarp` and
-  `Torch1` in three tries.
+* It leaves a random item, not coins.
 
 ## Trapchest6 ("Shrine Mimic")
 
@@ -18,7 +17,5 @@ For players. How this was measured: [enemies.md](./enemies.md).
 * The first bump cost 2 health (`damage_taken source=Trapchest6`) and the
   second killed it, with a dagger that did 2 damage (Sunglasses worn): two
   bumps, not the three of `Trapchest`. One kill, so the count is unconfirmed.
-* It left `WeaponBlunderbuss`, which replaced the dagger when walked onto
-  (the dagger stayed on the tile). The blunderbuss killed a `Slime2` and a
-  `Crate` and hit a second `Slime2` for 3 each in one swing; its pattern is
-  in [weapons.md](./weapons.md).
+* It leaves a random item; its pattern for weapons is in
+  [weapons.md](./weapons.md).

@@ -40,5 +40,5 @@ For the weapons see [weapons.md](./weapons.md), and for `FamiliarIceSpirit`,
 ## Crates
 
 `Crate2` slides one tile away when the player walks into it, and a weapon hit
-did `damage_dealt(amount=0)`, so melee does not break a crate. A bomb does;
+did `damage_dealt(amount=0)`, so melee does not break a crate. A bomb breaks a `Crate` or `Crate2`;
 see [bombs.md](./bombs.md).

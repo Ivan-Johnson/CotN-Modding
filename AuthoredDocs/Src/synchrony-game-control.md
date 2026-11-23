@@ -75,9 +75,8 @@ Synchrony API 4.2.1, unless a bullet bounds it further.
   in 49 beats sent one at a time); waiting 25 ticks after each input
   resolved stopped it and 10 did not. The cause is unknown. Deterministic
   enemies (`Slime2`, `Slime3`, `Skeleton`) act on the same beats either way.
-* The diagonal inputs (`up_left` and the like) did nothing as Cadence on one
-  1-1 level: the input never resolved and the turn did not advance. Tried
-  once.
+* The diagonal inputs (`up_left` and the like) are ignored: the input never
+  resolves and the turn does not advance ([controls.md](./controls.md)).
 * No API steps N beats; `Turn.process(target)` did nothing. N `IDLE` inputs
   advance about one beat each, faster than real time.
 * After an input that steps onto stairs or a `Trapdoor`, the level changes

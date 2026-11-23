@@ -1,17 +1,16 @@
 # Minibosses
 
 For players. The natural miniboss that guards a level's stairs; which one
-appears differs between runs. How these were measured:
-[enemies.md](./enemies.md). What the stairs do when it dies:
+appears differs between runs. Stats columns: [enemies.md](./enemies.md#stats-tables). What the stairs do when it dies:
 [stairs-and-levels.md](./stairs-and-levels.md).
 
 | Type | Speed | HP | Damage | Hits to kill |
 |------|-------|----|--------|--------------|
 | `BatMiniboss` | 2 | 2 | 3 | 2 |
 | `Minotaur` | 1 | 3 | 4 | 3, or one bomb |
-| `Minotaur2` | 1 | 5 | 5 | not fought |
+| `Minotaur2` | 1 | 5 | 5 | 5 |
 | `Dragon` | 2 | 4 | 4 | 4, or one bomb |
-| `Dragon2` | ? | ? | ? | not fought |
+| `Dragon2` | 2 | 6 | | 6 |
 
 ## BatMiniboss
 

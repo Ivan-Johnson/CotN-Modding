@@ -22,7 +22,7 @@ which were not fought. Level layout: [stairs-and-levels.md](./stairs-and-levels.
   `KingCongaAngry` (speed 1) after one idle beat next to him. That is the only
   observation tying a missed beat to the fight.
 * With both snake lines alive, a trident hit, a trident hit through
-  `BloodDrum` and a `Bomb3` all did 0 damage to `KingCongaAngry`. A `Crate2`
+  `BloodDrum` did 0 damage to `KingCongaAngry`. A `Crate2`
   also took 0 from the trident, so 0 is not special to bosses. In a later
   attempt the player killed every snake first (one hit each, 2 damage) and
   then one trident hit killed him (2 damage), which won the run. Whether the
