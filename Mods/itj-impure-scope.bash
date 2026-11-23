@@ -1,10 +1,14 @@
 # Reads the repo paths a change touches, one per line on stdin, and prints
 # `none` if the live test suite (`itj-impure-tests`) cannot be affected by
-# them, or `all` otherwise. Called by `build-release` (DevTools) from the git
+# them, `all` if it must run in full, or else the changed test files, one
+# basename per line (e.g. `weapon-tests.lua`), which `itj-impure-tests --files`
+# runs alone. Called by `build-release` (DevTools) from the git
 # hooks, so a docs-only commit or push skips the ~90 s live run.
 #
-# Only known-harmless paths give `none`; every other path, and empty input
-# (e.g. a message-only amend), gives `all`, so a new kind of file fails safe.
+# Only known-harmless paths give `none` and only `Mods/HelloWorld/*-tests.lua`
+# gives a file list; every other path, and empty input (e.g. a message-only
+# amend), gives `all`, which wins over a file list, so a new kind of file fails
+# safe.
 # The suite installs only HelloWorld and HelloWorldTests, so none of the
 # `none` paths can change it.
 
@@ -49,13 +53,22 @@ isHarmless() {
 	return 1
 }
 
+# The tests of each of these files register independently of the other files'
+# tests (checked live: each file alone passes the same tests as in the full run).
+isTestFile() {
+	[[ $1 == Mods/HelloWorld/*-tests.lua && $1 != Mods/HelloWorld/*/* ]]
+}
+
 seen=0
+testFiles=()
 while IFS= read -r path; do
 	if [[ -z $path ]]; then
 		continue
 	fi
 	seen=$((seen + 1))
-	if ! isHarmless "$path"; then
+	if isTestFile "$path"; then
+		testFiles+=("${path##*/}")
+	elif ! isHarmless "$path"; then
 		echo all
 		exit 0
 	fi
@@ -63,6 +76,8 @@ done
 
 if ((seen == 0)); then
 	echo all
-else
+elif ((${#testFiles[@]} == 0)); then
 	echo none
+else
+	printf '%s\n' "${testFiles[@]}" | sort -u
 fi

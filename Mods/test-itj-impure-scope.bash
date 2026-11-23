@@ -23,8 +23,12 @@ expect none open_files.txt Tmp/scratch/notes.txt README.md
 expect none Mods/HelloWorld/notes.md
 
 expect all Mods/HelloWorld/HelloWorld.lua
-expect all Mods/HelloWorld/weapon-tests.lua
-expect all Docs/a.md Mods/HelloWorld/weapon-tests.lua
+expect weapon-tests.lua Mods/HelloWorld/weapon-tests.lua
+expect weapon-tests.lua Docs/a.md Mods/HelloWorld/weapon-tests.lua
+expect "$(printf 'bomb-tests.lua\nweapon-tests.lua')" Mods/HelloWorld/weapon-tests.lua Mods/HelloWorld/bomb-tests.lua Mods/HelloWorld/weapon-tests.lua
+expect all Mods/HelloWorld/tests.lua
+expect all Mods/HelloWorld/weapon-tests.lua Mods/HelloWorld/HelloWorld.lua
+expect all Mods/HelloWorld/sub/weapon-tests.lua
 expect all Mods/HelloWorld/weapon-tests.lua Mods/HelloWorldTests/api.lua
 expect all Mods/HelloWorldTests/README.md
 expect all Mods/install-mods.bash

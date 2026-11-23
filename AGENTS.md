@@ -45,9 +45,12 @@ than silently overriding it.
   the changed paths cannot affect it: the git hooks tell it what changed, and
   `nix run .#itj-impure-scope` (fed paths on stdin) answers `none` for
   docs, `GameData/`, `DocDownloader/`, `ScrapeGameData`, `Gary the Cowardly
-  Sheep`, `*.md`, `open_files.txt` and `Tmp/` paths, and `all` for anything
-  else (`Mods/itj-impure-scope.bash` has the lists). A manual `build-release`
-  has no changed paths and runs everything.
+  Sheep`, `*.md`, `open_files.txt` and `Tmp/` paths, the changed
+  `Mods/HelloWorld/*-tests.lua` names when those are the only suite paths, and
+  `all` for anything else (`Mods/itj-impure-scope.bash` has the lists). A
+  commit that changes only test files runs only those files' tests
+  (`itj-impure-tests --files`); a push always runs the full suite. A manual
+  `build-release` has no changed paths and runs everything.
 * The impure tests reload the mods and wipe the live game run, and the
   `commit-msg` hook runs `build-release`, so every commit that touches a suite
   path does, except one whose subject starts with `WIP` or one made with
