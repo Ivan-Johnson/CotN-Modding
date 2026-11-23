@@ -36,8 +36,11 @@ second derivation: `Docs/Adr/0002-*` at the repo root.
 * `htmlq --pretty` reflows the `minimal-html` tree onto its own lines, so an
   assertion over it must match within a single line: `<h1>Home` matches where
   `<h1>Home</h1>` does not.
-* Before committing a numeric claim or formula to `Src/`, re-check it
-  against every recorded data point, label anything not measured as a guess,
-  and say which cases were tested.
-* State the setup behind every "never does X" claim (spawned or natural, open
-  floor or walls), and re-check negative claims on natural enemies.
+* A player page states conclusions only. A claim's scope (the character, the
+  mode) bounds it; the experiment's setup and trial counts belong in the commit
+  message and the tests, and a claim that could not be concluded is left out.
+  Open questions go to the issue tracker.
+* Every claim on a player page has a test in `Mods/HelloWorld/`. Check a claim
+  that an enemy never does something on enemies that come with the level, not
+  only spawned ones.
+* To document a game mechanic, use the `cotn-document-mechanic` skill.
