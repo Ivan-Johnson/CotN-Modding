@@ -41,12 +41,20 @@ than silently overriding it.
 ## Commands
 
 * `build-release` runs `nix flake check` and the nix formatting check, and
-  also runs `nix run .#itj-impure-tests` since this flake provides it.
+  also runs `nix run .#itj-impure-tests` since this flake provides it, unless
+  the changed paths cannot affect it: the git hooks tell it what changed, and
+  `nix run .#itj-impure-scope` (fed paths on stdin) answers `none` for
+  docs, `GameData/`, `DocDownloader/`, `ScrapeGameData`, `Gary the Cowardly
+  Sheep`, `*.md`, `open_files.txt` and `Tmp/` paths, and `all` for anything
+  else (`Mods/itj-impure-scope.bash` has the lists). A manual `build-release`
+  has no changed paths and runs everything.
 * The impure tests reload the mods and wipe the live game run, and the
-  `commit-msg` hook runs `build-release`, so every commit does, except one
-  whose subject starts with `WIP` or one made with `--no-verify`. During a
-  live run, commit docs-only changes with `--no-verify` and re-run the checks
-  at the end.
+  `commit-msg` hook runs `build-release`, so every commit that touches a suite
+  path does, except one whose subject starts with `WIP` or one made with
+  `--no-verify`. A docs-only commit skips them (the build output says so), and
+  so does a docs-only push; any other push runs them once per pushed commit,
+  and a new branch once on its tip. During a live run, avoid touching
+  suite paths in commits, or use `--no-verify` and re-run the checks at the end.
 * `nix run .#itj-impure-tests` installs `HelloWorld` and `HelloWorldTests` via
   `install-mods` (see `Mods/AGENTS.md`), forces `HelloWorldTests` to reload so
   its automated test run

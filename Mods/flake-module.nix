@@ -164,6 +164,28 @@ let
                                 bash ${./test-itj-impure-tests-lock.bash}
                                 touch "$out"
                         '';
+
+        # Tells `build-release` whether a change can affect the live suite;
+        # see `Mods/itj-impure-scope.bash`.
+        impureScope = pkgs.writeShellApplication {
+                name = "itj-impure-scope";
+                text = builtins.readFile ./itj-impure-scope.bash;
+        };
+
+        # Feeds the classifier fixture path lists; see
+        # `Mods/test-itj-impure-scope.bash`.
+        impureScopeTest =
+                pkgs.runCommand "cotn-impure-scope-test"
+                        {
+                                nativeBuildInputs = [
+                                        impureScope
+                                        pkgs.coreutils
+                                ];
+                        }
+                        ''
+                                bash ${./test-itj-impure-scope.bash}
+                                touch "$out"
+                        '';
 in
 {
         # What other modules need to drive the live game; not merged into the
@@ -181,6 +203,7 @@ in
                 bytecode-api = bytecodeApiTest;
                 bundle-layout = bundleLayoutTest;
                 impure-tests-lock = impureTestsLockTest;
+                impure-scope = impureScopeTest;
         };
 
         apps = {
@@ -194,6 +217,12 @@ in
                         type = "app";
                         program = "${impureTests}/bin/run-tests";
                         meta.description = "Rsync mods into the game's local mods directory and run its automated test suite";
+                };
+
+                itj-impure-scope = {
+                        type = "app";
+                        program = "${impureScope}/bin/itj-impure-scope";
+                        meta.description = "Print none or all: whether the changed paths on stdin can affect itj-impure-tests";
                 };
         };
 
