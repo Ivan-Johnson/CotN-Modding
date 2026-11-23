@@ -32,7 +32,12 @@ it as a regression test with real assertions.
   reload can run a mod's load-time `registerTest()` calls again, and the
   replacement keeps each test running once. The entrypoint fails if a test
   still reports twice.
-* Results print as `PASS`, `FAIL` or `SKIP` lines to `NecroDancer.log`.
+* Results print as `PASS`, `FAIL`, `XFAIL` or `XPASS` lines to
+  `NecroDancer.log`, each ending in how long the test took, e.g. `PASS name
+  (212 ticks)`. A tick is about a millisecond, but the Synchrony sandbox has no
+  `os` library, so there is no wall clock; ticks slow down on a loaded
+  machine. The completion line gives the suite's total in ticks, and
+  `nix run .#itj-impure-tests` adds the wall-clock seconds.
 * To answer a question about the game instead of only asserting, call
   `api.observe(key, value)` from `onLoad`. It prints `[HelloWorldTests]
   OBSERVED <test> <key>=<value>` before the test's `PASS`/`FAIL` line, and

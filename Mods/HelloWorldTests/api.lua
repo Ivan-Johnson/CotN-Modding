@@ -19,12 +19,21 @@ need this mod installed too.
 ]]
 local FIXED_SEED = 20240101
 
-local function log(status, name, reason)
+-- Ticks since the suite loaded, counted by the TestHarnessTimers handler. The
+-- Synchrony sandbox has no os library (os.clock and os.time are missing), so
+-- durations are in ticks, which run over 1000 a second.
+local tickCount = 0
+
+-- elapsedTicks is optional; when given, the line ends with the duration.
+local function log(status, name, reason, elapsedTicks)
+	local line = string.format("[HelloWorldTests] %s %s", status, name)
 	if reason then
-		print(string.format("[HelloWorldTests] %s %s: %s", status, name, reason))
-	else
-		print(string.format("[HelloWorldTests] %s %s", status, name))
+		line = line .. ": " .. reason
 	end
+	if elapsedTicks then
+		line = string.format("%s (%d ticks)", line, elapsedTicks)
+	end
+	print(line)
 end
 
 --[[
@@ -57,6 +66,7 @@ fixed-seed GameSession. A test is a table:
 ]]
 local tests = {}
 local currentTest = nil
+local suiteStartedAt = nil
 
 -- A mod's own directory is not exposed, but the location prefix of a Lua error
 -- ("<Bundle>/HelloWorldTests/api.lua:N: ...") names it.
@@ -137,9 +147,14 @@ local function runNextTest()
 	if not currentTest then
 		-- `run-tests` greps this exact "N failure(s)" phrasing to decide
 		-- its own exit code, so keep the wording in sync with it.
-		print(string.format("[HelloWorldTests] Test suite completed: %d failure(s)", failureCount))
+		print(string.format(
+			"[HelloWorldTests] Test suite completed: %d failure(s) (took %d ticks)",
+			failureCount,
+			tickCount - suiteStartedAt
+		))
 		return
 	end
+	currentTest.startedAt = tickCount
 	print(string.format("[HelloWorldTests] Running %s", currentTest.name))
 	HelloWorldTests_startGameSession()
 end
@@ -163,18 +178,19 @@ end)
 -- Logs one test's outcome: err is nil when it passed. An expectFail test logs
 -- XFAIL for a failure and XPASS for a pass.
 local function report(test, err)
+	local elapsed = tickCount - test.startedAt
 	if err == nil then
 		if test.expectFail then
 			failureCount = failureCount + 1
-			log("XPASS", test.name, "expected this test to fail, but it passed")
+			log("XPASS", test.name, "expected this test to fail, but it passed", elapsed)
 		else
-			log("PASS", test.name)
+			log("PASS", test.name, nil, elapsed)
 		end
 	elseif test.expectFail then
-		log("XFAIL", test.name, tostring(err))
+		log("XFAIL", test.name, tostring(err), elapsed)
 	else
 		failureCount = failureCount + 1
-		log("FAIL", test.name, tostring(err))
+		log("FAIL", test.name, tostring(err), elapsed)
 	end
 end
 
@@ -207,6 +223,7 @@ local function afterTicks(n, fn)
 end
 
 event.tick.add("TestHarnessTimers", { order = "invokeLater" }, function()
+	tickCount = tickCount + 1
 	local due = {}
 	local waiting = {}
 	for _, timer in ipairs(timers) do
@@ -352,6 +369,7 @@ local function start()
 		tests = kept
 	end
 	print("[HelloWorldTests] Starting test suite")
+	suiteStartedAt = tickCount
 	runNextTest()
 end
 
