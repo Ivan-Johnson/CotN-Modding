@@ -20,5 +20,5 @@ For players. How this was measured: [enemies.md](./enemies.md).
   bumps, not the three of `Trapchest`. One kill, so the count is unconfirmed.
 * It left `WeaponBlunderbuss`, which replaced the dagger when walked onto
   (the dagger stayed on the tile). The blunderbuss killed a `Slime2` and a
-  `Crate` and hit a second `Slime2` for 3 each in one swing; its pattern
-  was not mapped.
+  `Crate` and hit a second `Slime2` for 3 each in one swing; its pattern is
+  in [weapons.md](./weapons.md).

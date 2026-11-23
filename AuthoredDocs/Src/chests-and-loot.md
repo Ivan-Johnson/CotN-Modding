@@ -16,10 +16,10 @@ loot pools.
   on the floor 3 tiles from it); the key was used up and the chest dropped
   `HeadSunglasses`. Bumping it without a key was not tried.
 * A route search that treated a chest as floor walked onto it and opened it.
-* A weapon drop is swapped in for the current weapon when the player picks it
-  up (`Sync_WeaponOnyxDagger` replaced `WeaponDagger`, whose entity then
-  vanished). Armor and other drops lie on the chest's tile until the player
-  walks onto them.
+* A weapon drop is swapped in for the current weapon when the player walks
+  onto it, and the old weapon drops on that tile ([weapons.md](./weapons.md)).
+  Armor and other drops lie on the chest's tile until the player walks onto
+  them.
 * What `ChestWhite` does is untested. A `Trapchest` is an enemy: see
   [trapchest.md](./trapchest.md).
 
