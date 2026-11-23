@@ -34,7 +34,7 @@ A shovel digs every wall up to its strength.
 | Battle Shovel (`ShovelBattle`) | 2 | The attack on the action right after a dig kills the enemy however much health it has. A pause in between cancels it. |
 | Shovel of Strength (`ShovelStrength`) | 2 | Also digs every wall touching the one you hit that it could dig on its own. |
 | Crystal Shovel (`ShovelCrystal`) | 3 | |
-| Glass Shovel (`ShovelGlass`) | 3 | Digs one shop wall, then shatters. With no shovel you can dig nothing but earth walls and doors. |
+| Glass Shovel (`ShovelGlass`) | 3 | Digs one shop wall, then shatters. With no shovel left, only earth walls and doors open. |
 | Pickaxe (`Pickaxe`) | 3 | Takes one hit per point of toughness: one on dirt, two on stone, three on catacomb. |
 | Blood Shovel (`ShovelBlood`) | 1 | Digs any wall that can be dug, for 1 health per wall tougher than dirt. |
 | Obsidian Shovel (`ShovelObsidian`) | your coin multiplier | Dirt at x1, stone at x2, catacomb at x3. The multiplier caps at 3, so never a shop wall. |

@@ -1,6 +1,6 @@
 # Ghost
 
-For players. How the table's columns are read: [enemies.md](./enemies.md).
+For players. Stats columns: [enemies.md](./enemies.md#stats-tables).
 
 | Type | Speed | HP | Damage | Hits to kill |
 |------|-------|----|--------|--------------|
@@ -10,7 +10,8 @@ A ghost only moves while you have your back to it.
 
 * **Frozen in front or beside you.** Picture a line through you at right angles
   to the way you face. A ghost on your side of it, or on it, never moves or
-  attacks, and nothing hurts it: dagger bumps and bomb blasts do nothing. The
+  attacks. Dagger bumps and bomb blasts do nothing to it; only the Dagger of
+  Phasing hurts it ([weapons.md](./weapons.md#materials)). The
   way you face is set by [what you press](./controls.md#facing); standing
   still keeps it.
 * **Chasing from behind.** A ghost past that line, diagonals included, follows
@@ -26,6 +27,5 @@ A ghost only moves while you have your back to it.
   needs it adjacent, a trident reaches two tiles. A bomb also kills a chasing
   ghost. A ghost you already face is frozen, so you only get the kill on the
   turn that faces it.
-* **Reward.** A kill counts for the coin multiplier, and the ghost drops twice
-  a `Slime`'s gold: 4 at x1, 8 at x3 (see
-  [coin-multiplier.md](./coin-multiplier.md)).
+* **Reward.** A kill counts for the coin multiplier, and the ghost's
+  [base gold](./coin-multiplier.md#gold-per-kill) is 2.

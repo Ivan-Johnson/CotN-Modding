@@ -60,8 +60,7 @@ A `Trapchest` leaves an item instead ([trapchest.md](./trapchest.md)).
 
 ## Picking gold up
 
-A killed enemy leaves one pile; walk onto it to take the gold. A pile holds
-its whole amount whatever its look, and the multiplier does not touch what a
-pile gives. A small hoard (`ResourceHoardGoldSmall`) holds 25 gold and a large
+A killed enemy leaves one pile; walk onto it to take the gold. A pile gives
+its full amount however it looks, and the multiplier does not change it. A small hoard (`ResourceHoardGoldSmall`) holds 25 gold and a large
 one (`ResourceHoardGold`) 50. Diamonds give no gold. A bomb's blast destroys
 the piles lying in it ([bombs.md](./bombs.md)).

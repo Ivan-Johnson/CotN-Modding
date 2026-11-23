@@ -45,6 +45,9 @@ ignored diagonal all leave your facing as it was.
 * **Spell (`spell1`)** casts your spell. The Earth Spell is free once, then
   recharges after 10 kills; casting it before then costs 1 health each time.
   Casting keeps the chain.
+* **Throw** followed by a direction throws a dagger, spear or trident
+  ([weapons.md](./weapons.md)). Other weapons cannot be thrown: the direction
+  just moves you.
 * **Bomb (`bomb`)** drops a lit bomb on your tile and spends it
   ([bombs.md](./bombs.md)). Placing it keeps the chain.
 
