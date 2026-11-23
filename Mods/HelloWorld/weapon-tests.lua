@@ -232,17 +232,8 @@ local function step(weapon, targets, extra)
 	return s
 end
 
-local function health()
-	return fixtures.player().health.health
-end
-
-local function repeated(value, count)
-	local list = {}
-	for i = 1, count do
-		list[i] = value
-	end
-	return list
-end
+local health = fixtures.health
+local repeated = fixtures.repeated
 
 ------------------------------------------------------------------ reach
 

@@ -23,9 +23,7 @@ local function chain()
 	return fixtures.player().grooveChain.multiplier
 end
 
-local function health()
-	return fixtures.player().health.health
-end
+local health = fixtures.health
 
 local function assertAt(x, y, what)
 	local position = fixtures.player().position
@@ -54,28 +52,33 @@ local function controlsScene(name, setup, actions, checks, arenaRadius)
 	for _, action in ipairs(actions) do
 		table.insert(all, action)
 	end
-	testsApi.registerTest({
+	local wrapped = {}
+	for index = 1, #all do
+		wrapped[index] = function(state, resolved)
+			local turns = state.turns
+			if index == 1 then
+				assert(chain() == 2, "a kill raises the coin multiplier to 2")
+				turns[0] = Turn.getCurrentTurnID()
+				return
+			end
+			turns[index - 1] = Turn.getCurrentTurnID()
+			local check = checks[index - 1]
+			if check then
+				check(state.scene, resolved, turns[index - 1] ~= turns[index - 2])
+			end
+		end
+	end
+	fixtures.scene({
 		name = name,
-		noBeat = true,
-		async = true,
-		onLoad = function(_, finish)
-			fixtures.openArena(arenaRadius or 10)
+		radius = arenaRadius,
+		prepare = function()
 			fixtures.spawn("Slime", 0, -1)
-			local scene = setup and setup() or {}
-			local turns = {}
-			testsApi.play(all, function(index, _, resolved)
-				if index == 1 then
-					assert(chain() == 2, "a kill raises the coin multiplier to 2")
-					turns[0] = Turn.getCurrentTurnID()
-					return
-				end
-				turns[index - 1] = Turn.getCurrentTurnID()
-				local check = checks[index - 1]
-				if check then
-					check(scene, resolved, turns[index - 1] ~= turns[index - 2])
-				end
-			end, finish)
 		end,
+		setup = function()
+			return { scene = setup and setup() or {}, turns = {} }
+		end,
+		actions = all,
+		checks = wrapped,
 	})
 end
 
