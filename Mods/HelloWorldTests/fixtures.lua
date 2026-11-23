@@ -67,6 +67,7 @@ end
 
 -- Spawns at absolute tile coordinates. Spawned outside a turn, an entity would
 -- stay invulnerable until the next turn, unlike the enemies a level starts with.
+-- A Ghost spawned here stays frozen until the player's next move to a new tile.
 local function spawn(typeName, x, y)
 	local entity = Object.spawn(typeName, x, y)
 	if entity.spawnInvincibility then

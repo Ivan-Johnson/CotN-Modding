@@ -14,9 +14,9 @@ local fixtures = require "HelloWorldTests.fixtures"
 -- Backs AuthoredDocs/Src/ghost.md. Each test plays Cadence in no-beat mode on
 -- an open floor, spawning Ghosts by hand; "up" is toward negative y.
 --
--- Spawn every Ghost in setup, before the first action. A Ghost spawned between
--- actions never moves, whatever its aggro or stasis, so a test that needs one
--- to appear mid-scene would silently see a ghost that does nothing.
+-- A Ghost starts frozen and is freed only by the player's next move to a new
+-- tile, so spawn it before the move that should free it; a scene that only
+-- idles after the spawn would not move it.
 
 local function ghostScene(name, setup, actions, checks)
 	fixtures.scene({ name = name, setup = setup, actions = actions, checks = checks })
@@ -145,6 +145,28 @@ end, { "down", "idle", "idle", "idle", "idle" }, {
 		assertAt(scene.farRight, 2, 1, "farRight")
 		assertAt(scene.front, 0, 2, "front")
 		assert(health() == 12, "frozen ghosts never hit")
+	end,
+})
+
+-- Spawning late is fine: a ghost spawned after a move stays frozen through
+-- idles, and the next move to a new tile frees it to chase.
+ghostScene("ghostSpawnedAfterAMoveChases", function()
+	return {}
+end, { "up", "idle", "up", "idle" }, {
+	[1] = function(scene)
+		local y = fixtures.player().position.y
+		scene.ghost = fixtures.spawn("Ghost", 0, y + 2)
+		scene.y = y + 2
+		assert(scene.ghost.stasis.active, "a new ghost starts frozen")
+	end,
+	[2] = function(scene)
+		assertAt(scene.ghost, 0, scene.y, "idling does not free a ghost spawned after the move")
+	end,
+	[3] = function(scene)
+		assertAt(scene.ghost, 0, scene.y - 1, "the next move frees it, and it follows")
+	end,
+	[4] = function(scene)
+		assertAt(scene.ghost, 0, scene.y - 2, "it keeps following on the idle")
 	end,
 })
 
