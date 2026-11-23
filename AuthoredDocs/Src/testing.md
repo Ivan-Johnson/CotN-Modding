@@ -59,9 +59,15 @@ it as a regression test with real assertions.
   `timeoutTicks` on the test to change its limit. Use
   `api.afterTicks(n, fn)` to wait. An action that does not advance the turn,
   such as a bump into a wall, reports `resolved` false after 1500 ticks.
-  `HelloWorldTests.fixtures` clears the level's enemies, opens an arena of
-  floor, and spawns entities. `Mods/HelloWorld/ghost-tests.lua` is a worked
-  example.
+  `HelloWorldTests.fixtures` has the shared helpers: `openArena(radius)`
+  clears the level's enemies and opens an arena of floor, `spawn`, `player`,
+  `health`, `wallColumn(x, firstY, lastY, tileType)`, `tileName(x, y)`,
+  `repeated(value, count)`, `assertAt(entity, x, y, what)`, and
+  `scene{name, radius, prepare, setup, actions, checks}`, which registers a
+  no-beat test that opens the arena, runs `prepare` then `setup`, plays
+  `actions`, and calls `checks[index](state, resolved)` after each. Check
+  `fixtures.lua` before writing your own scene, wallColumn, health or
+  assertAt helper. `Mods/HelloWorld/ghost-tests.lua` is a worked example.
 * If an assertion needs a handler to run before or after the mod-under-test's
   handler within the same event and order key, set `sequence` on the test's
   handler, not the mod's. Timing that exists only to make an assertion
