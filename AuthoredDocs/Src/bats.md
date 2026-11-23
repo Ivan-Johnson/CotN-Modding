@@ -1,8 +1,7 @@
 # Bats
 
 For players. Bat, Bat2 and Bat3; the miniboss version is in
-[minibosses.md](./minibosses.md). How these were measured:
-[enemies.md](./enemies.md).
+[minibosses.md](./minibosses.md). Stats columns: [enemies.md](./enemies.md#stats-tables).
 
 | Type | Speed | HP | Damage | Directions |
 |------|-------|----|--------|------------|

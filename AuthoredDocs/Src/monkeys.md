@@ -1,7 +1,6 @@
 # Monkeys
 
-For players. Monkey and Monkey2. How these were measured:
-[enemies.md](./enemies.md).
+For players. Monkey and Monkey2. Stats columns: [enemies.md](./enemies.md#stats-tables).
 
 | Type | Speed | HP | Damage | Hits to kill |
 |------|-------|----|--------|--------------|

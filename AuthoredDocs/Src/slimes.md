@@ -1,7 +1,6 @@
 # Slimes
 
-For players. Slime, Slime2 and Slime3. How these were measured:
-[enemies.md](./enemies.md).
+For players. Slime, Slime2 and Slime3. Stats columns: [enemies.md](./enemies.md#stats-tables).
 
 | Type | Speed | HP | Damage | Movement |
 |------|-------|----|--------|----------|

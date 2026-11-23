@@ -1,7 +1,7 @@
 # Skeletons
 
-For players. Skeleton, Skeleton2, Skeleton3 and their headless variants. How
-these were measured: [enemies.md](./enemies.md).
+For players. Skeleton, Skeleton2, Skeleton3 and their headless variants.
+Stats columns: [enemies.md](./enemies.md#stats-tables).
 
 | Type | Speed | HP | Damage | Hits to kill |
 |------|-------|----|--------|--------------|

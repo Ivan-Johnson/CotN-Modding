@@ -1,6 +1,6 @@
 # Wraith
 
-For players. How this was measured: [enemies.md](./enemies.md).
+For players. Stats columns: [enemies.md](./enemies.md#stats-tables).
 
 | Type | Speed | HP | Damage | Hits to kill |
 |------|-------|----|--------|--------------|
