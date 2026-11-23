@@ -25,6 +25,16 @@ api.registerTest({
 	end,
 })
 
+-- A test that never finishes must time out and let the next test run: the
+-- tests after this one only run if it does.
+api.registerTest({
+	name = "frameworkTimeoutFailsAndContinues",
+	expectFail = true,
+	async = true,
+	timeoutTicks = 200,
+	onLoad = function() end,
+})
+
 -- Exercises observe(): the entrypoint's output must show this value next to
 -- the PASS line. Also the quickest named test to run alone.
 api.registerTest({

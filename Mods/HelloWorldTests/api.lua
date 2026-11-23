@@ -54,6 +54,9 @@ fixed-seed GameSession. A test is a table:
     ends only when onLoad's second argument, finish, is called (finish() passes,
     finish(message) fails). Drive the game with afterTicks and play below; an
     error raised inside any callback they run fails the test
+  timeoutTicks (integer?) - overrides TEST_TIMEOUT_TICKS, the ticks the test
+    may take from its "Running" line, level load included, before it fails
+    with "timed out after N ticks" and the next test runs
   onLoad (function(fixedSeed, finish), required)
     - runs once the level has loaded, and is passed the seed the level was
       generated with; call the builtin assert(condition, reason) once per
@@ -217,6 +220,12 @@ end
 
 local timers = {}
 
+-- Ticks a test may take, from its "Running" line to its result, level load
+-- included, before it fails as timed out. Set to about 3x the slowest test's
+-- measured time: controlsDiagonalsAreIgnored took 6127 ticks (full run,
+-- 53176 ticks in all), so 18000.
+local TEST_TIMEOUT_TICKS = 18000
+
 -- Runs fn after at least n ticks. Ticks run over 1000 times a second.
 local function afterTicks(n, fn)
 	timers[#timers + 1] = { ticks = n, fn = fn, test = currentTest }
@@ -224,6 +233,11 @@ end
 
 event.tick.add("TestHarnessTimers", { order = "invokeLater" }, function()
 	tickCount = tickCount + 1
+	local test = currentTest
+	if test and tickCount - test.startedAt >= (test.timeoutTicks or TEST_TIMEOUT_TICKS) then
+		-- Does nothing for a test that already finished.
+		finishAsync(test, string.format("timed out after %d ticks", tickCount - test.startedAt))
+	end
 	local due = {}
 	local waiting = {}
 	for _, timer in ipairs(timers) do
