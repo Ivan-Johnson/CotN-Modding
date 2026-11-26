@@ -204,7 +204,6 @@ assert_anchors_resolve() {
 # removes: see the player-page bullet under Conventions in AuthoredDocs/AGENTS.md.
 readonly UNSWEPT_PLAYER_PAGES=(
 	stairs-and-levels.md
-	traps.md
 )
 
 # A player page states conclusions, so the wording of an experiment's setup or
