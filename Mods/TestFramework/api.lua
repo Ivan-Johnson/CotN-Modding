@@ -5,6 +5,7 @@ local FileIO = require "system.game.FileIO"
 local Action = require "necro.game.system.Action"
 local Input = require "necro.client.Input"
 local Turn = require "necro.cycles.Turn"
+local Player = require "necro.game.character.Player"
 
 --[[
 Generic, reusable test-running framework. Any mod may contribute test cases
@@ -196,6 +197,10 @@ TestFramework_startGameSession = Tick.delay(function()
 		ExtraMode.setActive(ExtraMode.Type.NO_BEAT, true)
 	end
 
+	-- The level generator's initialCharacters alone leaves the player as the
+	-- menu's selected character, so select the test's character too.
+	Player.setCharacterType(1, currentTest and currentTest.character or "Cadence")
+
 	GameSession.start({
 		mode = GameSession.Mode.SingleZone,
 	})
@@ -204,6 +209,10 @@ end)
 local function runNextTest()
 	currentTest = table.remove(tests, 1)
 	if not currentTest then
+		-- Leave Cadence selected, so the game's next run, or a framework
+		-- that predates setCharacterType, does not play the last test's
+		-- character.
+		Player.setCharacterType(1, "Cadence")
 		-- `Mods/LiveGame/itj-impure-tests.bash` greps this exact "N failure(s)"
 		-- phrasing to decide its own exit code, so keep the wording in sync
 		-- with it.
