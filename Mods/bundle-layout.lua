@@ -194,10 +194,32 @@ local function reportViolations(path, violations, errors)
 	end
 end
 
+-- install-mods gives the bundle the `synchronyVersion` of the mods it holds,
+-- so each of `mods` must declare one, and all the same. Appends to `errors`.
+local function checkSynchronyVersion(modsDir, mods, errors)
+	local first = mods[1]
+	local expected = first and manifest(modsDir, first).synchronyVersion
+	for index, mod in ipairs(mods) do
+		local actual = manifest(modsDir, mod).synchronyVersion
+		if type(actual) ~= "string" then
+			errors[#errors + 1] = string.format('%s/mod.json: "synchronyVersion" must be a string', mod)
+		elseif index > 1 and type(expected) == "string" and actual ~= expected then
+			errors[#errors + 1] = string.format(
+				'%s/mod.json: "synchronyVersion" is "%s", expected "%s" to match %s/mod.json',
+				mod,
+				actual,
+				expected,
+				first
+			)
+		end
+	end
+end
+
 -- Checks every mod directly under `modsDir`; returns a list of error messages.
 function M.check(modsDir)
 	local errors = {}
 	local mods = modsUnder(modsDir)
+	checkSynchronyVersion(modsDir, mods, errors)
 	for _, mod in ipairs(mods) do
 		local mod_json = manifest(modsDir, mod)
 		for _, field in ipairs({ "namespace", "name" }) do
@@ -220,9 +242,12 @@ function M.check(modsDir)
 end
 
 -- A bundled mod can only find mods bundled with it, so each of `installing`
--- must not depend on a mod of `modsDir` that isn't also being installed.
+-- must not depend on a mod of `modsDir` that isn't also being installed. The
+-- installed mods must also agree on `synchronyVersion`: the source tree can
+-- hold edits the `mods-layout` check has not seen.
 function M.checkInstall(modsDir, installing)
 	local errors = {}
+	checkSynchronyVersion(modsDir, installing, errors)
 	local installed, available = {}, {}
 	for _, mod in ipairs(installing) do
 		installed[mod] = true

@@ -69,7 +69,8 @@ do not: each group's role and what it is coupled to.
 ## Architecture
 
 * Each mod lives in `Mods/<name>/`, where `<name>` equals its `mod.json`
-  `namespace` and `name` (enforced by the `mods-layout` check).
+  `namespace` and `name`, and all mods declare one `synchronyVersion`, which
+  the bundle copies (both enforced by the `mods-layout` check).
 * Development installs go through one bundle mod, `install-mods` (`nix run
   .#install-mods -- Foo Bar`, or `install-mods Foo Bar` in the dev shell); why
   and how: `Docs/Adr/0004-dev-installs-go-through-a-bundle-mod.md`. The bundle

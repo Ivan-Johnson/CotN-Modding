@@ -59,15 +59,30 @@ local function write(path, content)
 	handle:write(content)
 	handle:close()
 end
-write("Alpha/mod.json", '{"namespace":"Alpha","name":"Alpha","dependencies":{"Beta":"1","Outside":"1"}}')
+write(
+	"Alpha/mod.json",
+	'{"namespace":"Alpha","name":"Alpha","synchronyVersion":"1.0","dependencies":{"Beta":"1","Outside":"1"}}'
+)
 write("Alpha/a.lua", 'require "Beta.x"')
-write("Beta/mod.json", '{"namespace":"Wrong","name":"Beta"}')
+write("Beta/mod.json", '{"namespace":"Wrong","name":"Beta","synchronyVersion":"1.0"}')
+write("Gamma/mod.json", '{"namespace":"Gamma","name":"Gamma","synchronyVersion":"2.0"}')
+write("Delta/mod.json", '{"namespace":"Delta","name":"Delta"}')
 write("Beta/x.lua", 'x = "Beta.x"')
 
 local errors = BundleLayout.check(tmp)
-expect("check finds the namespace and the stray string", #errors, 2)
+expect("check finds the namespace, the stray string, Gamma's version and Delta's missing one", #errors, 4)
 expect("checkInstall refuses a missing Mods/ dependency", #BundleLayout.checkInstall(tmp, { "Alpha" }), 1)
 expect("checkInstall ignores dependencies outside Mods/", #BundleLayout.checkInstall(tmp, { "Alpha", "Beta" }), 0)
+expect(
+	"checkInstall refuses mods whose synchronyVersion differs",
+	#BundleLayout.checkInstall(tmp, { "Alpha", "Beta", "Gamma" }),
+	1
+)
+expect(
+	"checkInstall refuses a mod without a synchronyVersion",
+	#BundleLayout.checkInstall(tmp, { "Alpha", "Beta", "Delta" }),
+	1
+)
 expect("rewriteTree refuses unsafe trees", #BundleLayout.rewriteTree(tmp, "Bundle", { "Alpha", "Beta" }), 1)
 -- The command line, through the real wrapper. The module-level cases above
 -- cannot see a broken entry guard, which makes every command a silent no-op.

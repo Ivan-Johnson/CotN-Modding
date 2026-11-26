@@ -26,7 +26,6 @@ set -euo pipefail
 
 modsRoot="${ITJ_MODS_ROOT:-$(git rev-parse --show-toplevel)/Mods}"
 bundleName="${ITJ_BUNDLE_NAME:-DevBundle}"
-synchronyVersion="4.2.1"
 
 mods=("$@")
 
@@ -38,6 +37,16 @@ for mod in "${mods[@]}"; do
 done
 
 bundle-layout check-install "$modsRoot" "${mods[@]}"
+
+# The bundle declares the synchronyVersion its mods share; check-install has
+# just made them agree. With nothing to install, every mod under $modsRoot
+# stands in, and the mods-layout check keeps those in agreement.
+if ((${#mods[@]} > 0)); then
+	versionManifests=("$modsRoot/${mods[0]}/mod.json")
+else
+	versionManifests=("$modsRoot"/*/mod.json)
+fi
+synchronyVersion="$(jq -rn 'first(inputs.synchronyVersion)' "${versionManifests[@]}")"
 
 stage="$(mktemp -d)"
 trap 'rm -rf "$stage"' EXIT

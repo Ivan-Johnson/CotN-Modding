@@ -96,7 +96,7 @@ fi
 goodRepo="$scratch/good-repo"
 for mod in HelloWorld HelloWorldTests; do
 	mkdir -p "$goodRepo/Mods/$mod"
-	echo "{\"namespace\":\"$mod\",\"name\":\"$mod\"}" >"$goodRepo/Mods/$mod/mod.json"
+	echo "{\"namespace\":\"$mod\",\"name\":\"$mod\",\"synchronyVersion\":\"1.0\"}" >"$goodRepo/Mods/$mod/mod.json"
 done
 touch "$goodRepo/Mods/HelloWorldTests/api.lua"
 export ITJ_MODS_ROOT="$goodRepo/Mods"
