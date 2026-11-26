@@ -35,7 +35,8 @@ on most commits and pushes.
   (`Mods/LiveGame/test-*`) are not harness: `nix flake check` runs them, and
   the live suite never reads them.
 * A push applies the same rule to each pushed commit. A manual
-  `build-release` applies it to `git diff HEAD~`.
+  `build-release` applies it to the uncommitted changes to tracked files, or
+  to the last commit when there are none.
 * A game update changes no path in the repo, so it triggers no claim test.
   After an update, force a full run: `nix run .#itj-impure-tests` with no
   arguments.
