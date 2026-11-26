@@ -42,13 +42,15 @@ if ! grep -qF "game not responding" <<<"$stderr"; then
 fi
 
 # A pass whose suite completes with 0 failures passes the run, even when the
-# log took longer than the stall limit in total.
+# log took longer than the stall limit in total, and its last line totals the
+# results.
 (
 	for _ in 1 2 3 4 5 6; do
 		sleep 1
 		echo "line" >>"$COTN_LOG"
 	done
 	echo '[TestFramework] PASS fakeTest' >>"$COTN_LOG"
+	echo '[TestFramework] XFAIL fakeKnownBug' >>"$COTN_LOG"
 	echo '[TestFramework] Test suite completed: 0 failure(s)' >>"$COTN_LOG"
 ) &
 growerPid=$!
@@ -62,8 +64,8 @@ if grep -qF "game not responding" <<<"$stdout"; then
 	exit 1
 fi
 
-if ! grep -qF "All tests pass" <<<"$stdout"; then
-	echo "FAIL: a growing log did not run to the sentinel (status $status); output was:" >&2
+if [ "$(tail -n 1 <<<"$stdout")" != "itj-impure-tests: all tests pass: 1 PASS, 1 XFAIL, 0 FAIL, 0 XPASS" ]; then
+	echo "FAIL: a growing log did not end with its totals (status $status); output was:" >&2
 	echo "$stdout" >&2
 	exit 1
 fi
@@ -87,6 +89,12 @@ fi
 
 if ! grep -qF "itj-impure-tests: the pass printed no PASS/FAIL lines" <<<"$stdout"; then
 	echo "FAIL: a run with no PASS/FAIL lines gave no message; output was:" >&2
+	echo "$stdout" >&2
+	exit 1
+fi
+
+if [[ "$(tail -n 1 <<<"$stdout")" != "itj-impure-tests: run failed: "* ]]; then
+	echo "FAIL: a failed run did not end with its totals; output was:" >&2
 	echo "$stdout" >&2
 	exit 1
 fi

@@ -23,7 +23,8 @@ question:
    registered by some files instead: `nix run .#itj-impure-tests -- --files
    weapons.lua,bombs.lua`.
 4. Read the `OBSERVED <test> <key>=<value>` lines and the `PASS`/`FAIL` line
-   in what it prints. A Lua error in `onLoad` shows as `FAIL` with the message.
+   in what it prints; the last line totals the results. A Lua error in
+   `onLoad` shows as `FAIL` with the message.
 
 The command returns in a few seconds. Each run logs its own `Starting Single
 Zone run with seed N` line with a random N; that is the game's choice before

@@ -13,6 +13,10 @@
 # weapons.lua), in registration order.
 # Values a test reports with `api.observe` appear as
 # `OBSERVED <test> <key>=<value>` lines in the output.
+# The last line totals the run's results, e.g.
+# `itj-impure-tests: all tests pass: 132 PASS, 3 XFAIL, 0 FAIL, 0 XPASS`, or
+# `run failed:` in place of `all tests pass:`. `build-release` shows the last
+# line of a successful run, so keep it last.
 #
 # A run has up to two passes, each one install and one reload: the code pass
 # installs HelloWorld, and the claim pass installs ClaimTests without it, so
@@ -40,15 +44,18 @@ done
 # selected name.
 nameMissing=0
 
+# Each verdict's count over every pass, for the summary line.
+declare -A counts=([PASS]=0 [XFAIL]=0 [FAIL]=0 [XPASS]=0)
+
 # runPass SELECTION EXPECTED MOD...: installs the mods with the framework and
 # runs the selection (empty for every registered test, a bare test name, or
 # `file: a.lua b.lua`) once each of the EXPECTED test files (space-separated
-# basenames) has registered a test. Prints the new log lines and returns
-# non-zero unless every selected test passed.
+# basenames) has registered a test. Prints the new log lines, adds their
+# results to counts and returns non-zero unless every selected test passed.
 runPass() {
         local selection=$1 expected=$2
         shift 2
-        local runStatus newOutput resultLines duplicates runArgs
+        local runStatus newOutput resultLines duplicates runArgs verdict found
         nameMissing=0
 
         # The framework reads the expected files and the selection from this
@@ -71,6 +78,14 @@ $selection")
         newOutput=$(live-game-run "${runArgs[@]}" "$@" TestFramework) || runStatus=$?
         echo "$newOutput"
 
+        # Count before any early return, so a failed pass's results still
+        # reach the summary.
+        resultLines=$(grep -oE '\[TestFramework\] (PASS|FAIL|XFAIL|XPASS) [A-Za-z0-9_]+' <<<"$newOutput" || true)
+        for verdict in "${!counts[@]}"; do
+                found=$(grep -c "\] $verdict " <<<"$resultLines" || true)
+                counts[$verdict]=$((counts[$verdict] + found))
+        done
+
         # live-game-run has already said why on stderr, including the restart
         # instruction when the game stopped responding.
         if ((runStatus != 0)); then
@@ -87,7 +102,6 @@ $selection")
 
         # A test that reports twice was queued twice (a reload registered it
         # again), so the pass is not the single fixed-seed run the tests assume.
-        resultLines=$(grep -oE '\[TestFramework\] (PASS|FAIL|XFAIL|XPASS) [A-Za-z0-9_]+' <<<"$newOutput" || true)
         if [ -z "$resultLines" ]; then
                 echo "itj-impure-tests: the pass printed no PASS/FAIL lines" >&2
                 return 1
@@ -163,7 +177,9 @@ else
         fi
 fi
 
+summary="${counts[PASS]} PASS, ${counts[XFAIL]} XFAIL, ${counts[FAIL]} FAIL, ${counts[XPASS]} XPASS"
 if ((status != 0)); then
+        echo "itj-impure-tests: run failed: $summary"
         exit 1
 fi
-echo All tests pass
+echo "itj-impure-tests: all tests pass: $summary"

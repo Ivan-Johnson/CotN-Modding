@@ -29,7 +29,8 @@ do not: each group's role and what it is coupled to.
   `TestFramework/api.lua` both ways: it parses the result and completion
   lines `api.lua` prints, and has `live-game-run` write the
   `selected-test.txt` that `api.lua` reads. `itj-impure-scope.bash` decides when `build-release` runs
-  it.
+  it. Its last line totals the run's results, and `build-release` shows that
+  line when the run passes, so keep it last.
 * `flake-module.nix`: wires everything above into packages, checks, apps and
   the dev shell, and exports `liveGame` (`liveGameRun`) to
   `GameData/flake-module.nix`.
@@ -60,7 +61,10 @@ do not: each group's role and what it is coupled to.
   installs `HelloWorld` and `TestFramework` with `live-game-run`, and in a
   second pass `ClaimTests` and `TestFramework`. Each pass locks the game,
   forces `TestFramework` to reload so its test run fires, waits for the
-  suite, and prints only the new `NecroDancer.log` lines. CotN live-reloads
+  suite, and prints only the new `NecroDancer.log` lines. The run's last
+  line totals both passes, e.g. `itj-impure-tests: all tests pass: 132 PASS,
+  3 XFAIL, 0 FAIL, 0 XPASS`; read that rather than counting lines in
+  `NecroDancer.log`. CotN live-reloads
   unpacked mods, so no manual reload or log-tailing is needed. It's an `app`, not a
   `check`, because it needs a running, native Steam/Proton CotN instance.
   Writing, linting and running a test: `AuthoredDocs/Src/testing.md`.
