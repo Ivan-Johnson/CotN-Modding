@@ -17,6 +17,8 @@ for players or for mod authors; read the one whose trigger matches your task.
   tiles, and spawning or converting entities.
 * [enemy-ai-ids.md](./enemy-ai-ids.md): an enemy's `ai.id` and the components
   behind its movement.
+* [replays.md](./replays.md): where the game saves replays and how that
+  directory is laid out.
 
 ## Players
 
