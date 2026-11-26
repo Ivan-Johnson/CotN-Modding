@@ -1,26 +1,48 @@
 # Action items and spells
 
-For players. Items used with `item1` and spells cast with `spell1`, measured as
-Cadence in no-beat mode on CotN 4.2.1.
+For players. What Cadence's action items (used with `item1`) and spells (cast
+with `spell1`) do. What the inputs cost in beats and coin chain, and the Earth
+Spell's recharge: [controls.md](./controls.md). Where they are found:
+[chests-and-loot.md](./chests-and-loot.md).
 
-* `BloodDrum` ("Takes health, increases damage"): using it cost 1 health
-  (`damage_taken source=BloodDrum`) and gave +999 damage for 1 turn. Used with
-  `WeaponTitaniumBroadsword` on the next beat, a swing killed a `Minotaur2`
-  that had 3 of 5 health left and a second enemy, each taking 1001
-  damage. The `Minotaur2` was adjacent and had not yet attacked.
-* `FamiliarIceSpirit` ("Freeze enemies"): using it and then a direction spawns
-  a `FollowerSnowbro` on that tile. It follows the player and freezes what it
-  touches for about 2 turns. A `FollowerSnowbro` standing on a `Dragon`'s tile
-  blocked the player's melee: 4 or more dagger hits did no damage and the
-  dragon killed the player.
-* `SpellEarth` ("Raise walls", `spell1`) raises `EarthWall` on the 8 tiles
-  around the player. The walls held for 30+ beats; any move into one opens
-  it ([digging.md](./digging.md)). See [king-conga.md](./king-conga.md).
-* `HolyWater` ("Use near enemies", `item1`, consumed by the use) deals 5
-  damage to every enemy in the 3 by 3 around the player, diagonals included,
-  and nothing farther: a `Skeleton` 2 tiles away took nothing. It killed a
-  ring of eight spawned enemies (`Skeleton3`, `Zombie`, `Monkey2`, `Slime2`,
-  `Slime3`, two `Slime`, `Bat`) in one action, and the kills counted towards
-  the coin multiplier (x3, 8 kills). With no enemy in range it does nothing
-  visible and is still used up (tried at 2 and 3 tiles). Found in a
-  `ChestRed`.
+## Blood Drum (`BloodDrum`)
+
+Each use costs 1 health and keeps the drum, so you can use it again. The cost
+does not break the coin chain, and at 1 health it kills you.
+
+The action on the next beat gets the boost; an idle beat in between wastes it:
+
+* **An attack** does 999 more damage to every enemy it hits, each of a
+  broadsword swing's three included.
+* **A dig** is 3 stronger: even the starting shovel digs stone, catacomb and
+  shop walls, though never an unbreakable wall ([digging.md](./digging.md)).
+
+## Holy Water (`HolyWater`)
+
+It hits every enemy in the 3 by 3 around you, diagonals included, for 5, and
+heals you 2 (one heart) per enemy hit, up to your maximum. Enemies two tiles
+away take nothing. It is used up, even with no enemy in range.
+
+Its kills are yours: they extend the coin chain, each one counted
+([coin-multiplier.md](./coin-multiplier.md)).
+
+## Ice Spirit (`FamiliarIceSpirit`)
+
+Use it, then press a direction: a snowman (`FollowerSnowbro`) appears on that
+tile and you stay where you are. The item is spent; the snowman stays with you,
+taking the same step as you each time you move.
+
+An enemy that the snowman moves onto, or that walks into the snowman, is frozen
+for 3 beats, and cannot attack. A frozen enemy still takes your hits, even
+while the snowman shares its tile.
+
+## Earth Spell (`SpellEarth`)
+
+Every floor tile of the 8 around you becomes an earth wall (`EarthWall`); a
+tile that is already a wall stays as it was. The walls stand for at least 30
+beats, and enemies do not get through them. Opening one:
+[digging.md](./digging.md).
+
+An enemy on one of the 8 tiles is pushed one tile farther out, unhurt. If a
+wall or another enemy blocks that tile, it dies instead, whatever its health,
+and the kill is yours. Used against the boss: [king-conga.md](./king-conga.md).
