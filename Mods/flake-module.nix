@@ -267,10 +267,13 @@ in
                 shellHook = ''
                         # This path is platform specific. e.g. if you're running the native steam runtime vs proton
                         # todo: commonize?
-                        export COTN_LOCAL_MODS_DIR="$HOME/.local/share/Steam/steamapps/compatdata/247080/pfx/drive_c/users/steamuser/AppData/Local/NecroDancer/mods/"
+                        export COTN_COMPATDATA="$HOME/.local/share/Steam/steamapps/compatdata/247080"
+                        export COTN_LOCAL_MODS_DIR="$COTN_COMPATDATA/pfx/drive_c/users/steamuser/AppData/Local/NecroDancer/mods/"
 
                         export COTN_LOG="${cotnLogPath}"
-                        export EXTRA_RO_BINDS="''${EXTRA_RO_BINDS:+''$EXTRA_RO_BINDS:}$COTN_LOG"
+                        # The whole Proton prefix is read-only (e.g. for replays); the
+                        # mods dir is bound read-write on top of it.
+                        export EXTRA_RO_BINDS="''${EXTRA_RO_BINDS:+''$EXTRA_RO_BINDS:}$COTN_LOG:$COTN_COMPATDATA"
                         export EXTRA_RW_BINDS="''${EXTRA_RW_BINDS:+''$EXTRA_RW_BINDS:}$COTN_LOCAL_MODS_DIR"
                 '';
         };
