@@ -30,6 +30,8 @@ A wiki of linked pages about the game's things, for Cadence.
   stairs guards and the 1-4 boss fight.
 * [coin-multiplier.md](./coin-multiplier.md): gold per kill and what breaks the
   chain.
+* [damage.md](./damage.md): what a hit costs, what armor and invincibility
+  stop, and how much your hits deal.
 * [bombs.md](./bombs.md), [digging.md](./digging.md),
   [traps.md](./traps.md), [shrines.md](./shrines.md): the level's tools and
   hazards.
