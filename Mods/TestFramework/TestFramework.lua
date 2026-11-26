@@ -4,7 +4,7 @@ local Tick = require "necro.cycles.Tick"
 
 local api = require "TestFramework.api"
 
--- Self-tests exercising the harness itself (api.lua's expectFail/crash
+-- Self-tests exercising the framework itself (api.lua's expectFail/crash
 -- recovery machinery), not any particular mod under test.
 api.registerTest({
 	name = "checkFailureExpected",
@@ -19,7 +19,7 @@ api.registerTest({
 	expectFail = true,
 	onLoad = function()
 		-- Deliberately calls a Synchrony API with invalid arguments, to
-		-- exercise the harness recovering from an onLoad that crashes
+		-- exercise the framework recovering from an onLoad that crashes
 		-- outright rather than failing an explicit assert().
 		Map.getAll(nil, nil)
 	end,

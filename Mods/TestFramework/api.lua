@@ -19,9 +19,9 @@ need this mod installed too.
 ]]
 local FIXED_SEED = 20240101
 
--- Ticks since the suite loaded, counted by the TestHarnessTimers handler. The
--- Synchrony sandbox has no os library (os.clock and os.time are missing), so
--- durations are in ticks, which run over 1000 a second.
+-- Ticks since the suite loaded, counted by the TestFrameworkTimers handler.
+-- The Synchrony sandbox has no os library (os.clock and os.time are missing),
+-- so durations are in ticks, which run over 1000 a second.
 local tickCount = 0
 
 -- Prints a PASS/FAIL/XFAIL/XPASS line, which `Mods/itj-impure-tests.bash`
@@ -220,7 +220,7 @@ end
 -- Pins the seed every test's level is generated with, which is what
 -- CurrentLevel.getSeed() reports and what determines level layout, and
 -- applies the current test's zone/character overrides, if any.
-event.levelGenerate.add("TestHarnessConfigureLevel", {}, function(ev)
+event.levelGenerate.add("TestFrameworkConfigureLevel", {}, function(ev)
 	if not ev.options then
 		return
 	end
@@ -286,7 +286,7 @@ local function afterTicks(n, fn)
 	timers[#timers + 1] = { ticks = n, fn = fn, test = currentTest }
 end
 
-event.tick.add("TestHarnessTimers", { order = "invokeLater" }, function()
+event.tick.add("TestFrameworkTimers", { order = "invokeLater" }, function()
 	tickCount = tickCount + 1
 	local test = currentTest
 	if test and tickCount - test.startedAt >= (test.timeoutTicks or TEST_TIMEOUT_TICKS) then
@@ -397,7 +397,7 @@ local function runTest(test)
 	report(test, not ok and err or nil)
 end
 
-event.levelLoad.add("TestHarnessRunOnLoad", { order = "extraEntities", sequence = 1 }, function()
+event.levelLoad.add("TestFrameworkRunOnLoad", { order = "extraEntities", sequence = 1 }, function()
 	local test = currentTest
 	if test and test.started then
 		-- A level change during an async test is part of that test.
