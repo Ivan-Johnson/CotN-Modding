@@ -206,7 +206,6 @@ readonly UNSWEPT_PLAYER_PAGES=(
 	bats.md
 	chests-and-loot.md
 	king-conga.md
-	shops.md
 	shrines.md
 	stairs-and-levels.md
 	traps.md

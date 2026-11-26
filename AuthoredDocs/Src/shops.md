@@ -1,32 +1,33 @@
 # Shops
 
-For players. Measured as Cadence in no-beat mode on CotN 4.2.1, on one seeded
-1-1 (seed 1) and earlier runs.
+For players. Buying from a shop, and what angers the shopkeeper. Applies to
+Cadence on the first floor of each zone.
 
-* A shop sits a few tiles from the start on 1-1 and another on 1-3, behind a
-  `DoorHorizontal` in `ShopWall` (dig resistance 4; see
-  [digging.md](./digging.md)). A `Shopkeeper` (9 health) stands at the back.
-  Wares show a `PriceTagGold` (or `PriceTagHealth`).
-* A 1-3 shop sold `Food4` for 65 gold, and a different one sold
-  `Sync_WeaponOnyxBroadsword` (50), `MiscHeartContainer2` (200) and
-  `TorchInfernal`. The 1-1 shop sold `WeaponObsidianDagger` (25, "Multiplier-based
-  damage"), `MiscHeartContainerCursed` (25) and `ArmorLeather` (20). Another
-  1-1 shop sold `Sync_ScrollBerzerk`, `RingProtection` and `WeaponGoldenDagger`
-  for gold, and a second, health-priced one `WeaponGoldenStaff`,
-  `MiscHeartContainerCursed` and `Food3`.
-* Walking onto a ware buys it: with 25 gold, `ArmorLeather` left 5 and was
-  equipped.
-* With too little gold the move is blocked, silently: no event, no gold
-  spent, and the player stays put. This blocks a route through the ware.
-* `MiscHeartContainerCursed` gave `cursedHealth` 2 and left health at 12/12
-  (bought from a shop whose keeper was already dead; see below).
-* A bomb placed next to the wares destroys them
-  (`killed by=BombLit target=WeaponObsidianDagger`), hurts the shopkeeper (4)
-  and the player (3 with `ArmorLeather`, `source=Cadence`).
-* Three dagger bumps on the `Shopkeeper` did nothing (its `aggro` turned
-  active; it has `unrevealedDamageImmunity`, cause unconfirmed). After the
-  bomb a dagger hit did 1 damage, and the shopkeeper hit back for 19,
-  killing the player at 9 health. Do not anger it.
-* A dead shopkeeper makes everything free: after a live run removed
-  it (it has an `ai`), stepping onto `ArmorLeather`, the heart and the dagger
-  cost no gold. That explained a first, wrong, "shops are free" result.
+* Every such floor has a shop: a room walled with shop wall and entered by a
+  door, with the `Shopkeeper` at the back and three wares, each priced in
+  gold, in a row two tiles in front of him. Digging the walls:
+  [digging.md](./digging.md). Weapons zone one's shops never sell:
+  [weapons.md](./weapons.md).
+
+## Buying
+
+* Walk onto a ware to buy it. Its price comes out of your gold, having exactly
+  the price is enough, and you step onto its tile holding the item.
+* An item that takes the place of one you hold, such as a weapon, leaves the
+  old one on that tile, free to pick up again.
+* With less gold than the price, the move fails: you stay where you are and
+  keep your gold.
+
+## The shopkeeper
+
+* Until he is provoked, your weapon cannot hurt him: attacking him does
+  nothing, and he never attacks you. Digging through his shop's wall does not
+  provoke him.
+* A bomb that hurts him provokes him. He has 9 health and a bomb takes 4.
+  Bombs in a shop: [bombs.md](./bombs.md).
+* Provoked, he leaves his counter and chases you, keeping pace if you run,
+  and hits for 20 every second beat while beside you. Your weapon now hurts
+  him: a dagger takes 1 per hit.
+* While he is outside his shop, its wares are free.
+* Killed, he drops his Crown of Greed (`HeadCrownOfGreed`), and the wares left
+  are free for good.
