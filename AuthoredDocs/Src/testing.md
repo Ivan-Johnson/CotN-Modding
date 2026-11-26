@@ -56,6 +56,11 @@ it as a regression test with real assertions.
   `async = true` and drive it with `api.play`. Check `fixtures.lua` before
   writing your own scene, wallColumn, health or assertAt helper.
   `Mods/ClaimTests/ghost.lua` is a worked example.
+* No-beat mode stalls the traps whose effect lands a moment after the step
+  onto them: every trap but the bounce trap. Idling never sets one off; a
+  confusion trap takes hold only on the player's next move, a spike trap
+  never hurts, and a trapdoor holds the player in place without dropping
+  them. Play trap tests to the beat, as `Mods/ClaimTests/traps.lua` does.
 * If an assertion needs a handler to run before or after the mod-under-test's
   handler within the same event and order key, set `sequence` on the test's
   handler, not the mod's. Timing that exists only to make an assertion
