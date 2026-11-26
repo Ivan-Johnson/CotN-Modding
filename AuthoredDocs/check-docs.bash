@@ -30,10 +30,11 @@ fail() {
 	failures=$((failures + 1))
 }
 
-# The relative link targets in `path`, one per line, with any fragment or query
-# stripped. Anything that already names where it goes is not ours to resolve.
+# The relative links in `path`, one per line, with any query stripped and any
+# `#fragment` kept. Anything that already names where it goes is not ours to
+# resolve.
 relative_targets() {
-	local path="$1" href
+	local path="$1" href fragment
 	local -a hrefs=()
 
 	case "$path" in
@@ -43,20 +44,37 @@ relative_targets() {
 	esac
 
 	for href in "${hrefs[@]}"; do
-		[[ "$href" != *:* && "$href" != //* && "$href" != '#'* ]] || continue
-		href="${href%%[#?]*}"
+		[[ "$href" != *:* && "$href" != //* ]] || continue
+		fragment=""
+		if [[ "$href" == *'#'?* ]]; then
+			fragment="#${href#*#}"
+		fi
+		href="${href%%[#?]*}$fragment"
 		[[ -n "$href" ]] || continue
 		echo "$href"
 	done
 }
 
+# The GitHub-style anchor of each heading in Markdown file `path`, one per line:
+# lower case, punctuation dropped, spaces turned into hyphens. Headings inside
+# fenced code are not headings.
+heading_slugs() {
+	local path="$1"
+
+	awk '/^```/ { fenced = !fenced; next } !fenced && /^#{1,6} / { sub(/^#+ +/, ""); print }' "$path" |
+		tr '[:upper:]' '[:lower:]' |
+		sed -e 's/[^a-z0-9 _-]//g' -e 's/ /-/g'
+}
+
 # Every link that conversion was supposed to follow still lands on a page.
 assert_links_resolve() {
 	local tree="$1"
-	local path target checked=0
+	local path link target checked=0
 
 	while IFS= read -r path; do
-		while IFS= read -r target; do
+		while IFS= read -r link; do
+			target="${link%%#*}"
+			[[ -n "$target" ]] || continue
 			checked=$((checked + 1))
 			[[ -e "$(dirname "$path")/$target" ]] ||
 				fail "$path links to missing $target"
@@ -159,6 +177,74 @@ assert_man_pages_are_reachable() {
 	fi
 }
 
+# Every `#fragment` in a Markdown link names a heading of the Markdown page it
+# points at.
+assert_anchors_resolve() {
+	local tree="$1"
+	local path link target fragment page checked=0
+
+	while IFS= read -r path; do
+		while IFS= read -r link; do
+			[[ "$link" == *'#'* ]] || continue
+			target="${link%%#*}"
+			fragment="${link#*#}"
+			page="$(dirname "$path")/$target"
+			[[ -n "$target" ]] || page="$path"
+			[[ "$page" == *.md && -f "$page" ]] || continue
+			checked=$((checked + 1))
+			heading_slugs "$page" | grep -qxF -- "$fragment" ||
+				fail "$path links to $target#$fragment, which is no heading there"
+		done < <(relative_targets "$path")
+	done < <(find "$tree" -type f -name '*.md')
+
+	[[ "$checked" -gt 0 ]] || fail "$tree: no anchors found to check"
+}
+
+# Player pages that still carry wording the cotn-document-mechanic sweep
+# removes: see the player-page bullet under Conventions in AuthoredDocs/AGENTS.md.
+readonly UNSWEPT_PLAYER_PAGES=(
+	action-items.md
+	bats.md
+	chests-and-loot.md
+	dove.md
+	king-conga.md
+	shops.md
+	shrines.md
+	skeletons.md
+	slimes.md
+	stairs-and-levels.md
+	traps.md
+	zombies.md
+)
+
+# A player page states conclusions, so the wording of an experiment's setup or
+# of a claim it could not conclude is not on it. Matched case-blind across line
+# breaks, since prose wraps anywhere.
+assert_player_pages_state_conclusions() {
+	local tree="$1"
+	local banned='`guess`|untested|not measured|measured as|seen in one|no-beat mode|CotN 4\.'
+	local path page found checked=0
+
+	while IFS= read -r path; do
+		checked=$((checked + 1))
+		page="$(basename "$path")"
+		found="$(tr '\n' ' ' <"$path" | tr -s ' ' | grep -oiE "$banned" | sort -u | paste -sd, -)" || true
+		if [[ " ${UNSWEPT_PLAYER_PAGES[*]} " == *" $page "* ]]; then
+			[[ -n "$found" ]] ||
+				fail "$path is clean: delete it from UNSWEPT_PLAYER_PAGES"
+		elif [[ -n "$found" ]]; then
+			fail "$path is a player page but says: $found"
+		fi
+	done < <(grep -l '^For players\.' "$tree"/*.md)
+
+	for page in "${UNSWEPT_PLAYER_PAGES[@]}"; do
+		[[ -f "$tree/$page" ]] ||
+			fail "UNSWEPT_PLAYER_PAGES names $page, which $tree does not hold"
+	done
+
+	[[ "$checked" -gt 0 ]] || fail "$tree: no player pages found to check"
+}
+
 main() {
 	local docs="$1"
 
@@ -168,6 +254,9 @@ main() {
 	assert_no_chrome "$docs"
 	assert_links_resolve "$docs/official/minimal-html"
 	assert_links_resolve "$docs/official/markdown"
+	assert_links_resolve "$docs/authored"
+	assert_anchors_resolve "$docs/authored"
+	assert_player_pages_state_conclusions "$docs/authored"
 	assert_man_pages_are_indexable "$docs"
 	assert_man_pages_are_reachable "$docs"
 

@@ -41,7 +41,12 @@ second derivation: `Docs/Adr/0002-*` at the repo root.
 * A player page states conclusions only. A claim's scope (the character, the
   mode) bounds it; the experiment's setup and trial counts belong in the commit
   message and the tests, and a claim that could not be concluded is left out.
-  Open questions go to the issue tracker.
+  Open questions go to the issue tracker. `check-docs.bash` fails a player page
+  (one with a line starting `For players.`) that says `` `guess` ``,
+  `untested`, `not measured`, `measured as`, `seen in one`, `no-beat mode` or
+  `CotN 4.`. Pages written before the rule are on its `UNSWEPT_PLAYER_PAGES`
+  list; rewriting one with the `cotn-document-mechanic` skill removes its
+  entry, and the check fails until it does.
 * Every claim on a player page has a test in `Mods/HelloWorld/`. Check a claim
   that an enemy never does something on enemies that come with the level, not
   only spawned ones.
