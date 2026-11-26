@@ -209,6 +209,7 @@ Registers a no-beat test that plays actions on an open arena. Fields:
   name, actions (list of action names), checks ({[index] = function(state, resolved)},
   run after the action at that index settles);
   radius (default 10): passed to openArena;
+  character (string?): the test's character, as in api.lua's test table;
   prepare (function?): runs after openArena and before setup, e.g. to spawn
     something or change the player;
   setup (function?): runs next; what it returns is passed to every check.
@@ -221,6 +222,7 @@ local function scene(spec)
 	testsApi.registerTest({
 		name = spec.name,
 		file = file,
+		character = spec.character,
 		noBeat = true,
 		async = true,
 		onLoad = function(_, finish)
