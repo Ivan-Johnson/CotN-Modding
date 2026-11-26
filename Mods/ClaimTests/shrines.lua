@@ -505,8 +505,29 @@ shrineScene("shrineFireBomb", {
 	},
 })
 
--- A bomb destroys a shrine, which leaves one item: for Blood, a Crown of
--- Thorns if unused and a Ring of Regeneration if used.
+-- A bomb destroys any shrine. Each leaves one item on its tile and none
+-- below, except Fire, which leaves its tile empty and one item on each tile
+-- of the row below.
+for typeName in pairs(HINTS) do
+	local fire = typeName == "Sync_ShrineOfFire"
+	shrineScene("shrineBombed" .. typeName, {
+		shrine = typeName,
+		actions = { "bomb", "left", "left", "idle" },
+		checks = {
+			[4] = function(shrine)
+				assert(not Entities.entityExists(shrine.id), typeName .. " survived the blast")
+				local own = #itemsAt(1, 0)
+				assert(own == (fire and 0 or 1), typeName .. ": items on its tile: " .. own)
+				for x = 0, 2 do
+					local below = #itemsAt(x, 1)
+					assert(below == (fire and 1 or 0), string.format("%s: %d items at (%d,1)", typeName, below, x))
+				end
+			end,
+		},
+	})
+end
+-- For Blood, the item is a Crown of Thorns if unused and a Ring of
+-- Regeneration if used.
 for _, case in ipairs({
 	{ "Unused", { "bomb", "left", "left", "idle" }, "HeadCrownOfThorns" },
 	{ "Used", { "right", "bomb", "left", "left", "idle" }, "RingRegeneration" },

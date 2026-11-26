@@ -69,6 +69,7 @@ of three.
 
 ## Bombs
 
-A bomb blast destroys a shrine, which leaves one item where it stood. The
-Shrine of Blood leaves a Crown of Thorns if unused and a Ring of Regeneration
-if used. What else a blast destroys: [bombs.md](./bombs.md#what-it-destroys).
+A bomb blast destroys a shrine. Each leaves one item where it stood, except
+the Shrine of Fire, which leaves its own tile empty and puts one item on each
+of the three tiles below it. The Shrine of Blood leaves a Crown of Thorns if
+unused and a Ring of Regeneration if used. What else a blast destroys: [bombs.md](./bombs.md#what-it-destroys).
