@@ -44,7 +44,8 @@ fixed-seed GameSession. A test is a table:
   name (string, required) - unique id, prefixes this test's PASS/FAIL lines;
     registering the same name again replaces the earlier test
   zone (integer?)         - procedural zone number to generate the level in
-  character (string?)     - entity type name to play as, e.g. "Cadence"
+  character (string?)     - entity type name to play as (default "Cadence");
+    without a default, a test would play whoever the previous test played
   expectFail (boolean?)   - marks this test as expected to fail (default: false).
     A failing/crashing onLoad is then logged as XFAIL instead of FAIL (still an
     overall suite success), and an onLoad that runs to completion without
@@ -229,8 +230,8 @@ event.levelGenerate.add("TestFrameworkConfigureLevel", {}, function(ev)
 	if currentTest and currentTest.zone then
 		ev.options.zone = currentTest.zone
 	end
-	if currentTest and currentTest.character then
-		ev.options.initialCharacters = { [1] = currentTest.character }
+	if currentTest then
+		ev.options.initialCharacters = { [1] = currentTest.character or "Cadence" }
 	end
 end)
 
