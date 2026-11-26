@@ -47,6 +47,8 @@ expect all Mods/ClaimTests/mod.json
 expect all Mods/ClaimTests/weapons.lua Mods/TestFramework/api.lua
 expect all Mods/TestFramework/README.md
 expect all Mods/install-mods.bash
+expect all Mods/live-game-run.bash Mods/test-live-game-run.bash
+expect all Mods/test-itj-impure-tests.bash
 expect all Mods/itj-impure-tests.bash
 expect all Mods/flake-module.nix flake.nix flake.lock
 expect all Docs/a.md Mods/unknown.txt

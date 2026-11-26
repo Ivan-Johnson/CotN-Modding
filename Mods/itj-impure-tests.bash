@@ -1,14 +1,10 @@
-# Takes the game-instance lock, so a test run never overlaps another run or an
-# interactive session; then installs the mods, waits for the suite, and prints
-# its results. This is the only caller that takes the lock.
+# Runs the live tests: each pass installs its mods through live-game-run,
+# which locks the game for that pass, waits for the suite and hands back the
+# new log lines; this script prints them and judges the results.
 #
 # Environment:
-#   ITJ_MODS_ROOT                  default <git toplevel>/Mods
-#   ITJ_GAME_LOCK_FILE             default itj-game.lock in the game's mods dir
-#   ITJ_GAME_LOCK_TIMEOUT_SECONDS  wait for another run's lock (default 120)
-#   ITJ_SUITE_TIMEOUT_SECONDS      wait for each pass to complete (default 900)
-#   ITJ_SUITE_STALL_SECONDS        fail once the log is silent this long
-#                                  (default 120)
+#   ITJ_MODS_ROOT  default <git toplevel>/Mods
+#   live-game-run's variables (the lock, its timeouts) apply to each pass.
 #
 # Usage: itj-impure-tests [TEST_NAME | --files FILE,FILE...]
 # With no argument, runs every test. With a name, runs only that test (still
@@ -21,21 +17,10 @@
 # A run has up to two passes, each one install and one reload: the code pass
 # installs HelloWorld, and the claim pass installs ClaimTests without it, so
 # HelloWorld's gameplay code never changes a claim test's level
-# (Docs/Adr/0008-claim-tests-run-only-when-their-page-changes.md).
-lockFile=${ITJ_GAME_LOCK_FILE:-${COTN_LOCAL_MODS_DIR%/}/itj-game.lock}
-lockTimeout=${ITJ_GAME_LOCK_TIMEOUT_SECONDS:-120}
-
-exec 9>>"$lockFile"
-if ! flock --timeout "$lockTimeout" 9; then
-        echo "itj-impure-tests: the game is busy; gave up after ${lockTimeout}s waiting for $lockFile. Holder:" >&2
-        cat "$lockFile" >&2
-        exit 1
-fi
-echo "pid=$$ command=itj-impure-tests started=$(date -Is)" >"$lockFile"
-
+# (Docs/Adr/0008-claim-tests-run-only-when-their-page-changes.md). Another
+# caller may use the game between the passes, which is safe because each pass
+# reinstalls the whole bundle (Docs/Adr/0009-one-module-owns-the-live-game-instance.md).
 modsRoot="${ITJ_MODS_ROOT:-$(git rev-parse --show-toplevel)/Mods}"
-suiteTimeoutSeconds=${ITJ_SUITE_TIMEOUT_SECONDS:-900}
-suiteStallSeconds=${ITJ_SUITE_STALL_SECONDS:-120}
 
 # The test files of each pass, as itj-impure-scope.bash also finds them.
 claimFiles=()
@@ -63,49 +48,29 @@ nameMissing=0
 runPass() {
         local selection=$1 expected=$2
         shift 2
-        local baseline waitStatus newOutput resultLines duplicates
+        local runStatus newOutput resultLines duplicates
         nameMissing=0
-        baseline=$(wc -l <"$COTN_LOG") || return 1
 
-        # The framework reads both from this file in the bundle. install-mods
-        # can create any file with any content, so it takes the path and
-        # content in its generic ITJ_BUNDLE_EXTRA_* variables. The expected
-        # files make the suite wait out the reload batches of a changed mod
-        # set; see EXPECT_TIMEOUT_TICKS in TestFramework/api.lua.
-        export ITJ_BUNDLE_EXTRA_FILE="TestFramework/selected-test.txt"
-        export ITJ_BUNDLE_EXTRA_CONTENT="expect: $expected
-$selection"
-
-        # Installing appends a timestamp comment to api.lua, rather than to an
-        # entry script. api.lua is the module every mod under test requires at
-        # load-time to register its tests, so changing it (forcing a reload)
-        # cascades a reload of every mod that successfully required it,
-        # re-running their registerTest() calls. This also ensures the suite
-        # always reruns even if there are no new changes.
-        export ITJ_BUNDLE_RELOAD_TRIGGER="TestFramework/api.lua"
+        # The framework reads the expected files and the selection from this
+        # file in the bundle. The expected files make the suite wait out the
+        # reload batches of a changed mod set; see EXPECT_TIMEOUT_TICKS in
+        # TestFramework/api.lua.
+        #
+        # The reload goes through api.lua, rather than an entry script. api.lua
+        # is the module every mod under test requires at load-time to register
+        # its tests, so changing it cascades a reload of every mod that
+        # successfully required it, re-running their registerTest() calls, and
+        # the suite reruns even with no new changes.
+        #
         # runPass runs in a `||` list, where errexit is off, so check each step.
-        install-mods "$@" TestFramework || return 1
-
-        # Wait for the tests mod's completion sentinel, rather than a hardcoded
-        # sleep or a quiet-period guess. A game that crashed or hung stops
-        # logging, so a log silent for suiteStallSeconds also ends the wait; the
-        # longest gap between two log lines inside a healthy run was 36 s,
-        # hence 120.
-        waitStatus=0
-        SECONDS=0
-        wait_for_log "$baseline" "[TestFramework] Test suite completed" "$suiteTimeoutSeconds" "$suiteStallSeconds" || waitStatus=$?
-        if ((waitStatus == 1)); then
-                echo "itj-impure-tests: timed out waiting for test suite completion" >&2
-        elif ((waitStatus == 2)); then
-                echo "itj-impure-tests: game not responding (no new NecroDancer.log line for ${suiteStallSeconds}s); restart the game and re-run. Last log lines:" >&2
-                tail -n 20 "$COTN_LOG" >&2
-        fi
-
-        newOutput="$(tail -n "+$((baseline + 1))" "$COTN_LOG")"
+        runStatus=0
+        newOutput=$(live-game-run --until "[TestFramework] Test suite completed" --reload TestFramework/api.lua --file "TestFramework/selected-test.txt=expect: $expected
+$selection" "$@" TestFramework) || runStatus=$?
         echo "$newOutput"
-        echo "itj-impure-tests: the pass of $* took ${SECONDS} of ${suiteTimeoutSeconds} s"
 
-        if ((waitStatus != 0)); then
+        # live-game-run has already said why on stderr, including the restart
+        # instruction when the game stopped responding.
+        if ((runStatus != 0)); then
                 echo "Test suite did not complete"
                 return 1
         fi

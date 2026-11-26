@@ -59,19 +59,20 @@ than silently overriding it.
   a new branch runs everything once, on its tip. During
   a live run, avoid touching suite paths in commits, or use `--no-verify` and
   re-run the checks at the end.
-* `nix run .#itj-impure-tests` first takes an advisory `flock` on the one game
-  instance. If another run holds it, it waits, then fails naming the holder
-  before installing anything. Everything that runs the tests, hooks included,
-  goes through it. `nix flake check` tests the lock without a game. The lock
-  file, the timeouts and their variables are in the header of
-  `Mods/itj-impure-tests.bash`.
-* A crashed or hung game logs nothing, so a run whose `NecroDancer.log` stops
+* Everything that drives the live game goes through `live-game-run` (`nix
+  run .#live-game-run`; ADR 0009). Each call takes an advisory `flock` on the
+  one game instance for its own install and wait, so a test run locks once
+  per pass. If another caller holds it, it
+  waits, then fails naming the holder before installing anything. `nix flake
+  check` tests the lock without a game. The lock file, the timeouts and their
+  variables are in the header of `Mods/live-game-run.bash`.
+* A crashed or hung game logs nothing, so a call whose `NecroDancer.log` stops
   growing fails with "game not responding" and frees the lock. Restarting the
   game is the user's job; agents cannot reach it from the sandbox.
 * Scripts act on the checkout they are run in, found from `git rev-parse
   --show-toplevel`, never from the workspace's `ITJ_FLAKE_ROOT`, so a git
   worktree installs and tests its own mods. `ITJ_MODS_ROOT` overrides the
-  directory `install-mods` copies from.
+  directory `live-game-run` installs from.
 * `build-format` formats all code. Typically this does not need to be used; it
   is done automatically as part of a pre-commit hook.
 

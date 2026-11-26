@@ -1,5 +1,5 @@
 # The Mods context's flake outputs: the mod zips, the offline checks (lint,
-# layout, and each test-*.lua / test-*.bash), the install-mods,
+# layout, and each test-*.lua / test-*.bash), the live-game-run,
 # itj-impure-tests and itj-impure-scope apps, and the dev shell, whose
 # shellHook locates the game's log and mods directory. `liveGame` is the part
 # GameData reuses to run a mod in the live game.
@@ -102,8 +102,8 @@ let
                         '';
 
         # Installs mods from the source tree (not the store, which only
-        # sees git-tracked files) into the game as one bundle mod. See
-        # `Mods/install-mods.bash`.
+        # sees git-tracked files) into the game as one bundle mod. Internal to
+        # `liveGameRun`. See `Mods/install-mods.bash`.
         installMods = pkgs.writeShellApplication {
                 name = "install-mods";
                 runtimeInputs = [
@@ -120,7 +120,40 @@ let
         # user, via this specific Proton prefix (id 247080).
         cotnLogPath = "/home/i/.local/share/Steam/steamapps/common/Crypt of the NecroDancer/NecroDancer64/NecroDancer.log";
 
-        # Shell function shared by the live-game apps. `wait_for_log BASELINE
+        # The one module that drives the live game: takes the game-instance
+        # lock, installs, forces a reload, and can wait for a log line. Impure,
+        # so it lives in `apps`. See `Mods/live-game-run.bash` and
+        # Docs/Adr/0009-one-module-owns-the-live-game-instance.md.
+        liveGameRun = pkgs.writeShellApplication {
+                name = "live-game-run";
+                runtimeInputs = [
+                        pkgs.coreutils
+                        pkgs.gnugrep
+                        pkgs.util-linux
+                        installMods
+                ];
+                text = builtins.readFile ./live-game-run.bash;
+        };
+
+        # Tests the lock, the wait and the install options against a fake
+        # game log; see `Mods/test-live-game-run.bash`.
+        liveGameRunTest =
+                pkgs.runCommand "cotn-live-game-run-test"
+                        {
+                                nativeBuildInputs = [
+                                        liveGameRun
+                                        pkgs.coreutils
+                                        pkgs.gnugrep
+                                        pkgs.util-linux
+                                ];
+                        }
+                        ''
+                                bash ${./test-live-game-run.bash}
+                                touch "$out"
+                        '';
+
+        # Temporary: the scrape's copy of the wait, until it moves to
+        # `live-game-run` (ADR 0009). Shell function for the scrape. `wait_for_log BASELINE
         # SENTINEL [TIMEOUT_SECONDS [STALL_SECONDS]]` polls the `NecroDancer.log`
         # lines after line BASELINE for SENTINEL. It returns 1 if SENTINEL
         # doesn't appear within TIMEOUT_SECONDS (default 60), and 2 if the log
@@ -152,8 +185,8 @@ let
                 }
         '';
 
-        # The single unit-test entrypoint: takes the game-instance lock,
-        # installs the mods, runs the tests and prints the results. Impure
+        # The single unit-test entrypoint: runs each pass through
+        # `live-game-run` and judges the results. Impure
         # (needs a running, native Steam/Proton CotN instance and a live mods
         # directory), so it lives in `apps` rather than `checks`: exposed as
         # `nix run .#itj-impure-tests`. See `Mods/itj-impure-tests.bash`.
@@ -163,19 +196,15 @@ let
                         pkgs.coreutils
                         pkgs.git
                         pkgs.gnugrep
-                        pkgs.util-linux
-                        installMods
+                        liveGameRun
                 ];
-                text = ''
-                        ${waitForLog}
-                        ${builtins.readFile ./itj-impure-tests.bash}
-                '';
+                text = builtins.readFile ./itj-impure-tests.bash;
         };
 
-        # Tests the entrypoint's lock without a live game; see
-        # `Mods/test-itj-impure-tests-lock.bash`.
-        impureTestsLockTest =
-                pkgs.runCommand "cotn-impure-tests-lock-test"
+        # Tests the entrypoint's verdicts against a fake game log, through the
+        # real `live-game-run`; see `Mods/test-itj-impure-tests.bash`.
+        impureTestsTest =
+                pkgs.runCommand "cotn-impure-tests-test"
                         {
                                 nativeBuildInputs = [
                                         impureTests
@@ -185,7 +214,7 @@ let
                                 ];
                         }
                         ''
-                                bash ${./test-itj-impure-tests-lock.bash}
+                                bash ${./test-itj-impure-tests.bash}
                                 touch "$out"
                         '';
 
@@ -215,7 +244,11 @@ in
 {
         # What other modules need to drive the live game; not merged into the
         # flake's outputs.
-        liveGame = { inherit installMods waitForLog; };
+        liveGame = {
+                inherit liveGameRun;
+                # Temporary, until the scrape moves to `live-game-run`.
+                inherit installMods waitForLog;
+        };
 
         packages = {
                 hello-world-mod = helloWorldModZip;
@@ -228,15 +261,16 @@ in
                 claim-tests-layout = claimTestsLayout;
                 bytecode-api = bytecodeApiTest;
                 bundle-layout = bundleLayoutTest;
-                impure-tests-lock = impureTestsLockTest;
+                live-game-run = liveGameRunTest;
+                impure-tests = impureTestsTest;
                 impure-scope = impureScopeTest;
         };
 
         apps = {
-                install-mods = {
+                live-game-run = {
                         type = "app";
-                        program = "${installMods}/bin/install-mods";
-                        meta.description = "Install the named mods into the game as one bundle mod: nix run .#install-mods -- Foo Bar";
+                        program = "${liveGameRun}/bin/live-game-run";
+                        meta.description = "Lock the game, install the named mods as one bundle mod and reload: nix run .#live-game-run -- [--until LINE] Foo Bar";
                 };
 
                 itj-impure-tests = {
@@ -255,7 +289,7 @@ in
         devShell = pkgs.mkShell {
                 buildInputs = [
                         impureTests
-                        installMods
+                        liveGameRun
 
                         # For packaging mods
                         pkgs.zip

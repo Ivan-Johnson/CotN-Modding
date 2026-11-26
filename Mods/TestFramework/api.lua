@@ -102,7 +102,7 @@ local function callerFile()
 	return message:match("([^/]*):%d+: x$")
 end
 
--- Selects which tests run; `Mods/itj-impure-tests.bash` has install-mods write
+-- Selects which tests run; `Mods/itj-impure-tests.bash` has live-game-run write
 -- it, and without it the whole suite runs. A line `expect: a.lua b.lua` names
 -- the files that must have registered a test before the suite starts. Of the
 -- other lines, the first non-empty one is the selection: a bare line is the

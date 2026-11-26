@@ -2,9 +2,10 @@
 
 The game only loads mods it already has enabled; a new mod folder dropped into
 its mods directory is ignored until someone enables it in the Mods menu. To
-install and uninstall mods without that manual step, `install-mods` stages the
-chosen `Mods/<name>/` directories as subfolders of one generated bundle mod,
-which is enabled once by hand. Installing a different set replaces the
+install and uninstall mods without that manual step, `live-game-run` (through
+its internal `install-mods`; ADR 0009) stages the chosen `Mods/<name>/`
+directories as subfolders of one generated bundle mod, which is enabled once
+by hand. Installing a different set replaces the
 bundle's contents. Each mod stays a standalone `Mods/<name>/` so it can still
 be shared on its own.
 

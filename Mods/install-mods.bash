@@ -10,6 +10,9 @@
 # modules gain the bundle's name as a prefix. bundle-layout.lua, which also
 # does the rewriting, defines the form a mod must name modules in for that.
 #
+# Internal to live-game-run, which takes the game-instance lock around it
+# (ADR 0009); nothing else calls it.
+#
 # Usage: install-mods [MOD...]
 #
 # Environment:
@@ -74,6 +77,11 @@ jq -n \
 bundle-layout rewrite "$stage" "$bundleName" "${mods[@]}"
 
 if [[ -n ${ITJ_BUNDLE_RELOAD_TRIGGER:-} ]]; then
+	# A new file reloads nothing, so a misspelled trigger would wait in vain.
+	if [[ ! -f "$stage/$ITJ_BUNDLE_RELOAD_TRIGGER" ]]; then
+		echo "install-mods: the reload trigger $ITJ_BUNDLE_RELOAD_TRIGGER is not a file of the installed mods" >&2
+		exit 1
+	fi
 	echo "-- install-mods trigger $(date +%s%N)" >>"$stage/$ITJ_BUNDLE_RELOAD_TRIGGER"
 fi
 

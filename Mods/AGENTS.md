@@ -20,12 +20,14 @@ do not: each group's role and what it is coupled to.
   self-tests and the suite start.
 * `ScrapeGameData/`: the GameData context's scraper. Its `DATA` log lines are
   a format shared with `GameData/reassemble-scrape.bash`.
+* `live-game-run.bash`: the one way to drive the live game (ADR 0009). It
+  locks the game, installs, reloads and waits for a log line.
 * `install-mods.bash` and `bundle-layout.lua`: the dev install into one
-  bundle mod (ADR 0004). `bundle-layout.lua` also runs the `mods-layout`
-  check.
+  bundle mod (ADR 0004), internal to `live-game-run`. `bundle-layout.lua`
+  also runs the `mods-layout` check.
 * `itj-impure-tests.bash`: the live test run. It is coupled to
   `TestFramework/api.lua` both ways: it parses the result and completion
-  lines `api.lua` prints, and has `install-mods` write the
+  lines `api.lua` prints, and has `live-game-run` write the
   `selected-test.txt` that `api.lua` reads. `itj-impure-scope.bash` decides when `build-release` runs
   it.
 * `flake-module.nix`: wires everything above into packages, checks, apps and
@@ -54,11 +56,11 @@ do not: each group's role and what it is coupled to.
 ## Dev loop
 
 * `nix run .#itj-impure-tests` is the whole inner dev loop: in one pass it
-  installs `HelloWorld` and `TestFramework` with `install-mods`, and in a
-  second pass `ClaimTests` and `TestFramework`. Each pass forces
-  `TestFramework` to reload so its test run fires, waits for the suite, and
-  prints only the new `NecroDancer.log` lines. CotN live-reloads unpacked
-  mods, so no manual reload or log-tailing is needed. It's an `app`, not a
+  installs `HelloWorld` and `TestFramework` with `live-game-run`, and in a
+  second pass `ClaimTests` and `TestFramework`. Each pass locks the game,
+  forces `TestFramework` to reload so its test run fires, waits for the
+  suite, and prints only the new `NecroDancer.log` lines. CotN live-reloads
+  unpacked mods, so no manual reload or log-tailing is needed. It's an `app`, not a
   `check`, because it needs a running, native Steam/Proton CotN instance.
   Writing, linting and running a test: `AuthoredDocs/Src/testing.md`.
 * `luajit` is on `PATH` for running small Lua snippets.
@@ -76,9 +78,11 @@ do not: each group's role and what it is coupled to.
 * Each mod lives in `Mods/<name>/`, where `<name>` equals its `mod.json`
   `namespace` and `name`, and all mods declare one `synchronyVersion`, which
   the bundle copies (both enforced by the `mods-layout` check).
-* Development installs go through one bundle mod, `install-mods` (`nix run
-  .#install-mods -- Foo Bar`, or `install-mods Foo Bar` in the dev shell); why
-  and how: `Docs/Adr/0004-dev-installs-go-through-a-bundle-mod.md`. The bundle
+* Development installs go through one bundle mod, via `live-game-run` (`nix
+  run .#live-game-run -- Foo Bar`, or `live-game-run Foo Bar` in the dev
+  shell), which also locks the game for the install; why and how:
+  `Docs/Adr/0004-dev-installs-go-through-a-bundle-mod.md` and
+  `Docs/Adr/0009-one-module-owns-the-live-game-instance.md`. The bundle
   is enabled once by hand in the game's Mods menu.
 * Write a require of a mod's own modules as `require "<Mod>.<path>"` or
   `pcall(require, "<Mod>.<path>")`, so the install-time rewrite finds it; any

@@ -1,99 +1,20 @@
-# Behavior test for the unit-test entrypoint: its game-instance lock, its
-# stall detection and the mods each pass installs. Needs no live game: it
-# holds the lock from outside and runs the entrypoint against it.
-# Expects `itj-impure-tests` on PATH.
+# Behavior test for the unit-test entrypoint's verdicts and the mods each pass
+# installs. Needs no live game: it fakes the log and the mods directory, and
+# runs the entrypoint through the real `live-game-run`, whose own lock and wait
+# test-live-game-run.bash covers. Expects `itj-impure-tests` on PATH.
 set -u
 
 scratch=$(mktemp -d)
-lockFile="$scratch/game.lock"
 modsDir="$scratch/mods"
 mkdir "$modsDir"
 touch "$scratch/NecroDancer.log"
-holderPid=""
-trap '[ -n "$holderPid" ] && kill "$holderPid" 2>/dev/null; rm -rf "$scratch"' EXIT
+trap 'rm -rf "$scratch"' EXIT
 
-# An empty repo root makes the entrypoint's install step fail once it has the
-# lock, so it never touches a game.
-export ITJ_MODS_ROOT="$scratch/repo/Mods"
-export ITJ_GAME_LOCK_FILE="$lockFile"
+export ITJ_GAME_LOCK_FILE="$scratch/game.lock"
 export COTN_LOCAL_MODS_DIR="$modsDir"
 export COTN_LOG="$scratch/NecroDancer.log"
-mkdir -p "$ITJ_MODS_ROOT"
 
-# Takes the lock in the background, then holds it for $1 seconds. Returns once
-# the holder really holds it, so the test never races the holder's start.
-startHolder() {
-	rm -f "$scratch/held"
-	echo "pid=4242 command=fake-holder" >"$lockFile"
-	(
-		flock 8
-		touch "$scratch/held"
-		exec sleep "$1"
-	) 8>>"$lockFile" &
-	holderPid=$!
-	local tries=0
-	while [ ! -e "$scratch/held" ]; do
-		sleep 0.05
-		tries=$((tries + 1))
-		if ((tries > 200)); then
-			echo "FAIL: the holder never took the lock" >&2
-			exit 1
-		fi
-	done
-}
-
-# A caller that outwaits its timeout fails, names the holder, and installs
-# nothing.
-startHolder 30
-export ITJ_GAME_LOCK_TIMEOUT_SECONDS=1
-status=0
-stderr=$(itj-impure-tests 2>&1 >/dev/null) || status=$?
-
-if ((status == 0)); then
-	echo "FAIL: entrypoint succeeded while the lock was held" >&2
-	exit 1
-fi
-
-if ! grep -qF "fake-holder" <<<"$stderr"; then
-	echo "FAIL: failure did not name the holder; stderr was:" >&2
-	echo "$stderr" >&2
-	exit 1
-fi
-
-if [ -n "$(ls -A "$modsDir")" ]; then
-	echo "FAIL: something was installed before the lock was taken" >&2
-	exit 1
-fi
-kill "$holderPid"
-wait "$holderPid" 2>/dev/null
-
-# A caller whose timeout outlasts the holder waits, then takes the lock and
-# gets on to installing (which fails here, by design).
-startHolder 2
-export ITJ_GAME_LOCK_TIMEOUT_SECONDS=30
-start=$(date +%s)
-stderr=$(itj-impure-tests 2>&1 >/dev/null) || true
-elapsed=$(($(date +%s) - start))
-
-if grep -qF "the game is busy" <<<"$stderr"; then
-	echo "FAIL: the caller gave up instead of waiting; stderr was:" >&2
-	echo "$stderr" >&2
-	exit 1
-fi
-
-if ((elapsed < 1)); then
-	echo "FAIL: the caller did not wait for the holder (${elapsed}s)" >&2
-	exit 1
-fi
-
-if ! grep -qF "command=itj-impure-tests" "$lockFile"; then
-	echo "FAIL: the caller did not record itself as the holder" >&2
-	exit 1
-fi
-
-# A game whose log goes silent mid-run fails the holder fast, with the restart
-# instruction, and frees the lock. Needs an install that succeeds, so the repo
-# holds two minimal mods.
+# The repo holds two minimal mods, so each install succeeds.
 goodRepo="$scratch/good-repo"
 for mod in HelloWorld TestFramework; do
 	mkdir -p "$goodRepo/Mods/$mod"
@@ -101,21 +22,16 @@ for mod in HelloWorld TestFramework; do
 done
 touch "$goodRepo/Mods/TestFramework/api.lua"
 export ITJ_MODS_ROOT="$goodRepo/Mods"
-export ITJ_SUITE_STALL_SECONDS=2
-export ITJ_GAME_LOCK_TIMEOUT_SECONDS=5
-start=$(date +%s)
+export ITJ_GAME_STALL_SECONDS=2
+
+# A game whose log goes silent fails the run, and the restart instruction
+# reaches the user.
 status=0
 stderr=$(itj-impure-tests 2>&1 >/dev/null) || status=$?
-elapsed=$(($(date +%s) - start))
 
 if ((status != 1)); then
 	echo "FAIL: a silent log did not exit 1 (status $status); stderr was:" >&2
 	echo "$stderr" >&2
-	exit 1
-fi
-
-if ((elapsed > 6)); then
-	echo "FAIL: a silent log took ${elapsed}s to fail" >&2
 	exit 1
 fi
 
@@ -125,13 +41,8 @@ if ! grep -qF "game not responding" <<<"$stderr"; then
 	exit 1
 fi
 
-if ! flock --nonblock "$lockFile" true; then
-	echo "FAIL: the lock was still held after the stall" >&2
-	exit 1
-fi
-
-# A log that keeps growing is not a stall, even past the stall limit, and the
-# sentinel ends the wait.
+# A pass whose suite completes with 0 failures passes the run, even when the
+# log took longer than the stall limit in total.
 (
 	for _ in 1 2 3 4 5 6; do
 		sleep 1
@@ -206,4 +117,4 @@ if ! grep -qxF "file: weapons.lua" "$modsDir/DevBundle/TestFramework/selected-te
 	exit 1
 fi
 
-echo "lock test passed"
+echo "itj-impure-tests test passed"

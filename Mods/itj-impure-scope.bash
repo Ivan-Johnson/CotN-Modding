@@ -17,11 +17,14 @@
 root=${1:-$(git rev-parse --show-toplevel)}
 
 # The test harness: the framework, the scripts that install and run the
-# tests, and the flake that builds them. These win over the lists below.
+# tests and their offline tests, and the flake that builds them. These win over the lists below.
 harnessPrefixes=(
 	"Mods/TestFramework/"
 	"Mods/install-mods.bash"
+	"Mods/live-game-run.bash"
+	"Mods/test-live-game-run.bash"
 	"Mods/itj-impure-tests.bash"
+	"Mods/test-itj-impure-tests.bash"
 	"Mods/itj-impure-scope.bash"
 	"Mods/bundle-layout.lua"
 	"Mods/flake-module.nix"
