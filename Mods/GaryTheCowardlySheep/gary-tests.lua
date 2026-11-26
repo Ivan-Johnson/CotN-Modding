@@ -1,0 +1,99 @@
+local Action = require "necro.game.system.Action"
+local Entities = require "system.game.Entities"
+
+-- Optional dependency on TestFramework; see HelloWorld/tests.lua.
+local ok = pcall(require, "TestFramework.api")
+if not ok then
+	return
+end
+local fixtures = require "TestFramework.fixtures"
+local cowardlySheep = require "GaryTheCowardlySheep.GaryTheCowardlySheep"
+
+-- Each test plays Gary the Cowardly Sheep in no-beat mode on an open floor.
+-- Mary starts at (0,0) sharing Gary's tile; "up" is toward negative y. Two
+-- steps right leave Mary at (2,0) and Gary at (1,0) facing right, so his
+-- Fright zone is x in {-1, 0}, y in {-1, 0, 1}.
+
+local function sheep()
+	return Entities.getEntityByID(fixtures.player().characterWithFollower.followerID)
+end
+
+local function assertDead(what)
+	assert(sheep().killable.dead, what .. ": expected Gary to be dead")
+end
+
+local function assertAlive(what)
+	assert(not sheep().killable.dead, what .. ": expected Gary to be alive")
+end
+
+local function scene(name, actions, checks)
+	fixtures.scene({ name = name, character = cowardlySheep.CHARACTER, actions = actions, checks = checks })
+end
+
+scene("hostileEnemyBehindCoweringGaryFrightensHimToDeath", { "right", "right", "idle" }, {
+	[2] = function()
+		fixtures.assertAt(sheep(), 1, 0, "Gary trails Mary")
+		fixtures.spawn("Slime", 0, 1)
+	end,
+	[3] = function()
+		assertDead("a green slime two tiles away, in the Fright zone")
+	end,
+})
+
+-- Mary steps onto Gary's tile, which he does not leave, then into his Fright
+-- zone, while a green slime two tiles to his side keeps him Cowering.
+local function maryBacksIntoGary(name, prepare, verdict)
+	scene(name, { "right", "right", "left", "left" }, {
+		[2] = prepare,
+		[3] = function()
+			fixtures.assertAt(sheep(), 1, 0, "Gary stays put as Mary steps onto his tile")
+			assertAlive("Mary sharing Gary's tile")
+		end,
+		[4] = verdict,
+	})
+end
+
+maryBacksIntoGary("maryBehindCoweringGaryFrightensHimToDeath", function()
+	fixtures.spawn("Slime", 1, 2)
+end, function()
+	assertDead("Mary directly behind Gary while a slime is two tiles away")
+end)
+
+maryBacksIntoGary("enemyThreeTilesAwayLeavesGaryCalm", function()
+	fixtures.spawn("Slime", 1, 3)
+end, function()
+	assertAlive("Mary behind Gary while the only slime is three tiles away")
+end)
+
+maryBacksIntoGary("wallDoesNotShieldGaryFromCowering", function()
+	fixtures.spawn("Slime", 1, 2)
+	fixtures.wallColumn(1, 1, 1)
+end, function()
+	assertDead("Mary behind Gary while a slime two tiles away is behind a wall")
+end)
+
+maryBacksIntoGary("unprovokedShopkeeperLeavesGaryCalm", function()
+	fixtures.spawn("Shopkeeper", 1, 2)
+end, function()
+	assertAlive("Mary behind Gary while the only enemy near is an unprovoked shopkeeper")
+end)
+
+scene("unprovokedShopkeeperBehindGaryLeavesHimAlive", { "right", "right", "idle" }, {
+	[2] = function()
+		fixtures.spawn("Slime", 1, 2)
+		fixtures.spawn("Shopkeeper", 0, 0)
+	end,
+	[3] = function()
+		assertAlive("an unprovoked shopkeeper in the Fright zone of a Cowering Gary")
+	end,
+})
+
+scene("garyFacingDiagonallyHasNoFrightZone", { "right", "right", "idle" }, {
+	[2] = function()
+		sheep().facingDirection.direction = Action.Direction.UP_RIGHT
+		fixtures.spawn("Slime", 0, 1)
+	end,
+	[3] = function()
+		assertAlive("a slime diagonally behind Gary while he faces diagonally")
+	end,
+})

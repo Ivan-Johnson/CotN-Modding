@@ -27,10 +27,15 @@ by taxicab distance, regardless of walls. It changes nothing about how Gary
 moves or acts, and does not exist in the vanilla game.
 _Avoid_: Scared, afraid, frightened
 
+**Facing**:
+The direction of **Gary**'s most recent move. He has none until he first
+moves.
+_Avoid_: Heading, orientation
+
 **Fright zone**:
-The 3-wide, 2-deep block of tiles directly behind **Gary**'s cardinal facing,
-highlighted red while he **Cowers**. Gary has no Fright zone while facing
-diagonally.
+The 3-wide, 2-deep block of tiles directly behind **Gary**'s **Facing**,
+highlighted red while he **Cowers**. Gary has no Fright zone while his
+Facing is diagonal or before he has one.
 _Avoid_: Behind zone, danger zone
 
 **Death by fright**:
