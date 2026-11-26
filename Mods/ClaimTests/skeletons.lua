@@ -61,8 +61,10 @@ local function sequence(...)
 end
 
 -- Each type has the table's HP and damage, and chases like a Skeleton: one
--- next to the player hits on beats 3 and 5, and one three tiles away wakes
--- and steps in on beats 1 and 3.
+-- next to the player hits on beats 3 and 5, and one in plain sight three
+-- tiles away steps in on beats 1 and 3. Each is a sleeper: one four tiles
+-- away never moves. The full rules for when sleepers wake are enemies.lua's
+-- to back.
 local STATS = {
 	Skeleton = { hp = 1, damage = 1 },
 	Skeleton2 = { hp = 2, damage = 3 },
@@ -73,6 +75,7 @@ for type, stats in pairs(STATS) do
 		return {
 			near = fixtures.spawn(type, 1, 0),
 			far = fixtures.spawn(type, -3, 0),
+			asleep = fixtures.spawn(type, 0, -4),
 		}
 	end, sequence("idle", 5), {
 		[1] = function(things)
@@ -87,8 +90,9 @@ for type, stats in pairs(STATS) do
 			assertAt(things.far, -1, 0, "second step")
 			assert(health() == 12 - stats.damage, "one hit")
 		end,
-		[5] = function()
+		[5] = function(things)
 			assert(health() == 12 - 2 * stats.damage, "a second hit two beats later")
+			assertAt(things.asleep, 0, -4, "four tiles away sleeps")
 		end,
 	})
 end

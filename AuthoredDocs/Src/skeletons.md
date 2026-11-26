@@ -9,9 +9,11 @@ Stats columns: [enemies.md](./enemies.md#stats-tables).
 | `Skeleton2` | 2 | 2 | 3 | 2 |
 | `Skeleton3` | 2 | 3 | 4 | 3 |
 
-* **Chasing.** All three wake when you come within 3 tiles and then chase you
-  one tile every second beat, as [enemies.md](./enemies.md#movement)
-  describes. Next to you they hit every second beat.
+* **Chasing.** All three are sleepers, which wake as
+  [enemies.md](./enemies.md#when-enemies-act) describes. Once awake, they
+  chase you one tile every second beat, as
+  [enemies.md](./enemies.md#movement) describes. Next to you they hit every
+  second beat.
 * **Losing the head.** The hit that leaves a `Skeleton2` or `Skeleton3` on 1
   HP turns it into a `Skeleton2Headless` or `Skeleton3Headless`: the first
   dagger hit on a `Skeleton2`, the second on a `Skeleton3`. The first hit on
