@@ -77,4 +77,4 @@ damage at every enemy in a cone, one tile wide ahead, three tiles wide two
 ahead and five tiles wide three ahead, and knocks you back one tile.
 Afterwards it only hits the tile ahead, for 2.
 
-Where weapons were found: [chests-and-loot.md](./chests-and-loot.md).
+Which chests hold weapons: [chests-and-loot.md](./chests-and-loot.md).
