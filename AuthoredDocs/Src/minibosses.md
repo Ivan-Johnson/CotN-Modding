@@ -1,8 +1,9 @@
 # Minibosses
 
 For players. The natural miniboss that guards a level's stairs; which one
-appears differs between runs. Stats columns: [enemies.md](./enemies.md#stats-tables). What the stairs do when it dies:
-[stairs-and-levels.md](./stairs-and-levels.md).
+appears differs between runs. Stats columns:
+[enemies.md](./enemies.md#stats-tables). Which ones can guard each level, and
+what the stairs do when one dies: [stairs-and-levels.md](./stairs-and-levels.md).
 
 | Type | Speed | HP | Damage | Hits to kill |
 |------|-------|----|--------|--------------|
@@ -27,10 +28,6 @@ appears differs between runs. Stats columns: [enemies.md](./enemies.md#stats-tab
   first dagger hit and not on the next two beats; the third hit killed it.
   That is one attack in three adjacent beats. One fight only.
 * With `ArmorLeather` a `Minotaur` hit for 3 instead of 4 (once).
-* The 1-3 stairs room held a `Minotaur2`, two `Skeleton2`, two `Skeleton3`, a
-  `Ghost`, a `Bat`, a `Monkey2` and slimes, which were all still until the
-  player came within 3 tiles of the corridor mouth. Then within 3 beats the
-  `Minotaur2` dug through a `DirtWall` at (14,6) and stood adjacent.
 * `Minotaur2` was not fought; whether it attacks as `Minotaur` does is
   unknown.
 
@@ -45,7 +42,6 @@ appears differs between runs. Stats columns: [enemies.md](./enemies.md#stats-tab
   other ranged attack was seen.
 * A bomb kills a `Dragon` without damage to the player; see
   [bombs.md](./bombs.md).
-* A `FollowerSnowbro` on the dragon's tile blocks the player's melee; see
+* The Ice Spirit's snowman against a dragon:
   [action-items.md](./action-items.md).
-* `Dragon2` (a 1-3 stairs room and a 1-4 start room) was only seen, not
-  fought.
+* `Dragon2` was not fought.
