@@ -5,6 +5,7 @@ description: >-
   by live unit tests. Use when writing, rewriting or fact-checking a page under
   `AuthoredDocs/Src/` about how the game works: an enemy, item, weapon, trap,
   control, or any rule a player relies on.
+argument-hint: "<page or mechanic, e.g. traps.md>"
 ---
 # Document a game mechanic
 
