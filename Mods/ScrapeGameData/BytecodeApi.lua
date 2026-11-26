@@ -7,8 +7,8 @@
 -- to it is one member. Names starting with "_" and everything that is not
 -- reachable from the returned table are private and left out.
 --
--- Pure Lua with no game dependencies, so `Mods/test-bytecode-api.lua` can run
--- it under plain LuaJIT.
+-- Pure Lua with no game dependencies, so
+-- `Mods/LiveGame/test-bytecode-api.lua` can run it under plain LuaJIT.
 local BytecodeApi = {}
 
 local byte = string.byte

@@ -36,8 +36,9 @@ installed mod gains the bundle's name as a prefix. `install-mods` rewrites
   also `pcall(require, …)`); the rewrite touches nothing else, and comments
   are ignored. Dynamic requires built by concatenation fail the check.
 * The rules, the rewrite, and the dependency refusal below live in one place,
-  `Mods/bundle-layout.lua`, which tokenizes the Lua instead of matching text.
-  The `mods-layout` check and the `bundle-layout` fixture test run it.
+  `Mods/LiveGame/bundle-layout.lua`, which tokenizes the Lua instead of
+  matching text. The `mods-layout` check and the `bundle-layout` fixture test
+  run it.
 * `install-mods` refuses to install a mod that depends on another mod from
   `Mods/` that is not also being installed, since a bundled mod can only find
   mods bundled with it.

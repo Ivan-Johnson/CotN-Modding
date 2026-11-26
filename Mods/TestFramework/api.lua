@@ -24,9 +24,9 @@ local FIXED_SEED = 20240101
 -- so durations are in ticks, which run over 1000 a second.
 local tickCount = 0
 
--- Prints a PASS/FAIL/XFAIL/XPASS line, which `Mods/itj-impure-tests.bash`
--- parses into the run's results. elapsedTicks is optional; when given, the
--- line ends with the duration.
+-- Prints a PASS/FAIL/XFAIL/XPASS line, which
+-- `Mods/LiveGame/itj-impure-tests.bash` parses into the run's results.
+-- elapsedTicks is optional; when given, the line ends with the duration.
 local function log(status, name, reason, elapsedTicks)
 	local line = string.format("[TestFramework] %s %s", status, name)
 	if reason then
@@ -102,12 +102,13 @@ local function callerFile()
 	return message:match("([^/]*):%d+: x$")
 end
 
--- Selects which tests run; `Mods/itj-impure-tests.bash` has live-game-run write
--- it, and without it the whole suite runs. A line `expect: a.lua b.lua` names
--- the files that must have registered a test before the suite starts. Of the
--- other lines, the first non-empty one is the selection: a bare line is the
--- exact name of one test, and `file: a.lua b.lua` selects every test
--- registered by those files; with none, every test runs.
+-- Selects which tests run; `Mods/LiveGame/itj-impure-tests.bash` has
+-- live-game-run write it, and without it the whole suite runs. A line
+-- `expect: a.lua b.lua` names the files that must have registered a test
+-- before the suite starts. Of the other lines, the first non-empty one is the
+-- selection: a bare line is the exact name of one test, and
+-- `file: a.lua b.lua` selects every test registered by those files; with
+-- none, every test runs.
 local SELECTED_TEST_FILE = findOwnDirectory() .. "/selected-test.txt"
 
 -- Splits a list of basenames into a set.
@@ -202,7 +203,7 @@ end)
 local function runNextTest()
 	currentTest = table.remove(tests, 1)
 	if not currentTest then
-		-- `Mods/itj-impure-tests.bash` greps this exact "N failure(s)"
+		-- `Mods/LiveGame/itj-impure-tests.bash` greps this exact "N failure(s)"
 		-- phrasing to decide its own exit code, so keep the wording in sync
 		-- with it.
 		print(string.format(

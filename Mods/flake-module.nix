@@ -35,7 +35,7 @@ let
         bundleLuajit = pkgs.luajit.withPackages (p: [ p.cjson ]);
 
         # Validates and rewrites the bundle layout; the one home of the rules
-        # `install-mods` relies on. See `Mods/bundle-layout.lua`.
+        # `install-mods` relies on. See `Mods/LiveGame/bundle-layout.lua`.
         bundleLayout = pkgs.writeShellApplication {
                 name = "bundle-layout";
                 runtimeInputs = [
@@ -44,7 +44,7 @@ let
                         bundleLuajit
                 ];
                 text = ''
-                        exec luajit ${./bundle-layout.lua} "$@"
+                        exec luajit ${./LiveGame/bundle-layout.lua} "$@"
                 '';
         };
 
@@ -75,7 +75,7 @@ let
 
         # Tests the layout rules and the rewrite on fixtures, in-process and
         # through the real `bundle-layout` wrapper; see
-        # `Mods/test-bundle-layout.lua`.
+        # `Mods/LiveGame/test-bundle-layout.lua`.
         bundleLayoutTest =
                 pkgs.runCommand "cotn-bundle-layout-test"
                         {
@@ -86,24 +86,24 @@ let
                                 ];
                         }
                         ''
-                                cd ${./.}
+                                cd ${./LiveGame}
                                 luajit test-bundle-layout.lua
                                 touch "$out"
                         '';
 
         # Runs the bytecode parser behind `ScrapeGameData` under plain
-        # LuaJIT; see `Mods/test-bytecode-api.lua`.
+        # LuaJIT; see `Mods/LiveGame/test-bytecode-api.lua`.
         bytecodeApiTest =
                 pkgs.runCommand "cotn-bytecode-api-test" { nativeBuildInputs = [ pkgs.luajit ]; }
                         ''
                                 cd ${./.}
-                                luajit test-bytecode-api.lua
+                                luajit LiveGame/test-bytecode-api.lua
                                 touch "$out"
                         '';
 
         # Installs mods from the source tree (not the store, which only
         # sees git-tracked files) into the game as one bundle mod. Internal to
-        # `liveGameRun`. See `Mods/install-mods.bash`.
+        # `liveGameRun`. See `Mods/LiveGame/install-mods.bash`.
         installMods = pkgs.writeShellApplication {
                 name = "install-mods";
                 runtimeInputs = [
@@ -113,7 +113,7 @@ let
                         pkgs.jq
                         pkgs.rsync
                 ];
-                text = builtins.readFile ./install-mods.bash;
+                text = builtins.readFile ./LiveGame/install-mods.bash;
         };
 
         # Only correct while CotN runs natively on this machine, under this
@@ -122,7 +122,7 @@ let
 
         # The one module that drives the live game: takes the game-instance
         # lock, installs, forces a reload, and can wait for a log line. Impure,
-        # so it lives in `apps`. See `Mods/live-game-run.bash` and
+        # so it lives in `apps`. See `Mods/LiveGame/live-game-run.bash` and
         # Docs/Adr/0009-one-module-owns-the-live-game-instance.md.
         liveGameRun = pkgs.writeShellApplication {
                 name = "live-game-run";
@@ -132,11 +132,11 @@ let
                         pkgs.util-linux
                         installMods
                 ];
-                text = builtins.readFile ./live-game-run.bash;
+                text = builtins.readFile ./LiveGame/live-game-run.bash;
         };
 
         # Tests the lock, the wait and the install options against a fake
-        # game log; see `Mods/test-live-game-run.bash`.
+        # game log; see `Mods/LiveGame/test-live-game-run.bash`.
         liveGameRunTest =
                 pkgs.runCommand "cotn-live-game-run-test"
                         {
@@ -148,7 +148,7 @@ let
                                 ];
                         }
                         ''
-                                bash ${./test-live-game-run.bash}
+                                bash ${./LiveGame/test-live-game-run.bash}
                                 touch "$out"
                         '';
 
@@ -156,7 +156,8 @@ let
         # `live-game-run` and judges the results. Impure
         # (needs a running, native Steam/Proton CotN instance and a live mods
         # directory), so it lives in `apps` rather than `checks`: exposed as
-        # `nix run .#itj-impure-tests`. See `Mods/itj-impure-tests.bash`.
+        # `nix run .#itj-impure-tests`. See
+        # `Mods/LiveGame/itj-impure-tests.bash`.
         impureTests = pkgs.writeShellApplication {
                 name = "itj-impure-tests";
                 runtimeInputs = [
@@ -165,11 +166,11 @@ let
                         pkgs.gnugrep
                         liveGameRun
                 ];
-                text = builtins.readFile ./itj-impure-tests.bash;
+                text = builtins.readFile ./LiveGame/itj-impure-tests.bash;
         };
 
         # Tests the entrypoint's verdicts against a fake game log, through the
-        # real `live-game-run`; see `Mods/test-itj-impure-tests.bash`.
+        # real `live-game-run`; see `Mods/LiveGame/test-itj-impure-tests.bash`.
         impureTestsTest =
                 pkgs.runCommand "cotn-impure-tests-test"
                         {
@@ -181,20 +182,21 @@ let
                                 ];
                         }
                         ''
-                                bash ${./test-itj-impure-tests.bash}
+                                bash ${./LiveGame/test-itj-impure-tests.bash}
                                 touch "$out"
                         '';
 
         # Tells `build-release` whether a change can affect the live suite;
-        # see `Mods/itj-impure-scope.bash`.
+        # see `Mods/LiveGame/itj-impure-scope.bash`.
         impureScope = pkgs.writeShellApplication {
                 name = "itj-impure-scope";
                 runtimeInputs = [ pkgs.git ];
-                text = builtins.readFile ./itj-impure-scope.bash;
+                text = builtins.readFile ./LiveGame/itj-impure-scope.bash;
         };
 
         # Feeds the classifier fixture path lists and checks its prefix lists
-        # against the repo's tracked files; see `Mods/test-itj-impure-scope.bash`.
+        # against the repo's tracked files; see
+        # `Mods/LiveGame/test-itj-impure-scope.bash`.
         impureScopeTest =
                 pkgs.runCommand "cotn-impure-scope-test"
                         {
@@ -204,7 +206,7 @@ let
                                 ];
                         }
                         ''
-                                bash ${./test-itj-impure-scope.bash} ${../.}
+                                bash ${./LiveGame/test-itj-impure-scope.bash} ${../.}
                                 touch "$out"
                         '';
 in

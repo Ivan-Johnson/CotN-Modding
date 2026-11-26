@@ -29,10 +29,11 @@ on most commits and pushes.
 * `HelloWorld` is never installed while claim tests run. A run that needs
   both kinds does two passes, which costs one more game reload.
 * A change to the harness (`Mods/TestFramework/`, the runner and install
-  scripts in `Mods/`, `Mods/flake-module.nix`, `flake.nix`, `flake.lock`)
-  runs every test. A path that no list names also runs every test, so that
-  the scope fails safe. The offline tests (`Mods/test-*`) are not harness:
-  `nix flake check` runs them, and the live suite never reads them.
+  scripts in `Mods/LiveGame/`, `Mods/flake-module.nix`, `flake.nix`,
+  `flake.lock`) runs every test. A path that no list names also runs every
+  test, so that the scope fails safe. The offline tests
+  (`Mods/LiveGame/test-*`) are not harness: `nix flake check` runs them, and
+  the live suite never reads them.
 * A push applies the same rule to each pushed commit. A manual
   `build-release` applies it to `git diff HEAD~`.
 * A game update changes no path in the repo, so it triggers no claim test.

@@ -20,11 +20,11 @@ root=${1:-$(git rev-parse --show-toplevel)}
 # tests, and the flake that builds them. These win over the lists below.
 harnessPrefixes=(
 	"Mods/TestFramework/"
-	"Mods/install-mods.bash"
-	"Mods/live-game-run.bash"
-	"Mods/itj-impure-tests.bash"
-	"Mods/itj-impure-scope.bash"
-	"Mods/bundle-layout.lua"
+	"Mods/LiveGame/install-mods.bash"
+	"Mods/LiveGame/live-game-run.bash"
+	"Mods/LiveGame/itj-impure-tests.bash"
+	"Mods/LiveGame/itj-impure-scope.bash"
+	"Mods/LiveGame/bundle-layout.lua"
 	"Mods/flake-module.nix"
 	"flake.nix"
 	"flake.lock"
@@ -41,11 +41,11 @@ harmlessPrefixes=(
 	"Mods/ScrapeGameData/"
 )
 
-# Mods/test-* are the offline tests that `nix flake check` runs; the live
-# suite never reads them.
+# Mods/LiveGame/test-* are the offline tests that `nix flake check` runs; the
+# live suite never reads them.
 harmlessGlobs=(
 	"*.md"
-	"Mods/test-*"
+	"Mods/LiveGame/test-*"
 	"open_files.txt"
 	"Tmp/*"
 )

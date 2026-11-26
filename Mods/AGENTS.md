@@ -20,22 +20,27 @@ do not: each group's role and what it is coupled to.
   self-tests and the suite start.
 * `ScrapeGameData/`: the GameData context's scraper. Its `DATA` log lines are
   a format shared with `GameData/reassemble-scrape.bash`.
-* `live-game-run.bash`: the one way to drive the live game (ADR 0009). It
-  locks the game, installs, reloads and waits for a log line.
-* `install-mods.bash` and `bundle-layout.lua`: the dev install into one
-  bundle mod (ADR 0004), internal to `live-game-run`. `bundle-layout.lua`
-  also runs the `mods-layout` check.
-* `itj-impure-tests.bash`: the live test run. It is coupled to
-  `TestFramework/api.lua` both ways: it parses the result and completion
-  lines `api.lua` prints, and has `live-game-run` write the
-  `selected-test.txt` that `api.lua` reads. `itj-impure-scope.bash` decides when `build-release` runs
-  it. Its last line totals the run's results, and `build-release` shows that
-  line when the run passes, so keep it last.
+* `LiveGame/`: the tooling that installs mods into the game and runs the
+  live tests, plus the offline tests. It is not a mod.
+  * `live-game-run.bash`: the one way to drive the live game (ADR 0009). It
+    locks the game, installs, reloads and waits for a log line.
+  * `install-mods.bash` and `bundle-layout.lua`: the dev install into one
+    bundle mod (ADR 0004), internal to `live-game-run`. `bundle-layout.lua`
+    also runs the `mods-layout` check.
+  * `itj-impure-tests.bash`: the live test run. It is coupled to
+    `TestFramework/api.lua` both ways: it parses the result and completion
+    lines `api.lua` prints, and has `live-game-run` write the
+    `selected-test.txt` that `api.lua` reads. `itj-impure-scope.bash`
+    decides when `build-release` runs it. Its last line totals the run's
+    results, and `build-release` shows that line when the run passes, so
+    keep it last.
+  * `test-<name>.*`: the offline test of `<name>`, run by `nix flake check`.
+    `test-bytecode-api.lua` tests `ScrapeGameData/BytecodeApi.lua`; it lives
+    here because everything under a mod's directory is installed into the
+    game. Changing one runs no live test (ADR 0008).
 * `flake-module.nix`: wires everything above into packages, checks, apps and
   the dev shell, and exports `liveGame` (`liveGameRun`) to
   `GameData/flake-module.nix`.
-* `test-<name>.*`: the offline test of `<name>`, run by `nix flake check`.
-  Changing one runs no live test (ADR 0008).
 
 ## API reference
 
@@ -97,7 +102,7 @@ do not: each group's role and what it is coupled to.
 * Write a require of a mod's own modules as `require "<Mod>.<path>"` or
   `pcall(require, "<Mod>.<path>")`, so the install-time rewrite finds it; any
   other string naming a mod's modules fails the `mods-layout` check. The
-  rules live in `bundle-layout.lua`; its fixture test is
+  rules live in `LiveGame/bundle-layout.lua`; its fixture test is
   `test-bundle-layout.lua`.
 
 ## Read when needed

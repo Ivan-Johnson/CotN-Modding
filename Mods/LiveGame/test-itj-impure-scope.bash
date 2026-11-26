@@ -30,9 +30,9 @@ expect none open_files.txt Tmp/scratch/notes.txt README.md
 expect none Mods/HelloWorld/notes.md
 
 # The offline tests run under `nix flake check`, never in the live suite.
-expect none Mods/test-live-game-run.bash Mods/test-itj-impure-tests.bash
-expect none Mods/test-itj-impure-scope.bash
-expect none Mods/test-bundle-layout.lua Mods/test-bytecode-api.lua
+expect none Mods/LiveGame/test-live-game-run.bash Mods/LiveGame/test-itj-impure-tests.bash
+expect none Mods/LiveGame/test-itj-impure-scope.bash
+expect none Mods/LiveGame/test-bundle-layout.lua Mods/LiveGame/test-bytecode-api.lua
 
 # A claim test file runs when it or its page changes, and not when it is gone.
 expect weapons.lua Mods/ClaimTests/weapons.lua
@@ -51,11 +51,11 @@ expect all Mods/ClaimTests/sub/weapons.lua
 expect all Mods/ClaimTests/mod.json
 expect all Mods/ClaimTests/weapons.lua Mods/TestFramework/api.lua
 expect all Mods/TestFramework/README.md
-expect all Mods/install-mods.bash
-expect all Mods/live-game-run.bash Mods/test-live-game-run.bash
-expect all Mods/itj-impure-tests.bash
-expect all Mods/itj-impure-scope.bash
-expect all Mods/bundle-layout.lua
+expect all Mods/LiveGame/install-mods.bash
+expect all Mods/LiveGame/live-game-run.bash Mods/LiveGame/test-live-game-run.bash
+expect all Mods/LiveGame/itj-impure-tests.bash
+expect all Mods/LiveGame/itj-impure-scope.bash
+expect all Mods/LiveGame/bundle-layout.lua
 expect all Mods/flake-module.nix flake.nix flake.lock
 expect all Docs/a.md Mods/unknown.txt
 expect all some/new/place.txt
@@ -64,8 +64,8 @@ expect all
 # Each listed prefix matches a tracked path, so a list cannot drift out of step
 # with the tree. Sourcing the classifier with no input only sets its lists and
 # prints `all`; it takes the root from this script's $1.
-# shellcheck source=Mods/itj-impure-scope.bash
-source "$root/Mods/itj-impure-scope.bash" </dev/null >/dev/null
+# shellcheck source=Mods/LiveGame/itj-impure-scope.bash
+source "$root/Mods/LiveGame/itj-impure-scope.bash" </dev/null >/dev/null
 if ((${#harnessPrefixes[@]} == 0 || ${#harmlessPrefixes[@]} == 0)); then
 	echo "FAIL: sourcing the classifier did not set its prefix lists" >&2
 	failures=$((failures + 1))

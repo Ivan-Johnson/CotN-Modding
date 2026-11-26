@@ -1,6 +1,6 @@
 -- Offline test for ScrapeGameData/BytecodeApi.lua. Compiles a fixture with
 -- plain LuaJIT, whose `string.dump` makes the same bytecode the game ships.
--- Run from this directory: luajit test-bytecode-api.lua
+-- Run from Mods/: luajit LiveGame/test-bytecode-api.lua
 package.path = "./?.lua;" .. package.path
 local BytecodeApi = require "ScrapeGameData.BytecodeApi"
 

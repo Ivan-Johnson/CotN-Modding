@@ -97,8 +97,8 @@ local function setText(set)
 	return table.concat(keys, " ")
 end
 
--- The inputs are the shapes `runPass` in `Mods/itj-impure-tests.bash` writes:
--- an `expect:` line, then the selection, which may be empty.
+-- The inputs are the shapes `runPass` in `Mods/LiveGame/itj-impure-tests.bash`
+-- writes: an `expect:` line, then the selection, which may be empty.
 api.registerTest({
 	name = "selectionParsing",
 	onLoad = function()
