@@ -210,7 +210,6 @@ readonly UNSWEPT_PLAYER_PAGES=(
 	shops.md
 	shrines.md
 	skeletons.md
-	slimes.md
 	stairs-and-levels.md
 	traps.md
 	zombies.md
