@@ -1,4 +1,6 @@
+local CurrentLevel = require "necro.game.level.CurrentLevel"
 local Entities = require "system.game.Entities"
+local GameSession = require "necro.client.GameSession"
 local Object = require "necro.game.object.Object"
 local Player = require "necro.game.character.Player"
 local Tile = require "necro.game.tile.Tile"
@@ -92,6 +94,99 @@ local function tileName(x, y)
 	return info and info.name or "nil"
 end
 
+local function whenOnLevel(mode, number, andThen)
+	if CurrentLevel.isLoading() or CurrentLevel.getNumber() ~= number or CurrentLevel.getMode().id ~= mode then
+		testsApi.afterTicks(10, function()
+			whenOnLevel(mode, number, andThen)
+		end)
+		return
+	end
+	testsApi.afterTicks(100, andThen)
+end
+
+local function countOnce(counts, seen, name)
+	if not seen[name] then
+		seen[name] = true
+		counts[name] = (counts[name] or 0) + 1
+	end
+end
+
+--[[
+Surveys the regular levels (floors 1 to 3) of one zone as Cadence, over
+`runs` runs with different seeds, and calls andThen(census). The runs are
+all-zones runs, or single-zone runs if singleZone is set (zone 1 only):
+census.levels is the number of levels surveyed, and census.tiles and
+census.entities map each tile and entity type name to the number of those
+levels that hold it. Give the test a timeoutTicks of about 1500 per run.
+]]
+local function zoneCensus(zone, runs, singleZone, andThen)
+	local mode = singleZone and GameSession.Mode.SingleZone or GameSession.Mode.AllZones
+	local census = { levels = 0, tiles = {}, entities = {} }
+	local run, floor = 0, 3
+	local function surveyLevel()
+		local seen = {}
+		for y = -80, 80 do
+			for x = -80, 80 do
+				local info = Tile.getInfo(x, y)
+				if info and info.name then
+					countOnce(census.tiles, seen, info.name)
+				end
+			end
+		end
+		for entity in Entities.entitiesWithComponents({ "position" }) do
+			countOnce(census.entities, seen, entity.name)
+		end
+		census.levels = census.levels + 1
+	end
+	local nextLevel
+	local function goToFloor()
+		local number = singleZone and floor or 4 * (zone - 1) + floor
+		if number ~= CurrentLevel.getNumber() then
+			GameSession.goToLevel(number)
+		end
+		whenOnLevel(mode, number, function()
+			surveyLevel()
+			nextLevel()
+		end)
+	end
+	nextLevel = function()
+		floor = floor + 1
+		if floor <= 3 then
+			goToFloor()
+			return
+		end
+		run = run + 1
+		floor = 1
+		if run > runs then
+			testsApi.setSeedOverride(nil)
+			andThen(census)
+			return
+		end
+		-- Each run gets different levels, the same ones every time.
+		local runSeed = 1000003 * run
+		testsApi.setSeedOverride(function(options)
+			return runSeed + (options.number or 0) * 7919
+		end)
+		GameSession.start({ mode = mode })
+		testsApi.afterTicks(50, function()
+			whenOnLevel(mode, 1, goToFloor)
+		end)
+	end
+	Player.setCharacterType(PLAYER_ID, "Cadence")
+	testsApi.afterTicks(100, nextLevel)
+end
+
+-- Asserts that each of names is a key of counts, such as a zoneCensus map.
+local function assertAllPresent(counts, names, what)
+	local missing = {}
+	for _, name in ipairs(names) do
+		if not counts[name] then
+			missing[#missing + 1] = name
+		end
+	end
+	assert(#missing == 0, "no " .. what .. " " .. table.concat(missing, ", "))
+end
+
 -- A list of count copies of value, e.g. repeated("idle", 4).
 local function repeated(value, count)
 	local list = {}
@@ -144,6 +239,7 @@ local function scene(spec)
 end
 
 return {
+	assertAllPresent = assertAllPresent,
 	assertAt = assertAt,
 	health = health,
 	openArena = openArena,
@@ -153,4 +249,5 @@ return {
 	spawn = spawn,
 	tileName = tileName,
 	wallColumn = wallColumn,
+	zoneCensus = zoneCensus,
 }

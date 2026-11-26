@@ -230,6 +230,10 @@ local function runNextTest()
 	TestFramework_startGameSession()
 end
 
+-- A function(options) that returns the seed to generate a level with in
+-- place of FIXED_SEED, or nil; see setSeedOverride.
+local seedOverride
+
 -- Pins the seed every test's level is generated with, which is what
 -- CurrentLevel.getSeed() reports and what determines level layout, and
 -- applies the current test's zone/character overrides, if any.
@@ -237,7 +241,7 @@ event.levelGenerate.add("TestFrameworkConfigureLevel", {}, function(ev)
 	if not ev.options then
 		return
 	end
-	ev.options.seed = FIXED_SEED
+	ev.options.seed = seedOverride and seedOverride(ev.options) or FIXED_SEED
 	if currentTest and currentTest.zone then
 		ev.options.zone = currentTest.zone
 	end
@@ -530,6 +534,13 @@ local function start()
 	end)
 end
 
+-- Makes the levels generated from now on use seedFunction(options) as their
+-- seed instead of the fixed seed, until called again with nil. A handler of
+-- its own cannot do this: the framework's handler may run after it.
+local function setSeedOverride(seedFunction)
+	seedOverride = seedFunction
+end
+
 return {
 	afterTicks = afterTicks,
 	callerFile = callerFile,
@@ -539,6 +550,7 @@ return {
 	parseSelection = parseSelection,
 	play = play,
 	registerTest = registerTest,
+	setSeedOverride = setSeedOverride,
 	start = start,
 	waitForFiles = waitForFiles,
 }

@@ -60,6 +60,11 @@ it as a regression test with real assertions.
 * To play the game step by step, mark the test `noBeat = true` and
   `async = true` and drive it with `api.play`. Check `fixtures.lua` before
   writing your own scene, wallColumn, health or assertAt helper.
+* To check what a zone's levels hold, survey them with `fixtures.zoneCensus`,
+  which generates the same set of seeded levels every time. A test that
+  wants other seeds than the fixed one sets them with
+  `api.setSeedOverride`: the framework's `levelGenerate` handler can run
+  after a test file's own, undoing its seed.
   `Mods/ClaimTests/ghost.lua` is a worked example.
 * No-beat mode stalls the traps whose effect lands a moment after the step
   onto them: every trap but the bounce trap. Idling never sets one off; a
