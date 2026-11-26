@@ -9,7 +9,7 @@
 #   ITJ_SUITE_STALL_SECONDS        fail once the log is silent this long
 #                                  (default 120)
 #
-# Usage: run-tests [TEST_NAME | --files FILE,FILE...]
+# Usage: itj-impure-tests [TEST_NAME | --files FILE,FILE...]
 # With a name, runs only that test (still from the fixed seed) and fails if no
 # registered test has it. With --files, runs only the tests registered by the
 # named test files (basenames, e.g. weapon-tests.lua), in registration order.

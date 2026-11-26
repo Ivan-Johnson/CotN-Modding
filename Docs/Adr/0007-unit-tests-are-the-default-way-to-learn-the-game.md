@@ -25,8 +25,8 @@ the answer is known.
 
 ## Consequences
 
-* Only one process may drive the game at a time, so `run-tests` takes a lock
-  on the game instance first; see the root `AGENTS.md`.
+* Only one process may drive the game at a time, so `itj-impure-tests` takes
+  a lock on the game instance first; see the root `AGENTS.md`.
 * An experiment that needs interactive steps must script them in the test's
   `onLoad`.
 * Game facts found by experiment go in `AuthoredDocs/Src/`, not in agent

@@ -1,6 +1,6 @@
 # Behavior test for the unit-test entrypoint's game-instance lock. Needs no
 # live game: it holds the lock from outside and runs the entrypoint against it.
-# Expects `run-tests` on PATH.
+# Expects `itj-impure-tests` on PATH.
 set -u
 
 scratch=$(mktemp -d)
@@ -46,7 +46,7 @@ startHolder() {
 startHolder 30
 export ITJ_GAME_LOCK_TIMEOUT_SECONDS=1
 status=0
-stderr=$(run-tests 2>&1 >/dev/null) || status=$?
+stderr=$(itj-impure-tests 2>&1 >/dev/null) || status=$?
 
 if ((status == 0)); then
 	echo "FAIL: entrypoint succeeded while the lock was held" >&2
@@ -71,7 +71,7 @@ wait "$holderPid" 2>/dev/null
 startHolder 2
 export ITJ_GAME_LOCK_TIMEOUT_SECONDS=30
 start=$(date +%s)
-stderr=$(run-tests 2>&1 >/dev/null) || true
+stderr=$(itj-impure-tests 2>&1 >/dev/null) || true
 elapsed=$(($(date +%s) - start))
 
 if grep -qF "the game is busy" <<<"$stderr"; then
@@ -104,7 +104,7 @@ export ITJ_SUITE_STALL_SECONDS=2
 export ITJ_GAME_LOCK_TIMEOUT_SECONDS=5
 start=$(date +%s)
 status=0
-stderr=$(run-tests 2>&1 >/dev/null) || status=$?
+stderr=$(itj-impure-tests 2>&1 >/dev/null) || status=$?
 elapsed=$(($(date +%s) - start))
 
 if ((status != 1)); then
@@ -141,7 +141,7 @@ fi
 ) &
 growerPid=$!
 status=0
-stdout=$(run-tests 2>&1) || status=$?
+stdout=$(itj-impure-tests 2>&1) || status=$?
 wait "$growerPid"
 
 if grep -qF "game not responding" <<<"$stdout"; then
@@ -164,7 +164,7 @@ fi
 ) &
 growerPid=$!
 status=0
-stdout=$(run-tests 2>&1) || status=$?
+stdout=$(itj-impure-tests 2>&1) || status=$?
 wait "$growerPid"
 
 if ((status == 0)); then

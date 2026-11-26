@@ -140,7 +140,7 @@ let
         # directory), so it lives in `apps` rather than `checks`: exposed as
         # `nix run .#itj-impure-tests`. See `Mods/itj-impure-tests.bash`.
         impureTests = pkgs.writeShellApplication {
-                name = "run-tests";
+                name = "itj-impure-tests";
                 runtimeInputs = [
                         pkgs.coreutils
                         pkgs.gnugrep
@@ -220,7 +220,7 @@ in
 
                 itj-impure-tests = {
                         type = "app";
-                        program = "${impureTests}/bin/run-tests";
+                        program = "${impureTests}/bin/itj-impure-tests";
                         meta.description = "Rsync mods into the game's local mods directory and run its automated test suite";
                 };
 

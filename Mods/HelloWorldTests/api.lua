@@ -24,7 +24,9 @@ local FIXED_SEED = 20240101
 -- durations are in ticks, which run over 1000 a second.
 local tickCount = 0
 
--- elapsedTicks is optional; when given, the line ends with the duration.
+-- Prints a PASS/FAIL/XFAIL/XPASS line, which `Mods/itj-impure-tests.bash`
+-- parses into the run's results. elapsedTicks is optional; when given, the
+-- line ends with the duration.
 local function log(status, name, reason, elapsedTicks)
 	local line = string.format("[HelloWorldTests] %s %s", status, name)
 	if reason then
@@ -100,10 +102,10 @@ local function callerFile()
 	return message:match("([^/]*):%d+: x$")
 end
 
--- Selects which tests run; written by the unit-test entrypoint, absent (so the
--- whole suite runs) otherwise. A bare line is the exact name of one test; a
--- line `file: a-tests.lua b-tests.lua` selects every test registered by those
--- files.
+-- Selects which tests run; `Mods/itj-impure-tests.bash` has install-mods write
+-- it for a selected run, and it is absent (so the whole suite runs) otherwise.
+-- A bare line is the exact name of one test; a line
+-- `file: a-tests.lua b-tests.lua` selects every test registered by those files.
 local SELECTED_TEST_FILE = findOwnDirectory() .. "/selected-test.txt"
 
 -- Returns nil, or "name" and a test name, or "files" and a set of basenames.
@@ -189,8 +191,9 @@ end)
 local function runNextTest()
 	currentTest = table.remove(tests, 1)
 	if not currentTest then
-		-- `run-tests` greps this exact "N failure(s)" phrasing to decide
-		-- its own exit code, so keep the wording in sync with it.
+		-- `Mods/itj-impure-tests.bash` greps this exact "N failure(s)"
+		-- phrasing to decide its own exit code, so keep the wording in sync
+		-- with it.
 		print(string.format(
 			"[HelloWorldTests] Test suite completed: %d failure(s) (took %d ticks)",
 			failureCount,
