@@ -84,6 +84,93 @@ api.registerTest({
 	end,
 })
 
+-- A set's keys, sorted and joined by spaces, so a failing assert shows them.
+local function setText(set)
+	if set == nil then
+		return "<nil>"
+	end
+	local keys = {}
+	for key in pairs(set) do
+		keys[#keys + 1] = key
+	end
+	table.sort(keys)
+	return table.concat(keys, " ")
+end
+
+-- The inputs are the shapes `runPass` in `Mods/itj-impure-tests.bash` writes:
+-- an `expect:` line, then the selection, which may be empty.
+api.registerTest({
+	name = "selectionParsing",
+	onLoad = function()
+		local kind, selected, expected = api.parseSelection("")
+		assert(kind == nil and selected == nil and expected == nil, "a missing file selected something")
+
+		kind, selected, expected = api.parseSelection("expect: a.lua b.lua\n")
+		assert(kind == nil and selected == nil, "expect: alone made a selection")
+		assert(setText(expected) == "a.lua b.lua", "expected files: " .. setText(expected))
+
+		kind, selected, expected = api.parseSelection("expect: \n")
+		assert(kind == nil and selected == nil, "an empty expect: made a selection")
+		assert(setText(expected) == "", "an empty expect: gave expected files: " .. setText(expected))
+
+		kind, selected, expected = api.parseSelection("expect: a.lua\nobservesFixedSeed\n")
+		assert(kind == "name" and selected == "observesFixedSeed", "name selection: " .. tostring(selected))
+		assert(setText(expected) == "a.lua", "expected files beside a name: " .. setText(expected))
+
+		kind, selected, expected = api.parseSelection("expect: a.lua\nfile: b.lua c.lua\n")
+		assert(kind == "files", "file: line parsed as " .. tostring(kind))
+		assert(setText(selected) == "b.lua c.lua", "selected files: " .. setText(selected))
+		assert(setText(expected) == "a.lua", "expected files beside file: " .. setText(expected))
+	end,
+})
+
+api.registerTest({
+	name = "missingExpectedFiles",
+	onLoad = function()
+		local expected = { ["a.lua"] = true, ["b.lua"] = true, ["c.lua"] = true }
+		local missing = api.missingFiles(expected, { { file = "b.lua" }, { name = "untagged" } })
+		assert(table.concat(missing, " ") == "a.lua c.lua", "missing: " .. table.concat(missing, " "))
+		assert(#api.missingFiles({}, {}) == 0, "nothing expected, yet something is missing")
+	end,
+})
+
+-- A file that registers after the wait began ends the wait.
+api.registerTest({
+	name = "expectWaitSeesLateFile",
+	async = true,
+	onLoad = function(_, finish)
+		local testList = {}
+		local registered = false
+		api.waitForFiles({ ["late.lua"] = true }, testList, 1000, function()
+			finish(not registered and "ready before late.lua registered" or nil)
+		end, function()
+			finish("timed out with late.lua registered")
+		end)
+		api.afterTicks(10, function()
+			registered = true
+			table.insert(testList, { file = "late.lua" })
+		end)
+	end,
+})
+
+-- An expected file that never registers ends the wait after its timeout.
+api.registerTest({
+	name = "expectWaitTimesOut",
+	async = true,
+	onLoad = function(_, finish)
+		local waited = false
+		api.waitForFiles({ ["never.lua"] = true }, {}, 50, function()
+			finish("ready with never.lua missing")
+		end, function(missing)
+			assert(table.concat(missing, " ") == "never.lua", "missing: " .. table.concat(missing, " "))
+			finish(not waited and "timed out early" or nil)
+		end)
+		api.afterTicks(40, function()
+			waited = true
+		end)
+	end,
+})
+
 -- Deferred by one tick so that any other mod's own load-time
 -- api.registerTest() call - triggered by this same reload, if this mod's
 -- api.lua changed - has a chance to run first: a reload always finishes an

@@ -119,14 +119,12 @@ local function basenameSet(list)
 	return files
 end
 
--- Returns the selection (nil, or "name" and a test name, or "files" and a set
--- of basenames) and then the set of expected files, or nil.
-local function readSelectedTest()
-	if not FileIO.exists(SELECTED_TEST_FILE) then
-		return nil
-	end
+-- Parses the text of SELECTED_TEST_FILE (format above; "" when the file is
+-- missing). Returns the selection (nil, or "name" and a test name, or "files"
+-- and a set of basenames) and then the set of expected files, or nil.
+local function parseSelection(text)
 	local kind, selected, expected
-	for line in FileIO.readFileToString(SELECTED_TEST_FILE, 4096):gmatch("[^\n]+") do
+	for line in text:gmatch("[^\n]+") do
 		line = line:match("^%s*(.-)%s*$")
 		local expectList = line:match("^expect:%s*(.*)$")
 		local fileList = line:match("^file:%s*(.*)$")
@@ -141,7 +139,7 @@ local function readSelectedTest()
 	return kind, selected, expected
 end
 
--- Whether a selection, as readSelectedTest returns it, keeps the test. A test
+-- Whether a selection, as parseSelection returns it, keeps the test. A test
 -- with no file tag is kept by every file selection (fail safe).
 local function matchesSelection(kind, selected, test)
 	if kind == "name" then
@@ -420,13 +418,11 @@ local started = false
 -- bundle can load in a later batch than this framework. So the suite waits,
 -- up to this long, for each expected file to register a test.
 local EXPECT_TIMEOUT_TICKS = 10000
-local expectWaitStartedAt = nil
-local expectRecheckPending = false
 
--- The expected files that have registered no test yet, sorted.
-local function missingFiles(expected)
+-- The expected files that no test in testList comes from, sorted.
+local function missingFiles(expected, testList)
 	local registered = {}
-	for _, test in ipairs(tests) do
+	for _, test in ipairs(testList) do
 		if test.file then
 			registered[test.file] = true
 		end
@@ -441,32 +437,27 @@ local function missingFiles(expected)
 	return missing
 end
 
--- Kicks off the suite, once every expected file has registered a test.
--- Idempotent, and safe to call more than once (e.g. once from this mod's own
--- entry script, and again from a Tick.delay-deferred call - see there for
--- why): only the first call that starts the suite has any effect.
-local function start()
-	if started or expectRecheckPending then
-		return
-	end
-	local kind, selected, expected = readSelectedTest()
-	local missing = expected and missingFiles(expected) or {}
-	if #missing > 0 then
-		expectWaitStartedAt = expectWaitStartedAt or tickCount
-		if tickCount - expectWaitStartedAt < EXPECT_TIMEOUT_TICKS then
-			expectRecheckPending = true
-			afterTicks(1, function()
-				expectRecheckPending = false
-				start()
-			end)
-			return
+-- Rechecks testList every tick until each expected file has registered a
+-- test, then calls onReady(); after timeoutTicks it calls onTimeout(missing)
+-- instead. The callbacks run through afterTicks, so inside an async test an
+-- error in them fails that test.
+local function waitForFiles(expected, testList, timeoutTicks, onReady, onTimeout)
+	local waitStartedAt = tickCount
+	local function check()
+		local missing = missingFiles(expected, testList)
+		if #missing == 0 then
+			onReady()
+		elseif tickCount - waitStartedAt >= timeoutTicks then
+			onTimeout(missing)
+		else
+			afterTicks(1, check)
 		end
-		failureCount = failureCount + 1
-		log("FAIL", "expectedFiles", "no test registered from " .. table.concat(missing, " "))
-		kind = nil
-		tests = {}
 	end
-	started = true
+	check()
+end
+
+-- Filters the tests by the selection, then runs them.
+local function runSuite(kind, selected)
 	if kind then
 		local kept = {}
 		for _, test in ipairs(tests) do
@@ -489,12 +480,36 @@ local function start()
 	runNextTest()
 end
 
+-- Kicks off the suite, once every expected file has registered a test.
+-- Idempotent, and safe to call more than once (e.g. once from this mod's own
+-- entry script, and again from a Tick.delay-deferred call - see there for
+-- why): only the first call has any effect, even while it waits.
+local function start()
+	if started then
+		return
+	end
+	started = true
+	local text = FileIO.exists(SELECTED_TEST_FILE) and FileIO.readFileToString(SELECTED_TEST_FILE, 4096) or ""
+	local kind, selected, expected = parseSelection(text)
+	waitForFiles(expected or {}, tests, EXPECT_TIMEOUT_TICKS, function()
+		runSuite(kind, selected)
+	end, function(missing)
+		failureCount = failureCount + 1
+		log("FAIL", "expectedFiles", "no test registered from " .. table.concat(missing, " "))
+		tests = {}
+		runSuite(nil)
+	end)
+end
+
 return {
 	afterTicks = afterTicks,
 	callerFile = callerFile,
 	matchesSelection = matchesSelection,
+	missingFiles = missingFiles,
 	observe = observe,
+	parseSelection = parseSelection,
 	play = play,
 	registerTest = registerTest,
 	start = start,
+	waitForFiles = waitForFiles,
 }
