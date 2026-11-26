@@ -205,7 +205,6 @@ assert_anchors_resolve() {
 readonly UNSWEPT_PLAYER_PAGES=(
 	bats.md
 	chests-and-loot.md
-	dove.md
 	king-conga.md
 	shops.md
 	shrines.md
