@@ -38,5 +38,7 @@ A wiki of linked pages about the game's things, for Cadence.
   use.
 * [stairs-and-levels.md](./stairs-and-levels.md): leaving a level, trapdoors
   and the boss level.
+* [all-zones-mode.md](./all-zones-mode.md): the five-zone run, its bosses and
+  its starting kit.
 * [shops.md](./shops.md): prices, buying, and the shopkeeper.
 * [cadence.md](./cadence.md) and [dove.md](./dove.md): the characters.

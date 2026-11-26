@@ -1,7 +1,8 @@
 # Cadence
 
 For players. What Cadence starts a single-zone run with.
-Other characters: [dove.md](./dove.md).
+Other characters: [dove.md](./dove.md). An all-zones run starts differently:
+[all-zones-mode.md](./all-zones-mode.md).
 
 * Cadence starts with 12 health.
 * The inventory holds `Bomb`, `WeaponDagger` and `ShovelBasic`, plus
