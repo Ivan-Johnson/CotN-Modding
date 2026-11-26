@@ -29,28 +29,22 @@ let
                 touch "$out"
         '';
 
-        # Installs ScrapeGameData, waits for its "end" sentinel, saves the new
-        # log lines into a fresh per-run directory and reassembles the
-        # datasets there. Impure, like `itj-impure-tests`.
+        # Runs ScrapeGameData through `live-game-run`, which waits for its
+        # "end" sentinel, saves the new log lines into a fresh per-run
+        # directory and reassembles the datasets there. Impure, like
+        # `itj-impure-tests`.
         scrapeGameData = pkgs.writeShellApplication {
                 name = "scrape-game-data";
                 runtimeInputs = pipelineTools;
                 text = ''
-                        ${liveGame.waitForLog}
-
                         outDir="$(git rev-parse --show-toplevel)/Tmp/scrape-game-data/$(date +%Y-%m-%d_%H-%M-%S)"
                         mkdir -p "$outDir"
 
-                        baseline=$(wc -l <"$COTN_LOG")
-
-                        ITJ_BUNDLE_RELOAD_TRIGGER="ScrapeGameData/ScrapeGameData.lua" ${liveGame.installMods}/bin/install-mods ScrapeGameData
-
-                        if ! wait_for_log "$baseline" "[ScrapeGameData] end"; then
-                                echo "scrape-game-data: timed out waiting for the end sentinel" >&2
+                        # live-game-run has said why on stderr.
+                        if ! ${liveGame.liveGameRun}/bin/live-game-run --until "[ScrapeGameData] end" --timeout 60 ScrapeGameData >"$outDir/NecroDancer.log"; then
+                                echo "scrape-game-data: the scrape did not finish; its log is in $outDir" >&2
                                 exit 1
                         fi
-
-                        tail -n "+$((baseline + 1))" "$COTN_LOG" >"$outDir/NecroDancer.log"
 
                         status=0
                         bash ${scripts}/GameData/reassemble-scrape.bash "$outDir" || status=$?

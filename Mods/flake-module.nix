@@ -152,39 +152,6 @@ let
                                 touch "$out"
                         '';
 
-        # Temporary: the scrape's copy of the wait, until it moves to
-        # `live-game-run` (ADR 0009). Shell function for the scrape. `wait_for_log BASELINE
-        # SENTINEL [TIMEOUT_SECONDS [STALL_SECONDS]]` polls the `NecroDancer.log`
-        # lines after line BASELINE for SENTINEL. It returns 1 if SENTINEL
-        # doesn't appear within TIMEOUT_SECONDS (default 60), and 2 if the log
-        # gains no bytes for STALL_SECONDS (default 0, which turns the check
-        # off), so callers decide how to react and can tell a slow game from a
-        # silent one.
-        waitForLog = ''
-                wait_for_log() {
-                        local baseline=$1 sentinel=$2 timeoutSeconds=''${3:-60} stallSeconds=''${4:-0}
-                        local start now lastSize size lastChange
-                        start=$(date +%s)
-                        lastChange=$start
-                        lastSize=$(stat -c %s "$COTN_LOG")
-                        while ! tail -n "+$((baseline + 1))" "$COTN_LOG" | grep -qF "$sentinel"; do
-                                sleep 0.1
-                                now=$(date +%s)
-                                size=$(stat -c %s "$COTN_LOG")
-                                if ((size != lastSize)); then
-                                        lastSize=$size
-                                        lastChange=$now
-                                fi
-                                if ((stallSeconds > 0 && now - lastChange >= stallSeconds)); then
-                                        return 2
-                                fi
-                                if ((now - start >= timeoutSeconds)); then
-                                        return 1
-                                fi
-                        done
-                }
-        '';
-
         # The single unit-test entrypoint: runs each pass through
         # `live-game-run` and judges the results. Impure
         # (needs a running, native Steam/Proton CotN instance and a live mods
@@ -244,11 +211,7 @@ in
 {
         # What other modules need to drive the live game; not merged into the
         # flake's outputs.
-        liveGame = {
-                inherit liveGameRun;
-                # Temporary, until the scrape moves to `live-game-run`.
-                inherit installMods waitForLog;
-        };
+        liveGame = { inherit liveGameRun; };
 
         packages = {
                 hello-world-mod = helloWorldModZip;

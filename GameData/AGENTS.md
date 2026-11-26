@@ -25,7 +25,8 @@ the docs mirror. See `Docs/Adr/0005-*` for why the data has its own branch.
 
 The chunk line format is a contract between the mod and
 `reassemble-scrape.bash`; change both together, and `test-reassemble.bash`.
-`flake-module.nix` takes `installMods` and `waitForLog` from the Mods module.
+`flake-module.nix` runs the scrape through `liveGameRun` from the Mods
+module, which locks the game for it (ADR 0009).
 
 
 ## Glossary

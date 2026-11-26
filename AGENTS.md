@@ -59,10 +59,10 @@ than silently overriding it.
   a new branch runs everything once, on its tip. During
   a live run, avoid touching suite paths in commits, or use `--no-verify` and
   re-run the checks at the end.
-* Everything that drives the live game goes through `live-game-run` (`nix
-  run .#live-game-run`; ADR 0009). Each call takes an advisory `flock` on the
-  one game instance for its own install and wait, so a test run locks once
-  per pass. If another caller holds it, it
+* Everything that drives the live game, the tests and the scrape included,
+  goes through `live-game-run` (`nix run .#live-game-run`; ADR 0009). Each
+  call takes an advisory `flock` on the one game instance for its own install
+  and wait, so a test run locks once per pass. If another caller holds it, it
   waits, then fails naming the holder before installing anything. `nix flake
   check` tests the lock without a game. The lock file, the timeouts and their
   variables are in the header of `Mods/live-game-run.bash`.

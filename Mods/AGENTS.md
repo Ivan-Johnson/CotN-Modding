@@ -31,7 +31,7 @@ do not: each group's role and what it is coupled to.
   `selected-test.txt` that `api.lua` reads. `itj-impure-scope.bash` decides when `build-release` runs
   it.
 * `flake-module.nix`: wires everything above into packages, checks, apps and
-  the dev shell, and exports `liveGame` (`installMods`, `waitForLog`) to
+  the dev shell, and exports `liveGame` (`liveGameRun`) to
   `GameData/flake-module.nix`.
 * `test-<name>.*`: the offline test of `<name>`, run by `nix flake check`.
 
