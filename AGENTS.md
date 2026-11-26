@@ -45,8 +45,10 @@ than silently overriding it.
   `pre-push` hooks run it. How it picks the live tests, and how to run them
   yourself: `Mods/AGENTS.md`, "Dev loop"; why: ADRs 0008 and 0009.
 * A crashed or hung game fails every live run with "game not responding".
-  Restarting the game is the user's job; agents cannot reach it from the
-  sandbox.
+  A game that runs but has stopped noticing changes to the bundle fails it
+  with "the game did not load the installed mods"; turning `DevBundle` off
+  and on in the game's mods menu recovers it. Restarting or toggling the game
+  is the user's job; agents cannot reach it from the sandbox.
 * Scripts act on the checkout they run in (`git rev-parse --show-toplevel`),
   never on the workspace's `ITJ_FLAKE_ROOT`, so a git worktree installs and
   tests its own mods.

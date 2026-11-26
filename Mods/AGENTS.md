@@ -26,7 +26,8 @@ do not: each group's role and what it is coupled to.
 * `LiveGame/`: the tooling that installs mods into the game and runs the
   live tests, plus the offline tests. It is not a mod.
   * `live-game-run.bash`: the one way to drive the live game (ADR 0009). It
-    locks the game, installs, reloads and waits for a log line.
+    locks the game, installs, reloads, checks that the game loaded the
+    install, and waits for a log line.
   * `install-mods.bash` and `bundle-layout.lua`: the dev install into one
     bundle mod (ADR 0004), internal to `live-game-run`. `bundle-layout.lua`
     also runs the `mods-layout` check.
@@ -37,7 +38,8 @@ do not: each group's role and what it is coupled to.
     decides when `build-release` runs it. Its last line totals the run's
     results, and `build-release` shows that line when the run passes, so
     keep it last.
-  * `test-<name>.*`: the offline test of `<name>`, run by `nix flake check`.
+  * `test-<name>.*`: the offline test of `<name>`, run by `nix flake check`,
+    except `test-fake-game.bash`, the fake game those tests share.
     `test-bytecode-api.lua` tests `ScrapeGameData/BytecodeApi.lua`; it lives
     here because everything under a mod's directory is installed into the
     game. Changing one runs no live test (ADR 0008).

@@ -1,8 +1,12 @@
-# Behavior test for live-game-run: its game-instance lock, its wait for a log
-# line (timeout, stall, and the slice of new lines it prints) and its install
-# options. Needs no live game: it fakes the log and the mods directory, and
-# holds the lock from outside. Expects `live-game-run` on PATH.
+# Behavior test for live-game-run: its game-instance lock, its check that the
+# game loaded the install, its wait for a log line (timeout, stall, and the
+# slice of new lines it prints) and its install options. Needs no live game:
+# it fakes the game, the log and the mods directory, and holds the lock from
+# outside. Expects `live-game-run` on PATH and FAKE_GAME naming
+# test-fake-game.bash.
 set -u
+# shellcheck source=test-fake-game.bash
+source "$FAKE_GAME"
 
 scratch=$(mktemp -d)
 lockFile="$scratch/game.lock"
@@ -10,7 +14,8 @@ modsDir="$scratch/mods"
 mkdir "$modsDir"
 touch "$scratch/NecroDancer.log"
 holderPid=""
-trap '[ -n "$holderPid" ] && kill "$holderPid" 2>/dev/null; rm -rf "$scratch"' EXIT
+fakeGamePid=""
+trap '[ -n "$holderPid" ] && kill "$holderPid" 2>/dev/null; [ -n "$fakeGamePid" ] && kill "$fakeGamePid" 2>/dev/null; rm -rf "$scratch"' EXIT
 
 export ITJ_MODS_ROOT="$scratch/repo/Mods"
 export ITJ_GAME_LOCK_FILE="$lockFile"
@@ -24,6 +29,8 @@ for mod in Alpha Beta; do
 	echo "-- $mod" >"$ITJ_MODS_ROOT/$mod/$mod.lua"
 done
 bundle="$modsDir/DevBundle"
+frozen="$scratch/frozen"
+startFakeGame "$bundle" "$COTN_LOG" "$frozen"
 
 fail() {
 	echo "FAIL: $1" >&2
@@ -150,15 +157,20 @@ if [ ! -d "$bundle/Alpha" ] || [ ! -d "$bundle/Beta" ]; then
 fi
 
 # The reload defaults to the first mod's entry script, and --reload picks
-# another; each call appends a fresh trigger comment.
-if ! grep -qF -- "-- install-mods trigger" "$bundle/Alpha/Alpha.lua"; then
-	fail "the default reload did not touch Alpha/Alpha.lua"
+# another. Each call prefixes the file's first line with a print of a fresh
+# token, keeping its line numbers.
+trigger='print("[install-mods] loaded '
+if [ "$(sed -n 1p "$bundle/Alpha/Alpha.lua")" = "-- Alpha" ] || ! grep -qF -- "$trigger" "$bundle/Alpha/Alpha.lua"; then
+	fail "the default reload did not prefix Alpha/Alpha.lua:" "$(cat "$bundle/Alpha/Alpha.lua")"
+fi
+if [ "$(wc -l <"$bundle/Alpha/Alpha.lua")" != 1 ] || [[ "$(cat "$bundle/Alpha/Alpha.lua")" != *"; -- Alpha" ]]; then
+	fail "the reload changed Alpha/Alpha.lua's lines:" "$(cat "$bundle/Alpha/Alpha.lua")"
 fi
 live-game-run --reload Beta/Beta.lua Alpha Beta 2>/dev/null || fail "--reload Beta/Beta.lua failed"
-if ! grep -qF -- "-- install-mods trigger" "$bundle/Beta/Beta.lua"; then
+if ! grep -qF -- "$trigger" "$bundle/Beta/Beta.lua"; then
 	fail "--reload did not touch Beta/Beta.lua"
 fi
-if grep -qF -- "-- install-mods trigger" "$bundle/Alpha/Alpha.lua"; then
+if grep -qF -- "$trigger" "$bundle/Alpha/Alpha.lua"; then
 	fail "--reload Beta/Beta.lua also touched the default"
 fi
 
@@ -167,6 +179,32 @@ status=0
 stderr=$(live-game-run --reload Alpha/missing.lua Alpha 2>&1 >/dev/null) || status=$?
 if ((status != 3)); then
 	fail "a missing reload file did not exit 3 (status $status); stderr was:" "$stderr"
+fi
+
+# A reload file that is not Lua cannot print the token, so it fails the
+# install.
+echo "data" >"$ITJ_MODS_ROOT/Alpha/data.txt"
+status=0
+stderr=$(live-game-run --reload Alpha/data.txt Alpha 2>&1 >/dev/null) || status=$?
+rm "$ITJ_MODS_ROOT/Alpha/data.txt"
+if ((status != 3)) || ! grep -qF "not a Lua file" <<<"$stderr"; then
+	fail "a non-Lua reload file did not exit 3 naming it (status $status); stderr was:" "$stderr"
+fi
+
+# A game that keeps logging but never loads the install fails with exit 4 and
+# the instruction to toggle the bundle, rather than reading the stale copy's
+# lines, even when they hold the awaited line.
+touch "$frozen"
+grow 0 a "the end line" b c d e
+status=0
+stderr=$(ITJ_GAME_RELOAD_SECONDS=3 live-game-run --until "end line" --stall 2 Alpha 2>&1 >/dev/null) || status=$?
+wait "$growerPid"
+rm "$frozen"
+if ((status != 4)); then
+	fail "a game that did not load the install did not exit 4 (status $status); stderr was:" "$stderr"
+fi
+if ! grep -qF "did not load the installed mods" <<<"$stderr" || ! grep -qF "off and on in the game's mods menu" <<<"$stderr"; then
+	fail "a game that did not load the install did not say so; stderr was:" "$stderr"
 fi
 
 # --file creates the file with its multi-line content, and a later install
@@ -223,7 +261,7 @@ wait "$growerPid"
 if ((status != 0)); then
 	fail "a growing log did not run to the line (status $status); stdout was:" "$stdout"
 fi
-if [ "$stdout" != "$(printf 'one\ntwo\nthree\nthe end line')" ]; then
+if [ "$(grep -vF "[install-mods] loaded" <<<"$stdout")" != "$(printf 'one\ntwo\nthree\nthe end line')" ]; then
 	fail "stdout was not exactly the new lines:" "$stdout"
 fi
 
@@ -250,7 +288,7 @@ wait "$growerPid"
 if ((status != 0)); then
 	fail "a line followed by about 1 MB of log was not found (status $status)"
 fi
-if [ "${stdout%%$'\n'*}" != "the big end line" ]; then
+if [ "$(grep -vF "[install-mods] loaded" <<<"$stdout" | sed -n 1p)" != "the big end line" ]; then
 	fail "the big log's first new line was wrong:" "${stdout:0:200}"
 fi
 

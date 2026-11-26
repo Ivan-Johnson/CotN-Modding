@@ -1,29 +1,35 @@
 # The one way to drive the live game (ADR 0009). Takes the game-instance lock
 # for this call, installs the named mods into the bundle, forces a reload, and
-# with --until waits for a log line and prints the new NecroDancer.log lines.
+# with --until checks that the game loaded the new copy, waits for a log line
+# and prints the new NecroDancer.log lines.
 #
 # Usage: live-game-run [--until LINE] [--timeout S] [--stall S]
 #                      [--reload MOD/FILE] [--file MOD/PATH=CONTENT] MOD...
 #
-#   --until LINE        wait for a new log line containing LINE, then print
-#                       every log line the call added on stdout
+#   --until LINE        wait for the reload, then for a new log line
+#                       containing LINE, then print every log line the call
+#                       added on stdout
 #   --timeout S         give up waiting for LINE after S seconds
 #   --stall S           give up once the log gains nothing for S seconds,
 #                       since a crashed or hung game logs nothing; the
 #                       longest silence inside a healthy test run was 36 s,
 #                       hence the default 120; 0 turns the check off
-#   --reload MOD/FILE   the bundle file to append a timestamp comment to,
-#                       which forces the game to reload it and every mod that
-#                       requires it; default <first MOD>/<first MOD>.lua
+#   --reload MOD/FILE   the bundle Lua file to change, which forces the game
+#                       to reload it and every mod that requires it; default
+#                       <first MOD>/<first MOD>.lua. The change makes the
+#                       file print "[install-mods] loaded <token>" with a
+#                       token fresh to this call, so a game that loads the
+#                       new copy logs it; it must run when the mod loads
 #   --file MOD/PATH=CONTENT
 #                       create this file in the bundle, holding CONTENT (which
 #                       may span lines), so the mod sees it from its first load
 #
 # Without --until, it installs and returns. Exit status: 0 when the install
 # succeeded and LINE (if given) appeared, 1 when LINE timed out, 2 when the
-# game stopped responding, and 3 when the call failed before waiting (bad
-# usage, a missing variable, log or lock directory, the lock busy, or a failed
-# install). Progress goes to stderr.
+# game stopped responding, 3 when the call failed before waiting (bad usage,
+# a missing variable, log or lock directory, the lock busy, or a failed
+# install), and 4 when the game kept logging but did not load the new copy of
+# the reload file in time. Progress goes to stderr.
 #
 # Environment:
 #   COTN_LOG                       the game's NecroDancer.log
@@ -35,6 +41,9 @@
 #                                  a caller outwaits one whole pass of another)
 #   ITJ_GAME_TIMEOUT_SECONDS       the default --timeout (900)
 #   ITJ_GAME_STALL_SECONDS         the default --stall (120)
+#   ITJ_GAME_RELOAD_SECONDS        how long --until waits for the reload
+#                                  token (default 30; a reload takes about
+#                                  1 s)
 
 usage() {
 	echo "live-game-run: $1" >&2
@@ -46,6 +55,7 @@ untilLine=""
 defaultTimeout=${ITJ_GAME_TIMEOUT_SECONDS:-900}
 timeoutSeconds=$defaultTimeout
 stallSeconds=${ITJ_GAME_STALL_SECONDS:-120}
+reloadSeconds=${ITJ_GAME_RELOAD_SECONDS:-30}
 reload=""
 extraFile=""
 extraContent=""
@@ -98,6 +108,9 @@ fi
 if [[ ! $timeoutSeconds =~ ^[0-9]+$ || ! $stallSeconds =~ ^[0-9]+$ ]]; then
 	usage "--timeout and --stall take whole seconds"
 fi
+if [[ ! $reloadSeconds =~ ^[0-9]+$ ]]; then
+	usage "ITJ_GAME_RELOAD_SECONDS takes whole seconds"
+fi
 if [[ -z $reload ]]; then
 	reload="${mods[0]}/${mods[0]}.lua"
 fi
@@ -138,7 +151,9 @@ echo "pid=$$ command=live-game-run mods=${mods[*]} started=$(date -Is)" >"$lockF
 baseline=$(wc -l <"$COTN_LOG")
 
 # install-mods's stdout would mix into the log lines this prints.
+reloadToken="$(date +%s%N)-$$"
 export ITJ_BUNDLE_RELOAD_TRIGGER=$reload
+export ITJ_BUNDLE_RELOAD_TOKEN=$reloadToken
 export ITJ_BUNDLE_EXTRA_FILE=$extraFile
 export ITJ_BUNDLE_EXTRA_CONTENT=$extraContent
 if ! install-mods "${mods[@]}" >&2; then
@@ -149,17 +164,18 @@ if [[ -z $untilLine ]]; then
 	exit 0
 fi
 
-# Polls the log lines after the baseline for the line, rather than sleeping a
-# guessed time. Returns 1 on timeout and 2 once the log has gained no bytes
-# for stallSeconds. grep reads all its input rather than quitting at the first
-# match (no -q), so tail never dies of SIGPIPE, which pipefail would turn into
-# a miss.
+# waitForLine LINE TIMEOUT: polls the log lines after the baseline for LINE,
+# rather than sleeping a guessed time. Returns 1 after TIMEOUT seconds and 2
+# once the log has gained no bytes for stallSeconds. grep reads all its input
+# rather than quitting at the first match (no -q), so tail never dies of
+# SIGPIPE, which pipefail would turn into a miss.
 waitForLine() {
+	local line=$1 timeout=$2
 	local start now lastSize size lastChange
 	start=$(date +%s)
 	lastChange=$start
 	lastSize=$(stat -c %s "$COTN_LOG")
-	while ! tail -n "+$((baseline + 1))" "$COTN_LOG" | grep -F "$untilLine" >/dev/null; do
+	while ! tail -n "+$((baseline + 1))" "$COTN_LOG" | grep -F "$line" >/dev/null; do
 		sleep 0.1
 		now=$(date +%s)
 		size=$(stat -c %s "$COTN_LOG")
@@ -170,7 +186,7 @@ waitForLine() {
 		if ((stallSeconds > 0 && now - lastChange >= stallSeconds)); then
 			return 2
 		fi
-		if ((now - start >= timeoutSeconds)); then
+		if ((now - start >= timeout)); then
 			return 1
 		fi
 	done
@@ -178,7 +194,17 @@ waitForLine() {
 
 SECONDS=0
 waitStatus=0
-waitForLine || waitStatus=$?
+# The game can stop noticing changes to the bundle while still running and
+# logging, and then never reloads, so a stale copy of the mods would answer
+# the wait. The token is fresh to this call, so seeing it shows the game
+# loaded the copy just installed.
+waitForLine "[install-mods] loaded $reloadToken" "$reloadSeconds" || waitStatus=$?
+if ((waitStatus == 1)); then
+	waitStatus=4
+	echo "live-game-run: the game did not load the installed mods within ${reloadSeconds}s: $reload never printed its reload token. The game has likely stopped noticing changes to ${ITJ_BUNDLE_NAME:-DevBundle}; turn ${ITJ_BUNDLE_NAME:-DevBundle} off and on in the game's mods menu, or restart the game, and re-run." >&2
+elif ((waitStatus == 0)); then
+	waitForLine "$untilLine" "$timeoutSeconds" || waitStatus=$?
+fi
 if ((waitStatus == 1)); then
 	echo "live-game-run: timed out after ${timeoutSeconds}s waiting for '$untilLine'" >&2
 elif ((waitStatus == 2)); then

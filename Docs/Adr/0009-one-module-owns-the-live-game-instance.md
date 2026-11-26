@@ -10,8 +10,9 @@ and no check for a silent game.
 Every caller that drives the live game now goes through `live-game-run`
 (`Mods/LiveGame/live-game-run.bash`). One call takes the lock, records where
 the log ends, installs the named mods, forces a reload, and, given a line to
-wait for, waits for it and prints only the log lines the call added. It fails
-fast when the game stops logging. `install-mods` is an internal part of it.
+wait for, checks that the game loaded the install, waits for the line and
+prints only the log lines the call added. It fails fast when the game stops
+logging. `install-mods` is an internal part of it.
 
 The lock is held for one call, which is one test pass, not for a whole test
 run. Each pass reinstalls the whole bundle, so another caller that slips in

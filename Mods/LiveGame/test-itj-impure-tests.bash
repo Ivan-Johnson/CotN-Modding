@@ -1,14 +1,18 @@
 # Behavior test for the unit-test entrypoint's verdicts and the mods each pass
 # installs. Needs no live game: it fakes the log and the mods directory, and
 # runs the entrypoint through the real `live-game-run`, whose own lock and wait
-# test-live-game-run.bash covers. Expects `itj-impure-tests` on PATH.
+# test-live-game-run.bash covers. Expects `itj-impure-tests` on PATH and
+# FAKE_GAME naming test-fake-game.bash.
 set -u
+# shellcheck source=test-fake-game.bash
+source "$FAKE_GAME"
 
 scratch=$(mktemp -d)
 modsDir="$scratch/mods"
 mkdir "$modsDir"
 touch "$scratch/NecroDancer.log"
-trap 'rm -rf "$scratch"' EXIT
+fakeGamePid=""
+trap '[ -n "$fakeGamePid" ] && kill "$fakeGamePid" 2>/dev/null; rm -rf "$scratch"' EXIT
 
 export ITJ_GAME_LOCK_FILE="$scratch/game.lock"
 export COTN_LOCAL_MODS_DIR="$modsDir"
@@ -23,6 +27,7 @@ done
 touch "$goodRepo/Mods/TestFramework/api.lua"
 export ITJ_MODS_ROOT="$goodRepo/Mods"
 export ITJ_GAME_STALL_SECONDS=2
+startFakeGame "$modsDir/DevBundle" "$COTN_LOG" "$scratch/frozen"
 
 # A game whose log goes silent fails the run, and the restart instruction
 # reaches the user.

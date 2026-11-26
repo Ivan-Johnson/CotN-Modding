@@ -19,8 +19,14 @@
 #   ITJ_MODS_ROOT               override; default <git toplevel>/Mods
 #   COTN_LOCAL_MODS_DIR         the game's local mods directory
 #   ITJ_BUNDLE_NAME             bundle mod name (default: DevBundle)
-#   ITJ_BUNDLE_RELOAD_TRIGGER   optional "<mod>/<file>" in the bundle to
-#                               append a timestamp comment to, forcing a reload
+#   ITJ_BUNDLE_RELOAD_TRIGGER   optional "<mod>/<file>.lua" in the bundle to
+#                               prefix line 1 of with a print of the reload
+#                               token; the changed file forces a reload, and
+#                               the printed line shows the new copy loaded.
+#                               Prefixing line 1 keeps every line number.
+#   ITJ_BUNDLE_RELOAD_TOKEN     the token the trigger prints, as
+#                               "[install-mods] loaded <token>" (default: the
+#                               time in nanoseconds)
 #   ITJ_BUNDLE_EXTRA_FILE       optional "<mod>/<file>" in the bundle to create
 #                               holding ITJ_BUNDLE_EXTRA_CONTENT, so the mod
 #                               sees it from its first load; a reinstall
@@ -82,7 +88,17 @@ if [[ -n ${ITJ_BUNDLE_RELOAD_TRIGGER:-} ]]; then
 		echo "install-mods: the reload trigger $ITJ_BUNDLE_RELOAD_TRIGGER is not a file of the installed mods" >&2
 		exit 1
 	fi
-	echo "-- install-mods trigger $(date +%s%N)" >>"$stage/$ITJ_BUNDLE_RELOAD_TRIGGER"
+	if [[ $ITJ_BUNDLE_RELOAD_TRIGGER != *.lua ]]; then
+		echo "install-mods: the reload trigger $ITJ_BUNDLE_RELOAD_TRIGGER is not a Lua file, so it cannot print the reload token" >&2
+		exit 1
+	fi
+	trigger="$stage/$ITJ_BUNDLE_RELOAD_TRIGGER"
+	token="${ITJ_BUNDLE_RELOAD_TOKEN:-$(date +%s%N)}"
+	{
+		printf 'print("[install-mods] loaded %s"); ' "$token"
+		cat "$trigger"
+	} >"$trigger.new"
+	mv "$trigger.new" "$trigger"
 fi
 
 if [[ -n ${ITJ_BUNDLE_EXTRA_FILE:-} ]]; then

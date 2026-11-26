@@ -121,8 +121,8 @@ let
         cotnLogPath = "/home/i/.local/share/Steam/steamapps/common/Crypt of the NecroDancer/NecroDancer64/NecroDancer.log";
 
         # The one module that drives the live game: takes the game-instance
-        # lock, installs, forces a reload, and can wait for a log line. Impure,
-        # so it lives in `apps`. See `Mods/LiveGame/live-game-run.bash` and
+        # lock, installs, forces a reload, and can check the reload and wait
+        # for a log line. Impure, so it lives in `apps`. See `Mods/LiveGame/live-game-run.bash` and
         # Docs/Adr/0009-one-module-owns-the-live-game-instance.md.
         liveGameRun = pkgs.writeShellApplication {
                 name = "live-game-run";
@@ -148,7 +148,7 @@ let
                                 ];
                         }
                         ''
-                                bash ${./LiveGame/test-live-game-run.bash}
+                                FAKE_GAME=${./LiveGame/test-fake-game.bash} bash ${./LiveGame/test-live-game-run.bash}
                                 touch "$out"
                         '';
 
@@ -182,7 +182,7 @@ let
                                 ];
                         }
                         ''
-                                bash ${./LiveGame/test-itj-impure-tests.bash}
+                                FAKE_GAME=${./LiveGame/test-fake-game.bash} bash ${./LiveGame/test-itj-impure-tests.bash}
                                 touch "$out"
                         '';
 
