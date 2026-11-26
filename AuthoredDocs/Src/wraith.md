@@ -18,5 +18,3 @@ level.
   and died to one hit. Why it jumped is unknown.
 * So the spawned one is not how a wraith behaves in a level. What wakes a
   spawned `Wraith`, and what a natural one does besides chase, is unknown.
-
-Gold per kill: [coin-multiplier.md](./coin-multiplier.md) (not measured).

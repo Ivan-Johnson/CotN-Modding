@@ -6,12 +6,12 @@ for players or for mod authors; read the one whose trigger matches your task.
 ## Mod authors
 
 * [gotchas.md](./gotchas.md): Lua errors at load time, event ordering,
-  `Tick.delay`, stairs markers, or reverse-engineering an entity's behavior
-  with `print(ev)`.
+  `Tick.delay`, or stairs markers.
 * [testing.md](./testing.md): writing or debugging tests, or a mod that does
   not reload.
 * [game-data-sources.md](./game-data-sources.md): which game data a running
-  mod can read (`GameXML`, `FileIO`, versions), and which APIs fail.
+  mod can read (`GameXML`, `FileIO`, versions), which APIs fail, or
+  reverse-engineering an entity's behavior with `print(ev)`.
 * [synchrony-game-control.md](./synchrony-game-control.md): getting data out
   of a mod, running code in a turn, snapshot and restore, level changes,
   tiles, and spawning or converting entities.

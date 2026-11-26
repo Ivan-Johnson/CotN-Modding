@@ -1,9 +1,8 @@
 # GameData
 
 Scrapes data out of the running game with the `ScrapeGameData` mod (which
-lives in `Mods/`, per ADR-0004) and publishes it to the `game-data` branch of
-the docs mirror. See the repo-root `AGENTS.md` for shared commands and
-conventions, and `Docs/Adr/0005-*` for why the data has its own branch.
+lives in `Mods/`) and publishes it to the `game-data` branch of
+the docs mirror. See `Docs/Adr/0005-*` for why the data has its own branch.
 
 ## Commands
 

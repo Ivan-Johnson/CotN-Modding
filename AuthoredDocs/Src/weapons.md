@@ -8,7 +8,7 @@ For players. How facing, pressing and bumping work: [controls.md](./controls.md)
   of your weapon's trigger tiles; otherwise you move. Every pattern below
   rotates with the direction you press, and "ahead" means that direction.
 * A weapon hits an enemy for its full damage. Melee never damages a crate; the
-  swing pushes it one tile. A bomb breaks crates ([bombs.md](./bombs.md)).
+  swing pushes it one tile. What a bomb does to a crate: [bombs.md](./bombs.md).
 * Walking onto a weapon lying on the floor equips it and drops the one you
   held on that tile. Stepping onto the tile again swaps them back.
 * You can throw a dagger, a spear or a trident with the throw command followed

@@ -14,8 +14,8 @@ Cadence in no-beat mode on CotN 4.2.1.
   blocked the player's melee: 4 or more dagger hits did no damage and the
   dragon killed the player.
 * `SpellEarth` ("Raise walls", `spell1`) raises `EarthWall` on the 8 tiles
-  around the player. The walls held for 30+ beats and the shovel destroys
-  them; see [king-conga.md](./king-conga.md).
+  around the player. The walls held for 30+ beats; any move into one opens
+  it ([digging.md](./digging.md)). See [king-conga.md](./king-conga.md).
 * `HolyWater` ("Use near enemies", `item1`, consumed by the use) deals 5
   damage to every enemy in the 3 by 3 around the player, diagonals included,
   and nothing farther: a `Skeleton` 2 tiles away took nothing. It killed a

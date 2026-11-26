@@ -20,9 +20,9 @@ appears differs between runs. Stats columns: [enemies.md](./enemies.md#stats-tab
 
 ## Minotaur and Minotaur2
 
-* A natural `Minotaur` started moving toward the player while the player was
-  still 9 tiles away behind walls, one tile every beat. It digs through
-  walls on the way; see [digging.md](./digging.md).
+* What wakes a `Minotaur`: [enemies.md](./enemies.md). Once awake it moves
+  toward the player one tile every beat and digs through walls on the way;
+  see [digging.md](./digging.md).
 * Face to face with a dagger, a `Minotaur` hit once for 4 on the beat of the
   first dagger hit and not on the next two beats; the third hit killed it.
   That is one attack in three adjacent beats. One fight only.

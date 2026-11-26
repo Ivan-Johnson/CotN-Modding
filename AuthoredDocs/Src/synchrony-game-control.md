@@ -6,9 +6,10 @@ Synchrony API 4.2.1, unless a bullet bounds it further.
 
 ## Getting data in and out
 
-* A mod cannot write files: `FileIO` has no write function, `io` and `os` are
-  absent, and `Storage`, `HTTP`, `DebugDump` and `LocalProxy` fail with
-  "Permission denied".
+* A mod cannot write files: `FileIO` has no write function, and `Storage`,
+  `HTTP`, `DebugDump` and `LocalProxy` fail with "Permission denied". The
+  missing Lua globals are listed in
+  [game-data-sources.md](./game-data-sources.md#not-available).
 * `print()` goes to `NecroDancer.log`. The game flushes the log about once a
   second, so a reader sees a line 0 to 1 s late.
 * A mod can read a file inside a mounted mod's directory with
@@ -18,8 +19,6 @@ Synchrony API 4.2.1, unless a bullet bounds it further.
   it. Guard for nil, and have the writer write a temp file and rename it.
 * `event.tick.add(name, {order = "invokeLater"}, fn)` fires over 1000 times a
   second, so a `FileIO.exists` check per tick is cheap.
-* A new global throws at load time. Keep state in `local`s; a reload resets
-  them.
 * A log line of 17 KB was too long, so chunk big output (4,000-character
   base64 lines carried a 250 KB string intact; see `ScrapeGameData`).
 * `%q` can emit invalid JSON escapes, so serialize by hand. An entity dump
@@ -55,10 +54,10 @@ Synchrony API 4.2.1, unless a bullet bounds it further.
   angering a shopkeeper, a bomb beside you) and restore between trials. Each
   save overwrites the baseline a restore returns to, so save once, before
   the loop.
-* Clearing the buffer drops the pinned snapshot, so save and pin it again;
-  without that a second restore landed on an earlier turn. With it, one
-  snapshot restored three times in a row. A spawn made after the snapshot is
-  gone after a restore, and enemies cleared before it stay cleared.
+* Clearing the buffer drops the pinned snapshot, so save and pin it again
+  after each restore; otherwise the next restore lands on an earlier turn. A
+  spawn made after the snapshot is gone after a restore, and enemies cleared
+  before it stay cleared.
 
 ## Input, runs and levels
 
@@ -70,28 +69,22 @@ Synchrony API 4.2.1, unless a bullet bounds it further.
   The `Starting Single Zone run with seed` log line still shows a random
   number, so compare tiles. Entity ids differ between such runs, so match
   entities by type and tile.
-* Inputs queued back to back made enemies skip a move about every 24 beats (a
-  `Slime3`, which moves every beat, did so in 40 batched 8-beat runs and never
-  in 49 beats sent one at a time); waiting 25 ticks after each input
-  resolved stopped it and 10 did not. The cause is unknown. Deterministic
-  enemies (`Slime2`, `Slime3`, `Skeleton`) act on the same beats either way.
+* Inputs queued back to back make enemies skip a move about every 24 beats.
+  Wait at least 25 ticks after each input resolves (`api.play` waits 30);
+  10 is not enough.
 * The diagonal inputs (`up_left` and the like) are ignored: the input never
   resolves and the turn does not advance ([controls.md](./controls.md)).
 * No API steps N beats; `Turn.process(target)` did nothing. N `IDLE` inputs
   advance about one beat each, faster than real time.
 * After an input that steps onto stairs or a `Trapdoor`, the level changes
-  late (one stairs descent and one trapdoor fall, levels 1 and 2, no-beat
-  mode):
+  late, in no-beat mode:
   * The turn advances for the move itself, so the input's job finishes with
     the old level's state.
-  * `event.levelComplete` fires afterwards: stairs 0.36 s, then `levelLoad`
-    0.23 s later; trapdoor a `TRAPDOOR` groove-chain loss at 0.16 s,
-    `levelComplete` at 2.2 s, `levelLoad` 0.25 s later. It is too late to
-    warn the mod.
-  * `LevelTransition.isPending()` stayed false throughout, so no API signals
-    the change early. Reading state about 3 s later showed the new level.
-  * Once, in a batch whose sixth action stepped onto a trapdoor, the three
-    later actions all failed to move.
+  * `event.levelComplete`, then `levelLoad`, fire a fraction of a second to
+    about 2 s afterwards (a trapdoor first fires a `TRAPDOOR` groove-chain
+    loss). That is too late to warn the mod.
+  * `LevelTransition.isPending()` stays false throughout, so no API signals
+    the change early.
 
 ## Tiles and traps
 
@@ -101,7 +94,7 @@ Synchrony API 4.2.1, unless a bullet bounds it further.
 * `Tile.getInfo(x, y).digResistance` is a wall's toughness; the values, and
   what digs what, are in [digging.md](./digging.md).
 * `Marker.lookUpAll(Marker.Type.STAIRS)` lists the stairs as `{x, y}` (1 entry
-  on a 1-1 level; locked and boss exits were not checked). No tile is named
+  on a 1-1 level). No tile is named
   for the exit.
 * `Tile.setType(x, y, "Floor")` turns a wall into floor, but entities attached
   to the wall (spike traps, wall torches) stay; delete the `*Wall*` entities
@@ -126,17 +119,13 @@ Synchrony API 4.2.1, unless a bullet bounds it further.
   tile: an enemy later spawned beside it could never step there. Use
   `Object.delete(entity)`.
 * Entities with a `position` include the player's inventory items (at the
-  player's tile) and a `WallTorch` per wall: 49 plus 52 of those made the
-  101 on a 1-1 level.
+  player's tile) and the `WallTorch`es on walls.
 * A spawned enemy's `beatDelay.counter` starts at 0. With `beatDelay.interval`
   1 it acts every beat; with interval 2 it acts on beats 1, 3, 5, ... after
   the spawn. A dump taken after an action shows the counter at 0 again.
 * Spawning or converting to `Dove` also attaches a `DoveHead` entity on the
   same tile.
-* To dump an entity, loop over `Entities.listComponentNames()`, read
-  `entity[name]`, and read the fields named in
-  `Components.getComponentDefaults()[name]`. A dump is 12 to 17 KB (Cadence
-  about 16.5 KB).
+* Dumping an entity: [game-data-sources.md](./game-data-sources.md#dumping-entities).
 
 ## Events about the player
 
@@ -144,7 +133,7 @@ Synchrony API 4.2.1, unless a bullet bounds it further.
   `objectDeath`, `objectSongEnd`). The `holder*` events run per inventory
   item: `holderGrooveChain` never fires for the player's multiplier.
 * After a win or death the run-summary screen swallows every action.
-  `RunSummary.getActiveSummary()` is truthy then. After dying on 1-1,
-  `getPendingSummary`, `getActiveSummary` and `getDecisiveSummary` were all
-  truthy (`victory` nil) while the player entity still existed; in normal play
-  all three were false.
+  `RunSummary.getActiveSummary()` is truthy then. After a death,
+  `getPendingSummary`, `getActiveSummary` and `getDecisiveSummary` are all
+  truthy (`victory` nil) while the player entity still exists; in normal play
+  all three are false.

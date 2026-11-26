@@ -14,7 +14,8 @@ and 2, 4, 6 and 8 are the diagonals. Read from zone one enemy dumps on CotN
 | 7 | seeks the player | `Skeleton`, `Skeleton2`, `Skeleton3`, `Monkey`, `Monkey2`, `Ghost`, `Wraith`, `Dragon`, `Minotaur`, `Minotaur2` |
 
 * `beatDelay.interval` is the number of beats between actions; the player-facing
-  tables call it speed. A spawned enemy's `beatDelay.counter` starts at 0.
+  tables call it speed. How `beatDelay.counter` counts:
+  [synchrony-game-control.md](./synchrony-game-control.md#entities).
 * Every type above has an `ai.directions` list and `aiBasicSeek`, whatever its
   `ai.id`.
 * `activationRange.radius` is the straight-line distance within which a

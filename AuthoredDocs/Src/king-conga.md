@@ -42,8 +42,8 @@ which were not fought. Level layout: [stairs-and-levels.md](./stairs-and-levels.
 
 `SpellEarth` (`spell1`) raised `EarthWall` on the 8 tiles around the player at
 (0,-8). The walls held for 30+ beats: the King stopped at (0,-10) and the
-snake heads at (-2,-8) and (2,-8). Pressing toward a wall with the shovel
-destroyed it, after which the next snake head stepped adjacent and could be
+snake heads at (-2,-8) and (2,-8). Pressing toward a wall opened it
+([digging.md](./digging.md)), after which the next snake head stepped adjacent and could be
 killed, one hit each, from inside the box. With one wall opened per side, both
 lines were cleared with no damage taken; the King then stepped into the
 opening dug on his side and died to one hit. See also

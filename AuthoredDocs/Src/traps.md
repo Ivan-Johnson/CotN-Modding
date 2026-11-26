@@ -22,5 +22,6 @@ CotN 4.2.1.
 * `Trapdoor`: stepping on one drops the player to the next level with health
   unchanged; see [stairs-and-levels.md](./stairs-and-levels.md).
 * Also seen, with their effects untested: `BombTrap`, `BounceTrapLeft`,
-  `BounceTrapDown`, `BounceTrapOmni`, `TempoUpTrap`, `TempoDownTrap` and
-  `Sync_WallSpike`.
+  `BounceTrapDown`, `BounceTrapOmni`, `TempoUpTrap` and `TempoDownTrap`.
+* `Sync_WallSpike`: set in a wall; digging it out costs 1 health
+  ([digging.md](./digging.md)).

@@ -1,7 +1,13 @@
 # Takes the game-instance lock, so a test run never overlaps another run or an
 # interactive session; then installs the mods, waits for the suite, and prints
-# its results. This is the only caller that takes the lock; the root AGENTS.md
-# describes the lock and its ITJ_GAME_LOCK_* variables.
+# its results. This is the only caller that takes the lock.
+#
+# Environment:
+#   ITJ_GAME_LOCK_FILE             default itj-game.lock in the game's mods dir
+#   ITJ_GAME_LOCK_TIMEOUT_SECONDS  wait for another run's lock (default 120)
+#   ITJ_SUITE_TIMEOUT_SECONDS      wait for the suite to complete (default 900)
+#   ITJ_SUITE_STALL_SECONDS        fail once the log is silent this long
+#                                  (default 120)
 #
 # Usage: run-tests [TEST_NAME | --files FILE,FILE...]
 # With a name, runs only that test (still from the fixed seed) and fails if no

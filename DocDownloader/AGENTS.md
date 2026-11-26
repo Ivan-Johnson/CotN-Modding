@@ -1,8 +1,7 @@
 # DocDownloader
 
 Mirrors the official Synchrony API documentation and renders it to Markdown and
-man pages. See the repo-root `AGENTS.md` for shared commands and conventions.
-Why the crawl is mirrored rather than built, and why `mandb` is indexed in a
+man pages. Why the crawl is mirrored rather than built, and why `mandb` is indexed in a
 second derivation: `Docs/Adr/0001-*` and `0002-*` at the repo root.
 
 ## Commands
@@ -12,8 +11,6 @@ second derivation: `Docs/Adr/0001-*` and `0002-*` at the repo root.
   spare the official webserver. `crawl-and-push.bash` always re-crawls and its
   final stage performs a real Git push, so reserve it for publishing a mirror.
 * Validate with `nix flake check`, which runs `test-html-to-docs.bash`.
-  `push-to-mirror.bash` is shared with the GameData context, which pushes the
-  `game-data` branch; see `Docs/Adr/0005-*`.
 
 ## Architecture
 
@@ -28,6 +25,9 @@ second derivation: `Docs/Adr/0001-*` and `0002-*` at the repo root.
 3. `flake-module.nix` runs stage 2 over the pinned mirror and exports the
    result as `converted`, which the AuthoredDocs context assembles into the
    docs tree.
+
+`push-to-mirror.bash` is shared with the GameData context, which pushes the
+`game-data` branch; see `Docs/Adr/0005-*`.
 
 ## Conventions
 

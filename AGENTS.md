@@ -41,16 +41,13 @@ than silently overriding it.
 ## Commands
 
 * `build-release` runs `nix flake check` and the nix formatting check, and
-  also runs `nix run .#itj-impure-tests` since this flake provides it, unless
-  the changed paths cannot affect it: the git hooks tell it what changed, and
-  `nix run .#itj-impure-scope` (fed paths on stdin) answers `none` for
-  docs, `GameData/`, `DocDownloader/`, `ScrapeGameData`, `Gary the Cowardly
-  Sheep`, `*.md`, `open_files.txt` and `Tmp/` paths, the changed
-  `Mods/HelloWorld/*-tests.lua` names when those are the only suite paths, and
-  `all` for anything else (`Mods/itj-impure-scope.bash` has the lists). A
-  commit that changes only test files runs only those files' tests
-  (`itj-impure-tests --files`); a push always runs the full suite. A manual
-  `build-release` has no changed paths and runs everything.
+  also runs `nix run .#itj-impure-tests` (see `Mods/AGENTS.md`) unless the
+  changed paths cannot affect it: the git hooks tell it what changed, and
+  `nix run .#itj-impure-scope` (fed paths on stdin; the path lists are in
+  `Mods/itj-impure-scope.bash`) decides. A commit that changes only test files
+  runs only those files' tests (`itj-impure-tests --files`); a push always
+  runs the full suite. A manual `build-release` has no changed paths and runs
+  everything.
 * The impure tests reload the mods and wipe the live game run, and the
   `commit-msg` hook runs `build-release`, so every commit that touches a suite
   path does, except one whose subject starts with `WIP` or one made with
@@ -58,25 +55,15 @@ than silently overriding it.
   so does a docs-only push; any other push runs them once per pushed commit,
   and a new branch once on its tip. During a live run, avoid touching
   suite paths in commits, or use `--no-verify` and re-run the checks at the end.
-* `nix run .#itj-impure-tests` installs `HelloWorld` and `HelloWorldTests` via
-  `install-mods` (see `Mods/AGENTS.md`), forces `HelloWorldTests` to reload so
-  its automated test run
-  fires, and prints only the new `NecroDancer.log` lines produced by that run.
-  CotN live-reloads unpacked mods, so this is the whole inner dev loop: edit,
-  run `nix run .#itj-impure-tests`, read the result. It's an `app`, not a
-  `check`, because it's impure: it needs a running, native Steam/Proton CotN
-  instance.
 * `nix run .#itj-impure-tests` first takes an advisory `flock` on the one game
-  instance (`ITJ_GAME_LOCK_FILE`, default `itj-game.lock` inside the game's
-  mods directory). If another run holds it, it waits up to 120 s
-  (`ITJ_GAME_LOCK_TIMEOUT_SECONDS`), then fails naming the holder before
-  installing anything. Everything that runs the tests, hooks included, goes
-  through it. `nix flake check` tests the lock without a game.
-* The run waits for the suite's completion line, up to 900 s
-  (`ITJ_SUITE_TIMEOUT_SECONDS`). If `NecroDancer.log` gains no line for 120 s
-  (`ITJ_SUITE_STALL_SECONDS`) it fails with "game not responding" and frees
-  the lock, because a crashed or hung game logs nothing. Restarting the game
-  is the user's job; agents cannot reach it from the sandbox.
+  instance. If another run holds it, it waits, then fails naming the holder
+  before installing anything. Everything that runs the tests, hooks included,
+  goes through it. `nix flake check` tests the lock without a game. The lock
+  file, the timeouts and their variables are in the header of
+  `Mods/itj-impure-tests.bash`.
+* A crashed or hung game logs nothing, so a run whose `NecroDancer.log` stops
+  growing fails with "game not responding" and frees the lock. Restarting the
+  game is the user's job; agents cannot reach it from the sandbox.
 * Scripts act on the checkout they are run in, found from `git rev-parse
   --show-toplevel`, never from the workspace's `ITJ_FLAKE_ROOT`, so a git
   worktree installs and tests its own mods. `ITJ_MODS_ROOT` overrides the
@@ -111,7 +98,8 @@ Issues live in GitHub Issues for `Ivan-Johnson/CotN-Modding`, via `gh`. See
 `Docs/Agents/issue-tracker.md`.
 
 **Implementing an issue:** end the commit message with `Closes #<n>` (on the
-last commit if there are several).
+last commit if there are several), one keyword per issue on its own line, so
+the push closes it; don't close it by hand.
 
 ### Triage labels
 

@@ -13,8 +13,7 @@ one run of [SKILL.md](./SKILL.md); this file covers running several.
   in their return. They report contradictions in other pages to you instead of
   editing them.
 * **One game.** Runs queue on the game lock, so experiments from several
-  agents interleave. A test run takes seconds, so contention is rare. A game
-  that stops logging fails the run after 120 s; only the user can restart it.
+  agents interleave. A test run takes seconds, so contention is rare.
 * **Worktrees** work: scripts act on the checkout they run in, so each agent
   can commit in its own.
 * **Merge serially.** Cherry-pick each agent's commit; cherry-picks skip the

@@ -11,8 +11,8 @@ For mod authors. What a mod can read from the running game at run-time (in an
   per-zone drop weights.
 * **`GameXML.getItemData(name)`** returns a parsed table for one XML item. Its
   values are strings, so numbers need parsing. `shopChance` and `chestChance`
-  are pipe-separated, probably one value per zone (`guess`). `getEnemyData`
-  and `getCharacterData` exist; their arguments and results are untried.
+  are pipe-separated lists. `getEnemyData`
+  and `getCharacterData` also exist.
 * **`Components.getComponentDefaults()`** maps every registered component to
   its fields and default values. It is the authoritative field list; the
   official docs lack one.
@@ -26,8 +26,6 @@ For mod authors. What a mod can read from the running game at run-time (in an
   files, which gives a module inventory. `listFiles("")` and
   `listFiles("mods")` also return entries; directories appear when
   `DIRECTORIES` is set.
-* **`entitySchemaLoadEntity`**: printing `ev` dumps every entity type with its
-  component table (see [gotchas.md](./gotchas.md)).
 * **`GameMod.getPatchVersion()`** returns the patch version (`"4.2.1"`). It is
   the only version a mod can read: `Session.getVersion()` and `necro.mod.Mods`
   cannot be required (Permission denied), `_VERSION` is absent and `Netplay`
@@ -44,9 +42,30 @@ For mod authors. What a mod can read from the running game at run-time (in an
   no `load`, `loadstring` or `lpeg` for mods, so those are scanned with Lua
   patterns.
 
-## Not available
+## Dumping entities
 
-Each item below came from one probe on 4.2.1, not a systematic check:
+To find which components/fields drive an existing entity's behavior, temporarily
+register:
+
+```
+event.entitySchemaLoadEntity.add("dump", {order = "finalize", sequence = 1}, function(ev) print(ev) end)
+```
+
+When run, every entity in the base game (and any other loaded mods) gets logged
+to `NecroDancer.log` with its full component/field table. Search it by the
+entity's `friendlyName` or internal `name` to see exactly which component
+provides a given behavior (e.g.  `consumableHeal` on `Food1`/Apple).
+
+The same `print(ev)` trick works inside any other event handler to inspect an
+unfamiliar event's fields (e.g. `ev.caster`, `ev.spell` inside `spellcast`) when
+the API docs don't spell out its payload.
+
+To dump one live entity, loop over `Entities.listComponentNames()`, read
+`entity[name]`, and read the fields named in
+`Components.getComponentDefaults()[name]`. A dump is 12 to 17 KB (Cadence
+about 16.5 KB).
+
+## Not available
 
 * `pairs()` or `next()` over a module, `_G`, `event` or `Entities` returns
   nothing, though their members work when named.
@@ -55,7 +74,6 @@ Each item below came from one probe on 4.2.1, not a systematic check:
   throws. `math`, `string`, `table`, `next`, `select`, `setmetatable` and
   `require` are present.
 * `FileIO.listFiles("data")` and `("data/xml")` return zero entries.
-* `FileIO` is read-only and `DebugDump.writeTextFile` is documented as
-  internal-only, so the log is the only output channel found (see
-  [synchrony-game-control.md](./synchrony-game-control.md)).
+* Writing anything but the log: see
+  [synchrony-game-control.md](./synchrony-game-control.md#getting-data-in-and-out).
 * The game install directory holds only `NecroDancer.log`.

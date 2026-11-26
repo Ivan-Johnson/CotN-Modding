@@ -1,8 +1,7 @@
 # AuthoredDocs
 
 Holds the docs written by hand (`Src/`), and builds the docs tree that
-publishes them beside the official docs and the game data. See the repo-root
-`AGENTS.md` for shared commands and conventions. Why `mandb` is indexed in a
+publishes them beside the official docs and the game data. Why `mandb` is indexed in a
 second derivation: `Docs/Adr/0002-*` at the repo root.
 
 ## Commands
