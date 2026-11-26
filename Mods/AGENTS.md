@@ -13,8 +13,8 @@ do not: each group's role and what it is coupled to.
   `tests.lua`.
 * `ClaimTests/`: the claim tests, with no gameplay code. `<page>.lua` backs
   `AuthoredDocs/Src/<page>.md` and nothing else; the `claim-tests-layout`
-  check requires the page. The test run never installs it beside
-  `HelloWorld` (ADR 0008).
+  check requires the page. The test run never installs it beside a
+  code-test mod (ADR 0008).
 * `TestFramework/`: the test framework. `api.lua` holds the test contract,
   `fixtures.lua` the shared helpers, and `TestFramework.lua` the framework's
   self-tests and the suite start.
@@ -66,7 +66,8 @@ do not: each group's role and what it is coupled to.
 ## Dev loop
 
 * `nix run .#itj-impure-tests` is the whole inner dev loop: in one pass it
-  installs `HelloWorld` and `TestFramework` with `live-game-run`, and in a
+  installs every code-test mod (each mod with a `tests.lua` or
+  `*-tests.lua`) and `TestFramework` with `live-game-run`, and in a
   second pass `ClaimTests` and `TestFramework`. Each pass locks the game,
   forces `TestFramework` to reload so its test run fires, waits for the
   suite, and prints only the new `NecroDancer.log` lines. The run's last

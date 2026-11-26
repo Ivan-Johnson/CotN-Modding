@@ -1,8 +1,8 @@
 # Behavior test for the live-test classifier: feeds it fixture path lists and
 # checks its answer. Needs no live game. Expects `itj-impure-scope` on PATH and
 # the repo's tracked files (the flake source) at the path in $1, whose claim
-# test files (e.g. Mods/ClaimTests/weapons.lua) and code test file
-# (Mods/HelloWorld/tests.lua) the answers depend on.
+# test files (e.g. Mods/ClaimTests/weapons.lua) and code test files
+# (e.g. Mods/HelloWorld/tests.lua) the answers depend on.
 set -u
 
 root=$1
@@ -41,10 +41,13 @@ expect weapons.lua Docs/a.md Mods/ClaimTests/weapons.lua AuthoredDocs/Src/weapon
 expect "$(printf 'bombs.lua\nweapons.lua')" Mods/ClaimTests/weapons.lua AuthoredDocs/Src/bombs.md Mods/ClaimTests/weapons.lua
 expect none Mods/ClaimTests/deleted.lua AuthoredDocs/Src/deleted.md
 
-# HelloWorld's code tests run when anything in HelloWorld changes.
+# A code-test mod's tests run when anything in that mod changes.
 expect tests.lua Mods/HelloWorld/HelloWorld.lua
 expect tests.lua Mods/HelloWorld/tests.lua
 expect "$(printf 'tests.lua\nweapons.lua')" Mods/HelloWorld/mod.json AuthoredDocs/Src/weapons.md
+expect gary-tests.lua Mods/GaryTheCowardlySheep/GaryTheCowardlySheep.lua
+expect "$(printf 'gary-tests.lua\ntests.lua')" Mods/GaryTheCowardlySheep/mod.json Mods/HelloWorld/tests.lua
+expect none Mods/GaryTheCowardlySheep/GLOSSARY.md
 
 # The harness, and anything no rule names, runs everything.
 expect all Mods/ClaimTests/sub/weapons.lua

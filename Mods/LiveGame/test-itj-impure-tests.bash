@@ -125,4 +125,41 @@ if ! grep -qxF "file: weapons.lua" "$modsDir/DevBundle/TestFramework/selected-te
 	exit 1
 fi
 
+# A code test file runs in a pass that installs every mod with code tests, and
+# not ClaimTests.
+mkdir -p "$goodRepo/Mods/OtherMod"
+echo '{"namespace":"OtherMod","name":"OtherMod","synchronyVersion":"1.0"}' >"$goodRepo/Mods/OtherMod/mod.json"
+touch "$goodRepo/Mods/HelloWorld/tests.lua" "$goodRepo/Mods/OtherMod/other-tests.lua"
+(
+	sleep 1
+	echo '[TestFramework] PASS fakeCodeTest' >>"$COTN_LOG"
+	echo '[TestFramework] Test suite completed: 0 failure(s)' >>"$COTN_LOG"
+) &
+growerPid=$!
+status=0
+stdout=$(itj-impure-tests --files other-tests.lua 2>&1) || status=$?
+wait "$growerPid"
+
+if ((status != 0)) || [ ! -d "$modsDir/DevBundle/OtherMod" ] || [ ! -d "$modsDir/DevBundle/HelloWorld" ] || [ -e "$modsDir/DevBundle/ClaimTests" ]; then
+	echo "FAIL: a code test file did not run with every code-test mod (status $status); installed: $(ls "$modsDir/DevBundle"); output was:" >&2
+	echo "$stdout" >&2
+	exit 1
+fi
+
+if ! grep -qxF "expect: tests.lua other-tests.lua" "$modsDir/DevBundle/TestFramework/selected-test.txt"; then
+	echo "FAIL: the code pass did not expect every code test file" >&2
+	exit 1
+fi
+
+# Two code test files with one basename would make a file selection ambiguous.
+touch "$goodRepo/Mods/OtherMod/tests.lua"
+status=0
+stdout=$(itj-impure-tests --files tests.lua 2>&1) || status=$?
+rm "$goodRepo/Mods/OtherMod/tests.lua"
+if ((status == 0)) || ! grep -qF "share the basename tests.lua" <<<"$stdout"; then
+	echo "FAIL: a duplicate code test basename was not refused (status $status); output was:" >&2
+	echo "$stdout" >&2
+	exit 1
+fi
+
 echo "itj-impure-tests test passed"

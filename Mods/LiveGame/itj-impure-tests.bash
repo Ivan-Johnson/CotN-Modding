@@ -19,24 +19,45 @@
 # line of a successful run, so keep it last.
 #
 # A run has up to two passes, each one install and one reload: the code pass
-# installs HelloWorld, and the claim pass installs ClaimTests without it, so
-# HelloWorld's gameplay code never changes a claim test's level
+# installs every code-test mod (a mod with a `tests.lua` or `*-tests.lua`), and
+# the claim pass installs ClaimTests without them, so their gameplay code never
+# changes a claim test's level
 # (Docs/Adr/0008-claim-tests-run-only-when-their-page-changes.md). Another
 # caller may use the game between the passes, which is safe because each pass
 # reinstalls the whole bundle (Docs/Adr/0009-one-module-owns-the-live-game-instance.md).
 modsRoot="${ITJ_MODS_ROOT:-$(git rev-parse --show-toplevel)/Mods}"
 
-# The test files of each pass, as itj-impure-scope.bash also finds them.
+# The test files of each pass, and the code-test mods, as itj-impure-scope.bash
+# also finds them.
 claimFiles=()
 codeFiles=()
+codeMods=()
 for path in "$modsRoot"/ClaimTests/*.lua; do
         if [ -e "$path" ]; then
                 claimFiles+=("${path##*/}")
         fi
 done
-for path in "$modsRoot"/HelloWorld/tests.lua "$modsRoot"/HelloWorld/*-tests.lua; do
-        if [ -e "$path" ]; then
-                codeFiles+=("${path##*/}")
+# A file selection names test files by basename, so two code test files must
+# not share one.
+declare -A codeFileMods=()
+for path in "$modsRoot"/*/tests.lua "$modsRoot"/*/*-tests.lua; do
+        if [ ! -e "$path" ]; then
+                continue
+        fi
+        file=${path##*/}
+        mod=${path%/*}
+        mod=${mod##*/}
+        if [ "$mod" = ClaimTests ]; then
+                continue
+        fi
+        if [ -n "${codeFileMods[$file]:-}" ]; then
+                echo "itj-impure-tests: ${codeFileMods[$file]} and $mod share the basename $file" >&2
+                exit 1
+        fi
+        codeFileMods[$file]=$mod
+        codeFiles+=("$file")
+        if [[ " ${codeMods[*]} " != *" $mod "* ]]; then
+                codeMods+=("$mod")
         fi
 done
 
@@ -166,11 +187,11 @@ if [ -n "${1:-}" ] && [ "${1:-}" != "--files" ]; then
         fi
         if ((!runClaim || nameMissing)); then
                 status=0
-                runPass "$codeSelection" "${codeFiles[*]}" HelloWorld || status=$?
+                runPass "$codeSelection" "${codeFiles[*]}" "${codeMods[@]}" || status=$?
         fi
 else
         if ((runCode)); then
-                runPass "$codeSelection" "${codeFiles[*]}" HelloWorld || status=1
+                runPass "$codeSelection" "${codeFiles[*]}" "${codeMods[@]}" || status=1
         fi
         if ((runClaim)); then
                 runPass "$claimSelection" "${claimFiles[*]}" ClaimTests || status=1

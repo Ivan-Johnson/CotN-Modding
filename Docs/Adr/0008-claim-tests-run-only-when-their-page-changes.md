@@ -26,8 +26,9 @@ on most commits and pushes.
   code. Each file backs exactly one page and is named after it:
   `Mods/ClaimTests/weapons.lua` backs `AuthoredDocs/Src/weapons.md`. A flake
   check requires each file to have its page. It does not check the reverse.
-* `HelloWorld` is never installed while claim tests run. A run that needs
-  both kinds does two passes, which costs one more game reload.
+* No mod with code tests (originally just `HelloWorld`) is installed while
+  claim tests run. A run that needs both kinds does two passes, which costs
+  one more game reload.
 * A change to the harness (`Mods/TestFramework/`, the runner and install
   scripts in `Mods/LiveGame/`, `Mods/flake-module.nix`, `flake.nix`,
   `flake.lock`) runs every test. A path that no list names also runs every

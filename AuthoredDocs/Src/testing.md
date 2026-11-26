@@ -34,11 +34,13 @@ it as a regression test with real assertions.
 
 ## Writing tests
 
-* A mod under test contributes code tests from its own `tests.lua` (for
-  example `HelloWorld/tests.lua`). Claim tests, which back a page's claims
-  about the game, go in `Mods/ClaimTests/<page>.lua`, which the run installs
-  without `HelloWorld`. Either guards the cross-mod `require()` of
-  `TestFramework.api` in a `pcall()`, since the framework may not be loaded.
+* A mod under test contributes code tests from its own `tests.lua` or
+  `*-tests.lua` (for example `HelloWorld/tests.lua`). Tests are selected by
+  file basename, so no two mods may share one. Claim tests, which back a
+  page's claims about the game, go in `Mods/ClaimTests/<page>.lua`, which the
+  run installs without the mods under test. Either guards the cross-mod
+  `require()` of `TestFramework.api` in a `pcall()`, since the framework may
+  not be loaded.
 * Registering a name that is already registered replaces the earlier test: a
   reload can run a mod's load-time `registerTest()` calls again, and the
   replacement keeps each test running once. The entrypoint fails if a test

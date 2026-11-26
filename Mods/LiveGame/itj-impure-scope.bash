@@ -6,7 +6,8 @@
 # Docs/Adr/0008-claim-tests-run-only-when-their-page-changes.md:
 #
 # * A claim test file runs when it or its page changes.
-# * HelloWorld's code tests run when anything in HelloWorld changes.
+# * A code-test mod's tests (its `tests.lua` and `*-tests.lua`) run when
+#   anything in that mod changes.
 # * A harness path, or any path no rule names, runs everything, so a new kind
 #   of file fails safe. So does empty input (e.g. a message-only amend).
 #
@@ -30,9 +31,9 @@ harnessPrefixes=(
 	"flake.lock"
 )
 
-# Paths that no live test reads. The suite installs only HelloWorld, ClaimTests
-# and TestFramework, so none of these can change it; a claim page is matched
-# before this list.
+# Paths that no live test reads. The suite installs only the code-test mods,
+# ClaimTests and TestFramework, so none of these can change it; a claim page is
+# matched before this list.
 harmlessPrefixes=(
 	"AuthoredDocs/"
 	"Docs/"
@@ -75,11 +76,16 @@ isHarmless() {
 	return 1
 }
 
-# HelloWorld's code test files, as they exist in the tree.
-codeTestFiles=()
+# Each code-test mod's test files, as they exist in the tree and as
+# itj-impure-tests.bash also finds them: space-separated, keyed by mod.
+declare -A codeTestFiles=()
 shopt -s nullglob
-for path in "$root"/Mods/HelloWorld/tests.lua "$root"/Mods/HelloWorld/*-tests.lua; do
-	codeTestFiles+=("${path##*/}")
+for path in "$root"/Mods/*/tests.lua "$root"/Mods/*/*-tests.lua; do
+	mod=${path%/*}
+	mod=${mod##*/}
+	if [[ $mod != ClaimTests ]]; then
+		codeTestFiles[$mod]+="${path##*/} "
+	fi
 done
 shopt -u nullglob
 
@@ -90,6 +96,9 @@ while IFS= read -r path; do
 		continue
 	fi
 	seen=$((seen + 1))
+	# The mod directory a `Mods/<mod>/...` path is in.
+	mod=${path#Mods/}
+	mod=${mod%%/*}
 	if hasPrefix "$path" "${harnessPrefixes[@]}"; then
 		echo all
 		exit 0
@@ -105,15 +114,12 @@ while IFS= read -r path; do
 		if [[ -e $root/Mods/ClaimTests/${page%.md}.lua ]]; then
 			testFiles+=("${page%.md}.lua")
 		fi
-	elif [[ $path == Mods/HelloWorld/* ]]; then
+	elif [[ $path == Mods/*/* && -n ${codeTestFiles[$mod]:-} ]]; then
 		if [[ $path == *.md ]]; then
 			continue
 		fi
-		if ((${#codeTestFiles[@]} == 0)); then
-			echo all
-			exit 0
-		fi
-		testFiles+=("${codeTestFiles[@]}")
+		read -ra files <<<"${codeTestFiles[$mod]}"
+		testFiles+=("${files[@]}")
 	elif ! isHarmless "$path"; then
 		echo all
 		exit 0
