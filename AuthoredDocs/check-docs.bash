@@ -209,7 +209,6 @@ readonly UNSWEPT_PLAYER_PAGES=(
 	king-conga.md
 	shops.md
 	shrines.md
-	skeletons.md
 	stairs-and-levels.md
 	traps.md
 	zombies.md

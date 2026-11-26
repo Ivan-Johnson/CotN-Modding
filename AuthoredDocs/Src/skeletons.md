@@ -9,20 +9,21 @@ Stats columns: [enemies.md](./enemies.md#stats-tables).
 | `Skeleton2` | 2 | 2 | 3 | 2 |
 | `Skeleton3` | 2 | 3 | 4 | 3 |
 
-* All three seek the player, one tile every second beat, x first and then y.
-  Next to the player they attack every second beat. Which beat they first move
-  on depends on the spawn timing.
-* `Skeleton2` kills a 12-health player in four hits and `Skeleton3` in three.
-* A dagger hit turns `Skeleton2` (first hit) and `Skeleton3` (second hit) into
-  `Skeleton2Headless` and `Skeleton3Headless`, shoved one tile away along the
-  hit direction. The first hit on `Skeleton3` changed nothing visible.
-* A headless skeleton does not seek, but it charges: after a dagger hit on a
-  natural `Skeleton2`, the `Skeleton2Headless` was shoved one tile, then ran
-  one tile every beat in the direction of the hit, away from the player,
-  until a wall stopped it. It stayed there for the 8 beats watched and never
-  attacked. When another enemy stood right behind it, it was not shoved or
-  moved, and a second hit killed it. A spawned one, or one hit with a wall
-  behind it, stood still. Only `Skeleton2` was seen this way; `Skeleton3` is
-  untested.
+* **Chasing.** All three wake when you come within 3 tiles and then chase you
+  one tile every second beat, as [enemies.md](./enemies.md#movement)
+  describes. Next to you they hit every second beat.
+* **Losing the head.** The hit that leaves a `Skeleton2` or `Skeleton3` on 1
+  HP turns it into a `Skeleton2Headless` or `Skeleton3Headless`: the first
+  dagger hit on a `Skeleton2`, the second on a `Skeleton3`. The first hit on
+  a `Skeleton3` only costs it 1 HP; it keeps its head and stays where it is.
+* **Headless charge.** The hit that knocks its head off shoves it one tile away
+  from you. It then runs one tile every beat in the direction of the hit
+  until a wall or another enemy stops it, and stands there from then on.
+  With a wall or an enemy right behind it when it loses its head, it is not
+  shoved and does not run.
+* **Headless and harmless.** A headless skeleton never attacks, even when you
+  stand next to it. One more hit kills it.
+* Skeleton2s and Skeleton3s that come with the level lose their heads and
+  charge the same way.
 
 Gold per kill: [coin-multiplier.md](./coin-multiplier.md).
