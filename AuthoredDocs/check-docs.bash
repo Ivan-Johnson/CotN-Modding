@@ -203,7 +203,6 @@ assert_anchors_resolve() {
 # Player pages that still carry wording the cotn-document-mechanic sweep
 # removes: see the player-page bullet under Conventions in AuthoredDocs/AGENTS.md.
 readonly UNSWEPT_PLAYER_PAGES=(
-	stairs-and-levels.md
 )
 
 # A player page states conclusions, so the wording of an experiment's setup or

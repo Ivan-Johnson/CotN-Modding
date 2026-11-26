@@ -1,39 +1,39 @@
 # Stairs and levels
 
-For players. How a single-zone run as Cadence moves through 1-1 to 1-4,
-measured in no-beat mode on CotN 4.2.1. Levels are random: two runs put
-different things near the start.
+For players. How a single-zone run as Cadence moves from 1-1 through 1-3 to
+the boss on 1-4. Each level's layout is random.
 
-## Leaving a level
+## Stairs
 
-* Walking onto the stairs loads the next level a second or so later. The
-  player starts at (0,0) on every level. Health, gold and the coin multiplier
-  carry over.
-* A miniboss usually stands on or by the stairs, and which one differs between
-  runs; see [minibosses.md](./minibosses.md). A `Minotaur` on a 1-1 stairs woke
-  up on its own, and the stairs worked once it was dead. On one run 1-2's
-  stairs were plain `Stairs`; on another they were `LockedStairs` under a
-  `BatMiniboss`, and killing it turned the tile into `Stairs` in the same
-  action.
-* Standing on a `LockedStairs` tile while its miniboss dies unlocks it and
-  descends at once, with no further input.
-* On 1-3 the stairs sat in a walled room with several enemies, including a
-  `Minotaur2`; another run's 1-3 had a `Dragon2` on the stairs.
-* A `Trapdoor` skips the stairs: on 1-3 one at (-1,9), plain floor to the
-  `tile` command, took the player to 1-4. Another run's 1-3 had one at (10,1)
-  behind a `DirtWall` and a `Ghost` in a one-tile cell; stepping on it loaded
-  1-4 with health unchanged. Trapdoors were also listed on 1-1 and 1-2 (not
-  stepped on), and their position is random.
+* On 1-1, 1-2 and 1-3 the stairs start locked (`LockedStairs`), with a
+  miniboss standing on them: a `BatMiniboss`, `Minotaur` or `Dragon` on 1-1
+  and 1-2, a `Minotaur2` or `Dragon2` on 1-3. How to fight each:
+  [minibosses.md](./minibosses.md).
+* You can stand on locked stairs, but they take you nowhere.
+* Killing the miniboss unlocks the stairs at once. If you are standing on
+  them when it dies, you go down without another move.
+* Walking onto unlocked stairs takes you to the next level. You keep your
+  health, gold, items and coin multiplier
+  ([coin-multiplier.md](./coin-multiplier.md)).
+
+## Trapdoors
+
+* A `Trapdoor` drops you to the next level, locked stairs or not, with your
+  health and gold unchanged. It ends the coin multiplier's chain
+  ([coin-multiplier.md](./coin-multiplier.md)).
+* Some of 1-1 to 1-3 hold one or more, at random spots; 1-4 has none. One on
+  1-3 drops you straight to the boss.
 
 ## 1-4, the boss level
 
-* The start room is closed (5 by 5 tiles in one run) with enemies inside, and
-  the boss room is above it, entered through five `PreBossBarrier` at y = -7
-  (x = -2 to 2).
-* The first step past y = -7 sealed the entrance with `BossWall` at y = -6.
-* The boss is random: `Fortissimole` (with 14 `Skeleton`s in two rows and four
-  `Ghost`s), `Deathmetal` at (1,-11) (seven `BounceTrapOmni`) and `KingConga`
-  were seen in three runs. Only [King Conga](./king-conga.md) was fought.
+* You start in a small walled room with no enemies. Its exit is a row of three
+  doors at the top (y = -6), opening onto a row of `PreBossBarrier`s (y = -7)
+  at the foot of the boss room.
+* Stepping onto the barriers' row walls the doorway off with `BossWall`
+  behind you: there is no way back to the start room.
+* The boss is one of five, at random: King Conga (`KingConga`, see
+  [king-conga.md](./king-conga.md)), Death Metal (`Deathmetal`), Deep Blues
+  (`King`), Coral Riff (`Coralriff`) or Fortissimole (`Fortissimole`).
 
 ## Shops
 
