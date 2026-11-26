@@ -3,8 +3,6 @@
 For the session coordinating a bulk pass over `AuthoredDocs/Src/`. Each page is
 one run of [SKILL.md](./SKILL.md); this file covers running several.
 
-* **Pilot first.** Do one page end to end and show it before fanning out: the
-  reader's corrections to the standard are cheapest on one page.
 * **One agent per page.** Brief it with the page, its neighbours to link by
   planned name (a page not yet written is fine), and "use the
   `cotn-document-mechanic` skill". It owns its page and its test file.
