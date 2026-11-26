@@ -22,6 +22,11 @@ for players or for mod authors; read the one whose trigger matches your task.
 
 A wiki of linked pages about the game's things, for Cadence.
 
+* [zone-one.md](./zone-one.md): the hub for zone one, the whole of a
+  single-zone run; start here when unsure which page covers something.
+  Zones two to five of an all-zones run: [zone-two.md](./zone-two.md),
+  [zone-three.md](./zone-three.md), [zone-four.md](./zone-four.md),
+  [zone-five.md](./zone-five.md).
 * [controls.md](./controls.md): what each input does (moving, bumping, facing,
   items, spells, bombs, idling) and what a failed action costs.
 * [enemies.md](./enemies.md): any zone one enemy, with a page per type and the

@@ -11,6 +11,9 @@ its bosses, and what you start with.
   level's stairs work: [stairs-and-levels.md](./stairs-and-levels.md).
 * As [Dove](./dove.md), the run is the same five zones with no boss levels:
   1-1 to 1-3 up to 5-3, which ends the run.
+* What each zone holds: [zone one](./zone-one.md),
+  [zone two](./zone-two.md), [zone three](./zone-three.md),
+  [zone four](./zone-four.md), [zone five](./zone-five.md).
 * You keep your health, gold and items from one zone into the next.
 * Which shrines a level can hold differs from a single-zone run:
   [shrines.md](./shrines.md).
