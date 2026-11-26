@@ -324,3 +324,15 @@ component. Source: `TargetingComponents`.
 **Provoked**:
 A `provokable` entity's triggered state, which can swap in a different AI.
 Source: `ProvokableComponents`.
+
+## Testing
+
+**Code test**:
+A live test that checks this repo's own code: a **Mod**'s behavior or the test
+framework's.
+_Avoid_: Regression test
+
+**Claim test**:
+A live test that backs a claim made in one authored doc. Each file of claim
+tests backs exactly one doc.
+_Avoid_: Doc test, docs test
