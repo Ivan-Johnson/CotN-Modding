@@ -23,6 +23,9 @@ second derivation: `Docs/Adr/0002-*` at the repo root.
   the mirror and the game data as inputs, adds the `mandb` index, and copies
   `Src/` verbatim into `authored/`. Change the layout there, and update the
   readers of it (`check-docs.bash`, `Mods/AGENTS.md`).
+* `flake-module.nix` exposes the docs tree as the `docs` package, runs
+  `check-docs.bash` over it as the `corpus` check, and defines `man-crypt`
+  in the dev shell.
 * Add a new authored doc to `Src/` and link it from `Src/README.md`, the
   index that `Mods/AGENTS.md` points at.
 

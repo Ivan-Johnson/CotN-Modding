@@ -4,6 +4,31 @@ The Synchrony mods themselves: `HelloWorld`, `ScrapeGameData`, and
 `HelloWorldTests`, a generic, reusable test-running framework any mod can
 optionally contribute test cases to.
 
+## Map
+
+Each file's header comment says what it does; this map says what the names
+do not: each group's role and what it is coupled to.
+
+* `HelloWorld/`: a minimal mod that also hosts the tests behind the player
+  pages, one `<subject>-tests.lua` per subject of `AuthoredDocs/Src/`.
+* `HelloWorldTests/`: the test framework. `api.lua` holds the test contract,
+  `fixtures.lua` the shared helpers, and `HelloWorldTests.lua` the framework's
+  self-tests and the suite start.
+* `ScrapeGameData/`: the GameData context's scraper. Its `DATA` log lines are
+  a format shared with `GameData/reassemble-scrape.bash`.
+* `install-mods.bash` and `bundle-layout.lua`: the dev install into one
+  bundle mod (ADR 0004). `bundle-layout.lua` also runs the `mods-layout`
+  check.
+* `itj-impure-tests.bash`: the live test run. It is coupled to
+  `HelloWorldTests/api.lua` both ways: it parses the result and completion
+  lines `api.lua` prints, and has `install-mods` write the
+  `selected-test.txt` that `api.lua` reads. `itj-impure-scope.bash` decides when `build-release` runs
+  it.
+* `flake-module.nix`: wires everything above into packages, checks, apps and
+  the dev shell, and exports `liveGame` (`installMods`, `waitForLog`) to
+  `GameData/flake-module.nix`.
+* `test-<name>.*`: the offline test of `<name>`, run by `nix flake check`.
+
 ## API reference
 
 * The docs built by `AuthoredDocs/` cover the whole Synchrony

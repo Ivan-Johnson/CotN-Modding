@@ -1,3 +1,6 @@
+# The AuthoredDocs context's flake outputs: the docs tree (`docs-tree.nix`) as
+# the `docs` package, `check-docs.bash` over it as the `corpus` check, and the
+# dev shell's `man-crypt`.
 {
         pkgs,
         official,

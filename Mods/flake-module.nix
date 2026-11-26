@@ -1,3 +1,8 @@
+# The Mods context's flake outputs: the mod zips, the offline checks (lint,
+# layout, and each test-*.lua / test-*.bash), the install-mods,
+# itj-impure-tests and itj-impure-scope apps, and the dev shell, whose
+# shellHook locates the game's log and mods directory. `liveGame` is the part
+# GameData reuses to run a mod in the live game.
 { pkgs }:
 let
         mkModZip =
