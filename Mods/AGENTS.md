@@ -89,8 +89,9 @@ do not: each group's role and what it is coupled to.
 * The game runs outside this sandbox, so `pgrep`/`ps` won't see its process
   even while it's running and live-reloading normally. If you need to check
   liveness by hand (rather than via `nix run .#itj-impure-tests`), judge it
-  by log growth (e.g. `wc -l` on `NecroDancer.log` before/after a change)
-  and fresh `Mounting`/output lines, never by process listing.
+  by log growth (e.g. `wc -l "$COTN_LOG"`, the game's `NecroDancer.log`,
+  before/after a change) and fresh `Mounting`/output lines, never by process
+  listing.
 
 ## Architecture
 
