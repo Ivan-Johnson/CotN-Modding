@@ -1,44 +1,44 @@
 # Chests and loot
 
-For players. What the player found in chests and on the floor in single-zone
-runs as Cadence, in no-beat mode on CotN 4.2.1. These are samples, not the
-loot pools.
+For players. What chests, crates and barrels hold, how to open them, and what
+some of the gear they give does, as Cadence. Weapons:
+[weapons.md](./weapons.md); items you use: [action-items.md](./action-items.md).
 
-## Chests
+## Opening a chest
 
-* Bumping a `ChestBlack` opens it (`killed target=ChestBlack`). Seen drops:
-  `Sync_WeaponOnyxDagger`, `ArmorLeather`, `FeetGlassSlippers`,
-  `Sync_ShieldObsidian`, `Sync_WeaponTitaniumTrident` and
-  `WeaponTitaniumBroadsword`.
-* `ChestRed` gave `FamiliarIceSpirit`, `BloodDrum` and `HolyWater`. `ChestPurple` gave
-  `SpellEarth`.
-* `ChestLocked` opened by bumping it while holding a `MiscKey` (found
-  on the floor 3 tiles from it); the key was used up and the chest dropped
-  `HeadSunglasses`. Bumping it without a key was not tried.
-* A route search that treated a chest as floor walked onto it and opened it.
-* A weapon drop is swapped in for the current weapon when the player walks
-  onto it, and the old weapon drops on that tile ([weapons.md](./weapons.md)).
-  Armor and other drops lie on the chest's tile until the player walks onto
-  them.
-* What `ChestWhite` does is untested. A `Trapchest` is an enemy: see
-  [trapchest.md](./trapchest.md).
+* Pressing toward a chest opens it, and you stay where you are. Its one item
+  lies on the chest's tile; step onto it to pick it up. How picking up a
+  weapon works: [weapons.md](./weapons.md).
+* A locked chest stays shut unless you hold a key. With one, the same press
+  opens it and uses the key up. A key lying on the floor is picked up by
+  walking onto it.
+* What a bomb does to chests: [bombs.md](./bombs.md). A `Trapchest` looks
+  like a chest but is an enemy ([trapchest.md](./trapchest.md)).
 
-## Equipment
+## What each chest holds
 
-* `ArmorLeather`: with it a `Minotaur` hit for 3 instead of 4 (once; other
-  enemies untested).
-* `FeetGlassSlippers` ("Ignore terrain, breakable") left the inventory after
-  the player took damage.
-* `HeadSunglasses` ("+1 dmg, strange vision"): the dagger did 2 damage
-  instead of 1 while worn.
-* `Sync_ShieldObsidian` is described as "Multiplier hit protection"; it was
-  not tested.
+The chest's colour decides what kind of item is inside:
 
-For the weapons see [weapons.md](./weapons.md), and for `FamiliarIceSpirit`,
-`BloodDrum` and `SpellEarth` see [action-items.md](./action-items.md).
+| Chest | Holds |
+|-------|-------|
+| Black | weapons, body armor, boots and shields |
+| Red | food, torches, charms, headgear, bombs, familiars, shovels, holy water and other consumables; never a weapon, armor, boots, a shield, a ring or a spell |
+| Purple | rings, spells, scrolls and tomes |
+| Locked | heart containers, magic food, boots, headgear, rings, charms and shovels; never a weapon or a spell |
 
-## Crates
+## Crates, barrels and urns
 
-`Crate2` slides one tile away when the player walks into it, and a weapon hit
-did `damage_dealt(amount=0)`, so melee does not break a crate. A bomb breaks a `Crate` or `Crate2`;
-see [bombs.md](./bombs.md).
+* A crate (`Crate`) or a barrel (`Crate2`) holds one thing: food, coins, a
+  bomb, an enemy, or now and then a locked chest's item.
+* Teh Urn (`Crate3`) holds three: a spell, food and one other item.
+* Pressing toward a crate or barrel pushes it ([controls.md](./controls.md));
+  a bomb breaks it, and what bombs do to the urn is on
+  [bombs.md](./bombs.md). A broken crate leaves what it held on its tile,
+  untouched by the blast that broke it, and an enemy inside comes out alive.
+
+## Gear
+
+* Body armor takes some damage off every hit you take: leather armor 1,
+  chainmail 2, platemail 3. A hit always costs at least 1 health.
+* Glass slippers break the first time you take damage.
+* Sunglasses add 1 to the damage of every hit you deal.
