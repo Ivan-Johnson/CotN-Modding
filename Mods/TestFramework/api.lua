@@ -78,6 +78,9 @@ fixed-seed GameSession. A test is a table:
       (e.g. a bad API call) is caught and treated the same as a failing
       assert
 ]]
+-- The character a test plays unless it names one.
+local DEFAULT_CHARACTER = "Cadence"
+
 local tests = {}
 local currentTest = nil
 local suiteStartedAt = nil
@@ -201,7 +204,7 @@ TestFramework_startGameSession = Tick.delay(function()
 
 	-- The level generator's initialCharacters alone leaves the player as the
 	-- menu's selected character, so select the test's character too.
-	Player.setCharacterType(1, currentTest and currentTest.character or "Cadence")
+	Player.setCharacterType(1, currentTest and currentTest.character or DEFAULT_CHARACTER)
 
 	GameSession.start({
 		mode = GameSession.Mode.SingleZone,
@@ -214,7 +217,7 @@ local function runNextTest()
 		-- Leave Cadence selected, so the game's next run, or a framework
 		-- that predates setCharacterType, does not play the last test's
 		-- character.
-		Player.setCharacterType(1, "Cadence")
+		Player.setCharacterType(1, DEFAULT_CHARACTER)
 		-- `Mods/LiveGame/itj-impure-tests.bash` greps this exact "N failure(s)"
 		-- phrasing to decide its own exit code, so keep the wording in sync
 		-- with it.
@@ -246,7 +249,7 @@ event.levelGenerate.add("TestFrameworkConfigureLevel", {}, function(ev)
 		ev.options.zone = currentTest.zone
 	end
 	if currentTest then
-		ev.options.initialCharacters = { [1] = currentTest.character or "Cadence" }
+		ev.options.initialCharacters = { [1] = currentTest.character or DEFAULT_CHARACTER }
 	end
 end)
 
@@ -430,10 +433,26 @@ local function runTest(test)
 	report(test, not ok and err or nil)
 end
 
+-- How many times a test's session restarts when its player spawned as the
+-- wrong character.
+local CHARACTER_RETRIES = 3
+
 event.levelLoad.add("TestFrameworkRunOnLoad", { order = "extraEntities", sequence = 1 }, function()
 	local test = currentTest
 	if test and test.started then
 		-- A level change during an async test is part of that test.
+		return
+	end
+	-- A session started just as a reload regenerates the entity schema can
+	-- spawn the player as Cadence, even though the test's character, say one a
+	-- mod defines, is valid by the time the level loads. Restart the session
+	-- then, rather than run the test as the wrong character.
+	local retries = test and test.characterRetries or 0
+	local spawnedAs = Player.getCharacterType(1)
+	if test and spawnedAs ~= (test.character or DEFAULT_CHARACTER) and retries < CHARACTER_RETRIES then
+		test.characterRetries = retries + 1
+		print(string.format("[TestFramework] Restarting %s: the player spawned as %s", test.name, tostring(spawnedAs)))
+		TestFramework_startGameSession()
 		return
 	end
 	if test then
