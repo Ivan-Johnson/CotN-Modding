@@ -44,3 +44,7 @@ second derivation: `Docs/Adr/0001-*` and `0002-*` at the repo root.
 
 * `test-html-to-docs.bash` generates its fixtures rather than committing them.
   When adding a behavior, add a case that fails without it.
+
+## Glossary
+
+@GLOSSARY.md

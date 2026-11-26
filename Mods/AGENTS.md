@@ -91,3 +91,7 @@ do not: each group's role and what it is coupled to.
 * `AuthoredDocs/Src/README.md`: an index of hand-written guides. Read it
   first when hitting a Lua error, an event-ordering surprise, a test problem,
   or a mod that will not reload, and follow its links.
+
+## Glossary
+
+@GLOSSARY.md

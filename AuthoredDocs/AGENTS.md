@@ -52,3 +52,7 @@ second derivation: `Docs/Adr/0002-*` at the repo root.
   that an enemy never does something on enemies that come with the level, not
   only spawned ones.
 * To document a game mechanic, use the `cotn-document-mechanic` skill.
+
+## Glossary
+
+@GLOSSARY.md
