@@ -203,7 +203,6 @@ assert_anchors_resolve() {
 # Player pages that still carry wording the cotn-document-mechanic sweep
 # removes: see the player-page bullet under Conventions in AuthoredDocs/AGENTS.md.
 readonly UNSWEPT_PLAYER_PAGES=(
-	bats.md
 	chests-and-loot.md
 	king-conga.md
 	shrines.md

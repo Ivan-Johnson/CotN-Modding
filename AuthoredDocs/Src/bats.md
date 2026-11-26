@@ -1,23 +1,30 @@
 # Bats
 
 For players. Bat, Bat2 and Bat3; the miniboss version is in
-[minibosses.md](./minibosses.md). Stats columns: [enemies.md](./enemies.md#stats-tables).
+[minibosses.md](./minibosses.md). Stats columns:
+[enemies.md](./enemies.md#stats-tables). What wakes a bat:
+[enemies.md](./enemies.md#when-enemies-act).
 
 | Type | Speed | HP | Damage | Directions |
 |------|-------|----|--------|------------|
 | `Bat` | 2 | 1 | 1 | 4 |
 | `Bat2` | 1 | 1 | 2 | 4 |
-| `Bat3` | 1 | 1 | 3 | 8, so diagonals appear |
+| `Bat3` | 1 | 1 | 3 | 8, diagonals included |
 
-* Bats take a random step with no bias toward the player: over about 330 steps
-  across the three bats and `BatMiniboss`, 48 to 51% of steps got closer,
-  which is chance.
-* A bat attacks only when a random step lands on the player, and the hit takes
-  the slot of a move. In 40 beats `Bat3` hit the player 2 to 4 times, `Bat2` 0
-  to 2 times, and `Bat` 3 times in one trial and never in two.
-* A step into a wall seems to be lost, so a bat sometimes skips a beat (`guess`;
-  over 40 beats `Bat2` and `Bat3` moved 34 to 39 times).
-* A `Bat2` that stepped into a trident's line was killed from 2 tiles away; see
-  [weapons.md](./weapons.md).
+* Almost every time a bat acts, it steps one tile to a random free
+  neighbouring tile in one of its directions. The pick does not lean toward
+  you or away from you.
+* Walls and other enemies are never picked: a bat with one free neighbour
+  always steps onto it, and a bat boxed in by walls and enemies stays put. It
+  never attacks another enemy.
+* Your tile counts as a free tile. When a bat picks it, the bat hits you from
+  where it stands instead of moving. Next to you in the open, a `Bat` or
+  `Bat2` hits on about a quarter of its actions and a `Bat3` on about an
+  eighth; a `Bat3` hits diagonally too.
+* A bat whose only free neighbour is your tile attacks every time it acts.
+  No hit lands on the beat after a bat hits you, so even a `Bat2` or `Bat3`
+  lands a hit only every second beat.
+* The `Bat`s a level starts with move the same way: one tile up, down, left
+  or right, every second beat.
 
 Gold per kill: [coin-multiplier.md](./coin-multiplier.md).
