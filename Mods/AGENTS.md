@@ -64,6 +64,11 @@ do not: each group's role and what it is coupled to.
   unpacked mods, so no manual reload or log-tailing is needed. It's an `app`, not a
   `check`, because it needs a running, native Steam/Proton CotN instance.
   Writing, linting and running a test: `AuthoredDocs/Src/testing.md`.
+* `build-release`, which the `commit-msg` and `pre-push` hooks run, runs only
+  the live tests the changed paths can affect, through `itj-impure-tests
+  --files`. `itj-impure-scope.bash` decides; its header has the rules
+  (ADR 0008). A game update changes no path, so after one, run everything:
+  `nix run .#itj-impure-tests` with no arguments.
 * `luajit` is on `PATH` for running small Lua snippets.
 * Assume by default that CotN is already running with an unpacked mod
   loaded; don't ask the user to confirm this or to run

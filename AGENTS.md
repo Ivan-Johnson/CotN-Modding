@@ -40,43 +40,24 @@ than silently overriding it.
 
 ## Commands
 
-* `build-release` runs `nix flake check` and the nix formatting check, and
-  also runs `nix run .#itj-impure-tests` (see `Mods/AGENTS.md`) unless the
-  changed paths cannot affect it: the git hooks tell it what changed, and
-  `nix run .#itj-impure-scope` (fed paths on stdin; the path lists are in
-  `Mods/itj-impure-scope.bash`) decides which tests run
-  (`itj-impure-tests --files`): a claim test when it or its page changes,
-  `HelloWorld`'s code tests when that mod changes, and everything when the
-  test harness or an unknown path changes (ADR 0008). A push classifies each
-  pushed commit's own changes, and a manual `build-release` classifies
-  `git diff HEAD~`. To run everything, run `nix run .#itj-impure-tests`
-  with no arguments, e.g. after a game update.
-* The impure tests reload the mods and wipe the live game run, and the
-  `commit-msg` hook runs `build-release`, so every commit that touches a suite
-  path does, except one whose subject starts with `WIP` or one made with
-  `--no-verify`. A docs-only commit that changes no claim test's page skips
-  them (the build output says so), and so does each such commit of a push;
-  a new branch runs everything once, on its tip. During
-  a live run, avoid touching suite paths in commits, or use `--no-verify` and
-  re-run the checks at the end.
-* Everything that drives the live game, the tests and the scrape included,
-  goes through `live-game-run` (`nix run .#live-game-run`; ADR 0009). Each
-  call takes an advisory `flock` on the one game instance for its own install
-  and wait, so a test run locks once per pass. If another caller holds it, it
-  waits, then fails naming the holder before installing anything. The wait
-  lasts up to a whole pass, 900 s by default, so a commit's hook can stall
-  that long while another caller, such as another session's tests, holds the
-  game. `nix flake check` tests the lock without a game. The lock file, the
-  timeouts and their variables are in the header of `Mods/live-game-run.bash`.
-* A crashed or hung game logs nothing, so a call whose `NecroDancer.log` stops
-  growing fails with "game not responding" and frees the lock. Restarting the
-  game is the user's job; agents cannot reach it from the sandbox.
-* Scripts act on the checkout they are run in, found from `git rev-parse
-  --show-toplevel`, never from the workspace's `ITJ_FLAKE_ROOT`, so a git
-  worktree installs and tests its own mods. `ITJ_MODS_ROOT` overrides the
-  directory `live-game-run` installs from.
-* `build-format` formats all code. Typically this does not need to be used; it
-  is done automatically as part of a pre-commit hook.
+* `build-release` runs `nix flake check`, the nix formatting check, and the
+  live tests that the changed paths can affect. The `commit-msg` and
+  `pre-push` hooks run it. How it picks the live tests, and how to run them
+  yourself: `Mods/AGENTS.md`, "Dev loop"; why: ADRs 0008 and 0009.
+* A commit that can affect the live tests reloads the game and wipes the live
+  run, and its hook may first wait up to a whole test pass while another
+  caller, such as another session's tests, holds the game. The build output
+  says when it skips them. During a live run, commit only paths that cannot
+  affect them, or skip the checks with a `WIP` subject or `--no-verify` and
+  run `build-release` at the end.
+* A crashed or hung game fails every live run with "game not responding".
+  Restarting the game is the user's job; agents cannot reach it from the
+  sandbox.
+* Scripts act on the checkout they run in (`git rev-parse --show-toplevel`),
+  never on the workspace's `ITJ_FLAKE_ROOT`, so a git worktree installs and
+  tests its own mods.
+* `build-format` formats all code. The pre-commit hook runs it, so you rarely
+  need to.
 
 ## Learning about the game
 
