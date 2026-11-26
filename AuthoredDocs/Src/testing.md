@@ -83,6 +83,15 @@ it as a regression test with real assertions.
   near, since an input sent a fixed number of ticks after the last drifts off
   the beat and, once early enough, counts as a missed beat: the player stays
   put although the turn advances.
+* To time inputs within a beat, for a trap's fuse or the stairs' descent,
+  play a `fixtures.timeline`: it sends each input at a set offset from a
+  beat, built on `api.atBeat`, `api.atMusicTime` and `api.send`, and
+  records when each watched value changed, missed beats included. Music
+  time moves every tick, so an input lands within about a millisecond of
+  its target.
+  Name such tests with letters, digits and `_` only: the runner reads a
+  test's name up to the first other character, so names that differ only
+  after a `+`, `-` or `.` look like one test reported twice.
 * If an assertion needs a handler to run before or after the mod-under-test's
   handler within the same event and order key, set `sequence` on the test's
   handler, not the mod's. Timing that exists only to make an assertion

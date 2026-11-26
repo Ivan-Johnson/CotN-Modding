@@ -1,6 +1,7 @@
 local CurrentLevel = require "necro.game.level.CurrentLevel"
 local Entities = require "system.game.Entities"
 local GameSession = require "necro.client.GameSession"
+local Music = require "necro.audio.Music"
 local Object = require "necro.game.object.Object"
 local Player = require "necro.game.character.Player"
 local Tile = require "necro.game.tile.Tile"
@@ -204,6 +205,88 @@ local function assertAt(entity, x, y, what)
 	)
 end
 
+-- Missed beats of the player, each recorded by a running timeline below.
+local onMissedBeat = nil
+
+event.objectMissedBeatAction.add("TestFrameworkMissedBeat", { order = "grooveChain", sequence = 1 }, function(ev)
+	if onMissedBeat and ev.entity == player() then
+		onMissedBeat()
+	end
+end)
+
+--[[
+Plays steps at fixed times around a beat, for timing finer than a beat (a
+trap's fuse, the stairs' descent). It picks a beat B at least a second away;
+each step is { t, action }, run at music time B + t: action is an api.play
+name to send, or a function to call. Meanwhile it records, every tick, each
+change of watch (a table of name = function returning a value) and each
+missed beat, as { key, value, at } with at in seconds from B and key
+"missedBeat" for a missed beat. It ends at B + seconds, or when the level
+changes (recorded under key "level"): the music, and so its time, restarts
+on a new level. Then it calls done(events, lastAt), where lastAt is the last
+time seen on the starting level.
+]]
+local function timeline(steps, watch, seconds, done)
+	testsApi.atBeat(-1, function(beat)
+		local events = {}
+		local function record(key, value)
+			events[#events + 1] = { key = key, value = value, at = Music.getMusicTime() - beat }
+		end
+		local last = {}
+		for key, probe in pairs(watch) do
+			last[key] = probe()
+		end
+		local level = CurrentLevel.getNumber()
+		local lastAt = Music.getMusicTime() - beat
+		for _, step in ipairs(steps) do
+			testsApi.atMusicTime(beat + step[1], function()
+				if type(step[2]) == "function" then
+					step[2]()
+				else
+					testsApi.send(step[2])
+				end
+			end)
+		end
+		onMissedBeat = function()
+			record("missedBeat", true)
+		end
+		local function poll()
+			if CurrentLevel.getNumber() ~= level then
+				record("level", CurrentLevel.getNumber())
+				onMissedBeat = nil
+				done(events, lastAt)
+				return
+			end
+			lastAt = Music.getMusicTime() - beat
+			for key, probe in pairs(watch) do
+				local value = probe()
+				if value ~= last[key] then
+					record(key, value)
+					last[key] = value
+				end
+			end
+			if lastAt < seconds then
+				testsApi.afterTicks(1, poll)
+			else
+				onMissedBeat = nil
+				done(events, lastAt)
+			end
+		end
+		poll()
+	end, 0.1)
+end
+
+-- The events of a timeline with the given key, in order.
+local function eventsOf(events, key)
+	local found = {}
+	for _, item in ipairs(events) do
+		if item.key == key then
+			found[#found + 1] = item
+		end
+	end
+	return found
+end
+
 --[[
 Registers a no-beat test that plays actions on an open arena. Fields:
   name, actions (list of action names), checks ({[index] = function(state, resolved)},
@@ -243,6 +326,7 @@ end
 return {
 	assertAllPresent = assertAllPresent,
 	assertAt = assertAt,
+	eventsOf = eventsOf,
 	health = health,
 	openArena = openArena,
 	player = player,
@@ -250,6 +334,7 @@ return {
 	scene = scene,
 	spawn = spawn,
 	tileName = tileName,
+	timeline = timeline,
 	wallColumn = wallColumn,
 	zoneCensus = zoneCensus,
 }

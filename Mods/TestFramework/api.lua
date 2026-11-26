@@ -295,6 +295,33 @@ end
 
 local timers = {}
 
+--[[
+The beat grid, for atBeat: beat is the music time of a beat (the beatmap's
+next beat, whose index getCurrentBeat gives), and interval the seconds
+between beats, from two beats' times and indexes. The next beat time stays on
+a beat until its late window has passed, so it says nothing by itself about
+where the beats fall now. A new level restarts the music, so a step back
+restarts the grid.
+]]
+local beatGrid = {}
+
+local function updateBeatGrid()
+	local beatmap = Beatmap.getPrimary()
+	if not beatmap then
+		return
+	end
+	local index = beatmap:getCurrentBeat()
+	local time = beatmap:getNextBeatTime()
+	if beatGrid.index and index > beatGrid.index then
+		local interval = (time - beatGrid.beat) / (index - beatGrid.index)
+		beatGrid.interval = interval > 0.05 and interval or nil
+	elseif beatGrid.index ~= index then
+		beatGrid.interval = nil
+	end
+	beatGrid.index = index
+	beatGrid.beat = time
+end
+
 -- Ticks a test may take, from its "Running" line to its result, level load
 -- included, before it fails as timed out. Set to about 3x the slowest test's
 -- measured time: controlsDiagonalsAreIgnored took 6127 ticks (full run,
@@ -308,6 +335,7 @@ end
 
 event.tick.add("TestFrameworkTimers", { order = "invokeLater" }, function()
 	tickCount = tickCount + 1
+	updateBeatGrid()
 	local test = currentTest
 	if test and tickCount - test.startedAt >= (test.timeoutTicks or TEST_TIMEOUT_TICKS) then
 		-- Does nothing for a test that already finished.
@@ -412,6 +440,48 @@ local function play(names, afterEach, finished)
 	end
 	-- An input sent on the tick the level loaded is dropped.
 	afterTicks(1, nextAction)
+end
+
+-- Sends player 1's action now, named as in ACTIONS, without waiting for the
+-- beat; for sub-beat timing, call it from atBeat or atMusicTime.
+local function send(name)
+	Input.add(assert(ACTIONS[name], "unknown action " .. tostring(name)), 1)
+end
+
+-- Calls fn() on the first tick at or after the music time `time`.
+local function atMusicTime(time, fn)
+	if Music.getMusicTime() >= time then
+		fn()
+	else
+		afterTicks(1, function()
+			atMusicTime(time, fn)
+		end)
+	end
+end
+
+--[[
+Calls fn(beat, interval) on the first tick at or after `offset` seconds of
+music time from a beat (negative: before it), choosing the earliest beat whose
+target is at least `lead` seconds (default 0; negative allows a target in the
+past) from now. beat is that beat's music time and interval the seconds
+between beats. Music time moves every tick, so the call lands within about a
+millisecond of its target. A change of tempo (e.g. a tempo trap) is not
+followed.
+]]
+local function atBeat(offset, fn, lead)
+	local function waitForGrid()
+		if not beatGrid.interval then
+			afterTicks(1, waitForGrid)
+			return
+		end
+		local interval = beatGrid.interval
+		local behind = Music.getMusicTime() + (lead or 0) - (beatGrid.beat + offset)
+		local beat = beatGrid.beat + math.ceil(behind / interval) * interval
+		atMusicTime(beat + offset, function()
+			fn(beat, interval)
+		end)
+	end
+	waitForGrid()
 end
 
 -- Runs one test's onLoad, which asserts its expectations with the builtin
@@ -567,6 +637,8 @@ end
 
 return {
 	afterTicks = afterTicks,
+	atBeat = atBeat,
+	atMusicTime = atMusicTime,
 	callerFile = callerFile,
 	matchesSelection = matchesSelection,
 	missingFiles = missingFiles,
@@ -574,6 +646,7 @@ return {
 	parseSelection = parseSelection,
 	play = play,
 	registerTest = registerTest,
+	send = send,
 	setSeedOverride = setSeedOverride,
 	start = start,
 	waitForFiles = waitForFiles,
