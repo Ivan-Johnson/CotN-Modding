@@ -44,17 +44,20 @@ than silently overriding it.
   also runs `nix run .#itj-impure-tests` (see `Mods/AGENTS.md`) unless the
   changed paths cannot affect it: the git hooks tell it what changed, and
   `nix run .#itj-impure-scope` (fed paths on stdin; the path lists are in
-  `Mods/itj-impure-scope.bash`) decides. A commit that changes only test files
-  runs only those files' tests (`itj-impure-tests --files`); a push always
-  runs the full suite. A manual `build-release` has no changed paths and runs
+  `Mods/itj-impure-scope.bash`) decides which tests run
+  (`itj-impure-tests --files`): a claim test when it or its page changes,
+  `HelloWorld`'s code tests when that mod changes, and everything when the
+  test harness or an unknown path changes (ADR 0008). A push always runs the
+  full suite. A manual `build-release` has no changed paths and runs
   everything.
 * The impure tests reload the mods and wipe the live game run, and the
   `commit-msg` hook runs `build-release`, so every commit that touches a suite
   path does, except one whose subject starts with `WIP` or one made with
-  `--no-verify`. A docs-only commit skips them (the build output says so), and
-  so does a docs-only push; any other push runs them once per pushed commit,
-  and a new branch once on its tip. During a live run, avoid touching
-  suite paths in commits, or use `--no-verify` and re-run the checks at the end.
+  `--no-verify`. A docs-only commit that changes no claim test's page skips
+  them (the build output says so), and so does such a push; any other push
+  runs them once per pushed commit, and a new branch once on its tip. During
+  a live run, avoid touching suite paths in commits, or use `--no-verify` and
+  re-run the checks at the end.
 * `nix run .#itj-impure-tests` first takes an advisory `flock` on the one game
   instance. If another run holds it, it waits, then fails naming the holder
   before installing anything. Everything that runs the tests, hooks included,

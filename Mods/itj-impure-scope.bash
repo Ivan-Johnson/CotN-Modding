@@ -1,22 +1,37 @@
 # Reads the repo paths a change touches, one per line on stdin, and prints
-# `none` if the live test suite (`itj-impure-tests`) cannot be affected by
-# them, `all` if it must run in full, or else the changed test files, one
-# basename per line (e.g. `weapons.lua`), which `itj-impure-tests --files`
-# runs alone. Called by `build-release` (DevTools) from the git
-# hooks, so a docs-only commit or push skips the ~90 s live run.
+# `none` if no live test (`itj-impure-tests`) can be affected by them, `all`
+# if every test must run, or else the test files to run, one basename per line
+# (e.g. `weapons.lua`), which `itj-impure-tests --files` runs alone. Called by
+# `build-release` (DevTools) from the git hooks. The rules are
+# Docs/Adr/0008-claim-tests-run-only-when-their-page-changes.md:
 #
-# Only known-harmless paths give `none` and only `Mods/ClaimTests/*.lua`
-# gives a file list; every other path, and empty input (e.g. a message-only
-# amend), gives `all`, which wins over a file list, so a new kind of file fails
-# safe.
-# The suite installs only HelloWorld, ClaimTests and HelloWorldTests, so none of the
-# `none` paths can change it.
+# * A claim test file runs when it or its page changes.
+# * HelloWorld's code tests run when anything in HelloWorld changes.
+# * A harness path, or any path no rule names, runs everything, so a new kind
+#   of file fails safe. So does empty input (e.g. a message-only amend).
+#
+# Usage: itj-impure-scope [REPO_ROOT] <paths
+# REPO_ROOT (default: the git toplevel) is the tree whose claim test and code
+# test files exist.
 
-# Suite paths that win over the harmless lists below.
-suitePrefixes=(
+root=${1:-$(git rev-parse --show-toplevel)}
+
+# The test harness: the framework, the scripts that install and run the
+# tests, and the flake that builds them. These win over the lists below.
+harnessPrefixes=(
 	"Mods/HelloWorldTests/"
+	"Mods/install-mods.bash"
+	"Mods/itj-impure-tests.bash"
+	"Mods/itj-impure-scope.bash"
+	"Mods/bundle-layout.lua"
+	"Mods/flake-module.nix"
+	"flake.nix"
+	"flake.lock"
 )
 
+# Paths that no live test reads. The suite installs only HelloWorld, ClaimTests
+# and HelloWorldTests, so none of these can change it; a claim page is matched
+# before this list.
 harmlessPrefixes=(
 	"AuthoredDocs/"
 	"Docs/"
@@ -31,18 +46,22 @@ harmlessGlobs=(
 	"Tmp/*"
 )
 
-isHarmless() {
-	local path=$1 prefix glob
-	for prefix in "${suitePrefixes[@]}"; do
-		if [[ $path == "$prefix"* ]]; then
-			return 1
-		fi
-	done
-	for prefix in "${harmlessPrefixes[@]}"; do
+hasPrefix() {
+	local path=$1 prefix
+	shift
+	for prefix in "$@"; do
 		if [[ $path == "$prefix"* ]]; then
 			return 0
 		fi
 	done
+	return 1
+}
+
+isHarmless() {
+	local path=$1 glob
+	if hasPrefix "$path" "${harmlessPrefixes[@]}"; then
+		return 0
+	fi
 	for glob in "${harmlessGlobs[@]}"; do
 		# shellcheck disable=SC2053 # The glob is meant to match as a pattern.
 		if [[ $path == $glob ]]; then
@@ -52,11 +71,13 @@ isHarmless() {
 	return 1
 }
 
-# The tests of each of these files register independently of the other files'
-# tests (checked live: each file alone passes the same tests as in the full run).
-isTestFile() {
-	[[ $1 == Mods/ClaimTests/*.lua && $1 != Mods/ClaimTests/*/* ]]
-}
+# HelloWorld's code test files, as they exist in the tree.
+codeTestFiles=()
+shopt -s nullglob
+for path in "$root"/Mods/HelloWorld/tests.lua "$root"/Mods/HelloWorld/*-tests.lua; do
+	codeTestFiles+=("${path##*/}")
+done
+shopt -u nullglob
 
 seen=0
 testFiles=()
@@ -65,8 +86,30 @@ while IFS= read -r path; do
 		continue
 	fi
 	seen=$((seen + 1))
-	if isTestFile "$path"; then
-		testFiles+=("${path##*/}")
+	if hasPrefix "$path" "${harnessPrefixes[@]}"; then
+		echo all
+		exit 0
+	elif [[ $path == Mods/ClaimTests/*.lua && $path != Mods/ClaimTests/*/* ]]; then
+		# A deleted claim test file has nothing left to run.
+		if [[ -e $root/$path ]]; then
+			testFiles+=("${path##*/}")
+		fi
+	elif [[ $path == AuthoredDocs/Src/*.md && $path != AuthoredDocs/Src/*/* ]]; then
+		# A page with no claim test file, or one deleted with its page, has
+		# nothing to run.
+		page=${path##*/}
+		if [[ -e $root/Mods/ClaimTests/${page%.md}.lua ]]; then
+			testFiles+=("${page%.md}.lua")
+		fi
+	elif [[ $path == Mods/HelloWorld/* ]]; then
+		if [[ $path == *.md ]]; then
+			continue
+		fi
+		if ((${#codeTestFiles[@]} == 0)); then
+			echo all
+			exit 0
+		fi
+		testFiles+=("${codeTestFiles[@]}")
 	elif ! isHarmless "$path"; then
 		echo all
 		exit 0

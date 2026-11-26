@@ -193,6 +193,7 @@ let
         # see `Mods/itj-impure-scope.bash`.
         impureScope = pkgs.writeShellApplication {
                 name = "itj-impure-scope";
+                runtimeInputs = [ pkgs.git ];
                 text = builtins.readFile ./itj-impure-scope.bash;
         };
 
@@ -247,7 +248,7 @@ in
                 itj-impure-scope = {
                         type = "app";
                         program = "${impureScope}/bin/itj-impure-scope";
-                        meta.description = "Print none or all: whether the changed paths on stdin can affect itj-impure-tests";
+                        meta.description = "Print none, all, or the test files that the changed paths on stdin can affect";
                 };
         };
 
