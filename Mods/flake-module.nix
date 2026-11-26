@@ -18,8 +18,8 @@ let
         # Not shipped to players; a generic test-running framework that
         # HelloWorld (and any other mod under test) optionally requires at
         # load-time to register and run its behavioral tests. See
-        # `Mods/HelloWorldTests`.
-        helloWorldModTestsZip = mkModZip "HelloWorldTests" "hello-world-mod-tests-zip";
+        # `Mods/TestFramework`.
+        testFrameworkZip = mkModZip "TestFramework" "test-framework-zip";
 
         # Static analysis of every mod's Lua, catching syntax errors and
         # undefined globals (e.g. a typo'd event name) without needing the
@@ -219,7 +219,7 @@ in
 
         packages = {
                 hello-world-mod = helloWorldModZip;
-                hello-world-mod-tests = helloWorldModTestsZip;
+                test-framework = testFrameworkZip;
         };
 
         checks = {

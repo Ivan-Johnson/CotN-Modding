@@ -1,7 +1,7 @@
 # Mods
 
 The Synchrony mods themselves: `HelloWorld`, `ScrapeGameData`, and
-`HelloWorldTests`, a generic, reusable test-running framework any mod can
+`TestFramework`, a generic, reusable test-running framework any mod can
 optionally contribute test cases to.
 
 ## Map
@@ -15,8 +15,8 @@ do not: each group's role and what it is coupled to.
   `AuthoredDocs/Src/<page>.md` and nothing else; the `claim-tests-layout`
   check requires the page. The test run never installs it beside
   `HelloWorld` (ADR 0008).
-* `HelloWorldTests/`: the test framework. `api.lua` holds the test contract,
-  `fixtures.lua` the shared helpers, and `HelloWorldTests.lua` the framework's
+* `TestFramework/`: the test framework. `api.lua` holds the test contract,
+  `fixtures.lua` the shared helpers, and `TestFramework.lua` the framework's
   self-tests and the suite start.
 * `ScrapeGameData/`: the GameData context's scraper. Its `DATA` log lines are
   a format shared with `GameData/reassemble-scrape.bash`.
@@ -24,7 +24,7 @@ do not: each group's role and what it is coupled to.
   bundle mod (ADR 0004). `bundle-layout.lua` also runs the `mods-layout`
   check.
 * `itj-impure-tests.bash`: the live test run. It is coupled to
-  `HelloWorldTests/api.lua` both ways: it parses the result and completion
+  `TestFramework/api.lua` both ways: it parses the result and completion
   lines `api.lua` prints, and has `install-mods` write the
   `selected-test.txt` that `api.lua` reads. `itj-impure-scope.bash` decides when `build-release` runs
   it.
@@ -54,9 +54,9 @@ do not: each group's role and what it is coupled to.
 ## Dev loop
 
 * `nix run .#itj-impure-tests` is the whole inner dev loop: in one pass it
-  installs `HelloWorld` and `HelloWorldTests` with `install-mods`, and in a
-  second pass `ClaimTests` and `HelloWorldTests`. Each pass forces
-  `HelloWorldTests` to reload so its test run fires, waits for the suite, and
+  installs `HelloWorld` and `TestFramework` with `install-mods`, and in a
+  second pass `ClaimTests` and `TestFramework`. Each pass forces
+  `TestFramework` to reload so its test run fires, waits for the suite, and
   prints only the new `NecroDancer.log` lines. CotN live-reloads unpacked
   mods, so no manual reload or log-tailing is needed. It's an `app`, not a
   `check`, because it needs a running, native Steam/Proton CotN instance.

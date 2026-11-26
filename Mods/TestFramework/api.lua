@@ -28,7 +28,7 @@ local tickCount = 0
 -- parses into the run's results. elapsedTicks is optional; when given, the
 -- line ends with the duration.
 local function log(status, name, reason, elapsedTicks)
-	local line = string.format("[HelloWorldTests] %s %s", status, name)
+	local line = string.format("[TestFramework] %s %s", status, name)
 	if reason then
 		line = line .. ": " .. reason
 	end
@@ -79,7 +79,7 @@ local currentTest = nil
 local suiteStartedAt = nil
 
 -- A mod's own directory is not exposed, but the location prefix of a Lua error
--- ("<Bundle>/HelloWorldTests/api.lua:N: ...") names it.
+-- ("<Bundle>/TestFramework/api.lua:N: ...") names it.
 local function findOwnDirectory()
 	local _, message = pcall(function()
 		error("x")
@@ -157,7 +157,7 @@ local failureCount = 0
 -- tostring().
 local function observe(key, value)
 	assert(currentTest, "observe may only be called from a running test's onLoad")
-	print(string.format("[HelloWorldTests] OBSERVED %s %s=%s", currentTest.name, key, tostring(value)))
+	print(string.format("[TestFramework] OBSERVED %s %s=%s", currentTest.name, key, tostring(value)))
 end
 
 local function registerTest(test)
@@ -179,8 +179,8 @@ end
 -- Defined once and reused for every queued test's session (Tick.delay's
 -- result must be bound to a global variable, and re-created wrapper closures
 -- reusing that same global confuse its binding check).
--- luacheck: globals HelloWorldTests_startGameSession
-HelloWorldTests_startGameSession = Tick.delay(function()
+-- luacheck: globals TestFramework_startGameSession
+TestFramework_startGameSession = Tick.delay(function()
 	-- Force every extra mode off, since e.g. All Characters Mode replaces
 	-- the level's exit with one staircase per remaining character, which
 	-- would break stairs-marker-based assertions.
@@ -206,15 +206,15 @@ local function runNextTest()
 		-- phrasing to decide its own exit code, so keep the wording in sync
 		-- with it.
 		print(string.format(
-			"[HelloWorldTests] Test suite completed: %d failure(s) (took %d ticks)",
+			"[TestFramework] Test suite completed: %d failure(s) (took %d ticks)",
 			failureCount,
 			tickCount - suiteStartedAt
 		))
 		return
 	end
 	currentTest.startedAt = tickCount
-	print(string.format("[HelloWorldTests] Running %s", currentTest.name))
-	HelloWorldTests_startGameSession()
+	print(string.format("[TestFramework] Running %s", currentTest.name))
+	TestFramework_startGameSession()
 end
 
 -- Pins the seed every test's level is generated with, which is what
@@ -475,7 +475,7 @@ local function runSuite(kind, selected)
 		end
 		tests = kept
 	end
-	print("[HelloWorldTests] Starting test suite")
+	print("[TestFramework] Starting test suite")
 	suiteStartedAt = tickCount
 	runNextTest()
 end

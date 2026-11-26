@@ -30,7 +30,7 @@ installed mod gains the bundle's name as a prefix. `install-mods` rewrites
 * `Mods/<name>/` must equal the `namespace` and `name` in its `mod.json`.
 * Every mod in `Mods/` declares the same `synchronyVersion`, and the generated
   bundle takes it from the mods it holds.
-* A string that names a mod's modules (such as `"HelloWorldTests.api"`) may
+* A string that names a mod's modules (such as `"TestFramework.api"`) may
   appear only as the whole, static argument of a `require` (any quote style,
   also `pcall(require, …)`); the rewrite touches nothing else, and comments
   are ignored. Dynamic requires built by concatenation fail the check.

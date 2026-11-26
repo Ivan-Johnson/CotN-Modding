@@ -1,11 +1,11 @@
 # Testing a mod
 
-For mod authors. How a mod contributes test cases to the repo's `HelloWorldTests`
+For mod authors. How a mod contributes test cases to the repo's `TestFramework`
 framework, and how the mod loader reloads mods. The framework's dependency
 direction is recorded in `Docs/Adr/0003-test-framework-never-depends-on-mods.md`
 at the repo root. The test table's fields, `api.play` and `api.observe` are
-documented in `Mods/HelloWorldTests/api.lua`; the shared helpers, `scene`
-among them, in `Mods/HelloWorldTests/fixtures.lua`.
+documented in `Mods/TestFramework/api.lua`; the shared helpers, `scene`
+among them, in `Mods/TestFramework/fixtures.lua`.
 
 ## Exploring the game with a test
 
@@ -37,7 +37,7 @@ it as a regression test with real assertions.
   example `HelloWorld/tests.lua`). Claim tests, which back a page's claims
   about the game, go in `Mods/ClaimTests/<page>.lua`, which the run installs
   without `HelloWorld`. Either guards the cross-mod `require()` of
-  `HelloWorldTests.api` in a `pcall()`, since the framework may not be loaded.
+  `TestFramework.api` in a `pcall()`, since the framework may not be loaded.
 * Registering a name that is already registered replaces the earlier test: a
   reload can run a mod's load-time `registerTest()` calls again, and the
   replacement keeps each test running once. The entrypoint fails if a test
@@ -69,8 +69,8 @@ it as a regression test with real assertions.
   bundle can load after the framework. So `nix run .#itj-impure-tests` names
   the test files it expects, and the suite starts only once each has
   registered a test, or fails naming the ones that never did.
-* A mod's first-ever install beside `HelloWorldTests` can fail its `require`
-  of `HelloWorldTests.api` if the framework has not loaded yet; the forced
+* A mod's first-ever install beside `TestFramework` can fail its `require`
+  of `TestFramework.api` if the framework has not loaded yet; the forced
   reload of `nix run .#itj-impure-tests` heals it.
 * Never delete a mod's installed directory while the game runs: the game's
   live-reload stopped noticing changes after that. Replace the contents

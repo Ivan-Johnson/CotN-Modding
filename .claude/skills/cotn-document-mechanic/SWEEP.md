@@ -8,7 +8,7 @@ one run of [SKILL.md](./SKILL.md); this file covers running several.
 * **One agent per page.** Brief it with the page, its neighbours to link by
   planned name (a page not yet written is fine), and "use the
   `cotn-document-mechanic` skill". It owns its page and its test file.
-* **Shared files.** Agents leave the test framework (`Mods/HelloWorldTests/`,
+* **Shared files.** Agents leave the test framework (`Mods/TestFramework/`,
   including `fixtures.lua`) alone unless a helper is truly needed, and say so
   in their return. They report contradictions in other pages to you instead of
   editing them.

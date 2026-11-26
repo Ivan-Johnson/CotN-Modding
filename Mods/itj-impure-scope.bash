@@ -19,7 +19,7 @@ root=${1:-$(git rev-parse --show-toplevel)}
 # The test harness: the framework, the scripts that install and run the
 # tests, and the flake that builds them. These win over the lists below.
 harnessPrefixes=(
-	"Mods/HelloWorldTests/"
+	"Mods/TestFramework/"
 	"Mods/install-mods.bash"
 	"Mods/itj-impure-tests.bash"
 	"Mods/itj-impure-scope.bash"
@@ -30,7 +30,7 @@ harnessPrefixes=(
 )
 
 # Paths that no live test reads. The suite installs only HelloWorld, ClaimTests
-# and HelloWorldTests, so none of these can change it; a claim page is matched
+# and TestFramework, so none of these can change it; a claim page is matched
 # before this list.
 harmlessPrefixes=(
 	"AuthoredDocs/"

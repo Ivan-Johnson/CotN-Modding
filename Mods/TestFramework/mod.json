@@ -1,6 +1,6 @@
 {
-	"namespace": "HelloWorldTests",
-	"displayName": "Hello World Tests",
+	"namespace": "TestFramework",
+	"displayName": "Test Framework",
 	"version": "0.1.0",
 	"synchronyVersion": "4.2.1",
 	"description": "Generic automated test-running framework, consumed by mods that optionally require its api.lua. Not intended for players.",
@@ -8,5 +8,5 @@
 	"dependencies": {},
 	"api": {"scriptPath":""},
 	"tags": [],
-	"name": "HelloWorldTests"
+	"name": "TestFramework"
 }

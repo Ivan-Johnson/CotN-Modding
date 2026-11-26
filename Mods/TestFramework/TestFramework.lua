@@ -2,7 +2,7 @@ local CurrentLevel = require "necro.game.level.CurrentLevel"
 local Map = require "necro.game.object.Map"
 local Tick = require "necro.cycles.Tick"
 
-local api = require "HelloWorldTests.api"
+local api = require "TestFramework.api"
 
 -- Self-tests exercising the harness itself (api.lua's expectFail/crash
 -- recovery machinery), not any particular mod under test.
@@ -55,7 +55,7 @@ for index = 1, 2 do
 		onLoad = function()
 			api.observe("file", selfTagged[index].file)
 			-- Not a plain "<mod>.lua" string, which install-mods would try to rewrite.
-			assert(selfTagged[index].file == "HelloWorldTests" .. ".lua", "a loop-registered test has the wrong file tag")
+			assert(selfTagged[index].file == "TestFramework" .. ".lua", "a loop-registered test has the wrong file tag")
 		end,
 	}
 	selfTagged[index] = test
@@ -176,6 +176,6 @@ api.registerTest({
 -- api.lua changed - has a chance to run first: a reload always finishes an
 -- entire batch of scripts before the next tick, but does not guarantee this
 -- entry script runs last within that batch.
--- luacheck: globals HelloWorldTests_start
-HelloWorldTests_start = Tick.delay(api.start)
-HelloWorldTests_start()
+-- luacheck: globals TestFramework_start
+TestFramework_start = Tick.delay(api.start)
+TestFramework_start()

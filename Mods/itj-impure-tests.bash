@@ -71,8 +71,8 @@ runPass() {
         # can create any file with any content, so it takes the path and
         # content in its generic ITJ_BUNDLE_EXTRA_* variables. The expected
         # files make the suite wait out the reload batches of a changed mod
-        # set; see EXPECT_TIMEOUT_TICKS in HelloWorldTests/api.lua.
-        export ITJ_BUNDLE_EXTRA_FILE="HelloWorldTests/selected-test.txt"
+        # set; see EXPECT_TIMEOUT_TICKS in TestFramework/api.lua.
+        export ITJ_BUNDLE_EXTRA_FILE="TestFramework/selected-test.txt"
         export ITJ_BUNDLE_EXTRA_CONTENT="expect: $expected
 $selection"
 
@@ -82,9 +82,9 @@ $selection"
         # cascades a reload of every mod that successfully required it,
         # re-running their registerTest() calls. This also ensures the suite
         # always reruns even if there are no new changes.
-        export ITJ_BUNDLE_RELOAD_TRIGGER="HelloWorldTests/api.lua"
+        export ITJ_BUNDLE_RELOAD_TRIGGER="TestFramework/api.lua"
         # runPass runs in a `||` list, where errexit is off, so check each step.
-        install-mods "$@" HelloWorldTests || return 1
+        install-mods "$@" TestFramework || return 1
 
         # Wait for the tests mod's completion sentinel, rather than a hardcoded
         # sleep or a quiet-period guess. A game that crashed or hung stops
@@ -93,7 +93,7 @@ $selection"
         # hence 120.
         waitStatus=0
         SECONDS=0
-        wait_for_log "$baseline" "[HelloWorldTests] Test suite completed" "$suiteTimeoutSeconds" "$suiteStallSeconds" || waitStatus=$?
+        wait_for_log "$baseline" "[TestFramework] Test suite completed" "$suiteTimeoutSeconds" "$suiteStallSeconds" || waitStatus=$?
         if ((waitStatus == 1)); then
                 echo "itj-impure-tests: timed out waiting for test suite completion" >&2
         elif ((waitStatus == 2)); then
@@ -119,7 +119,7 @@ $selection"
 
         # A test that reports twice was queued twice (a reload registered it
         # again), so the pass is not the single fixed-seed run the tests assume.
-        resultLines=$(grep -oE '\[HelloWorldTests\] (PASS|FAIL|XFAIL|XPASS) [A-Za-z0-9_]+' <<<"$newOutput" || true)
+        resultLines=$(grep -oE '\[TestFramework\] (PASS|FAIL|XFAIL|XPASS) [A-Za-z0-9_]+' <<<"$newOutput" || true)
         if [ -z "$resultLines" ]; then
                 echo "itj-impure-tests: the pass printed no PASS/FAIL lines" >&2
                 return 1
@@ -131,7 +131,7 @@ $selection"
                 return 1
         fi
 
-        if ! grep -qE '\[HelloWorldTests\] Test suite completed: 0 failure\(s\)' <<<"$newOutput"; then
+        if ! grep -qE '\[TestFramework\] Test suite completed: 0 failure\(s\)' <<<"$newOutput"; then
                 echo "itj-impure-tests: test suite reported failures" >&2
                 return 1
         fi

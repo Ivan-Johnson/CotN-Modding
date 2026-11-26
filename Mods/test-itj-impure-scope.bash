@@ -44,8 +44,8 @@ expect "$(printf 'tests.lua\nweapons.lua')" Mods/HelloWorld/mod.json AuthoredDoc
 # The harness, and anything no rule names, runs everything.
 expect all Mods/ClaimTests/sub/weapons.lua
 expect all Mods/ClaimTests/mod.json
-expect all Mods/ClaimTests/weapons.lua Mods/HelloWorldTests/api.lua
-expect all Mods/HelloWorldTests/README.md
+expect all Mods/ClaimTests/weapons.lua Mods/TestFramework/api.lua
+expect all Mods/TestFramework/README.md
 expect all Mods/install-mods.bash
 expect all Mods/itj-impure-tests.bash
 expect all Mods/flake-module.nix flake.nix flake.lock

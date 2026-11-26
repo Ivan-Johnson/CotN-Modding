@@ -2,7 +2,7 @@ local Entities = require "system.game.Entities"
 local Object = require "necro.game.object.Object"
 local Player = require "necro.game.character.Player"
 local Tile = require "necro.game.tile.Tile"
-local testsApi = require "HelloWorldTests.api"
+local testsApi = require "TestFramework.api"
 
 --[[
 Scene setup for tests that watch enemies, shared by any mod's tests. Like

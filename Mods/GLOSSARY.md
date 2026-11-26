@@ -336,3 +336,10 @@ _Avoid_: Regression test
 A live test that backs a claim made in one authored doc. Each file of claim
 tests backs exactly one doc.
 _Avoid_: Doc test, docs test
+
+**Test framework**:
+The mod `TestFramework`, which mods optionally `require` to register code
+tests and claim tests, and which runs them. It never depends on a mod under
+test (ADR 0003).
+_Avoid_: Harness (the framework plus the runner, install scripts and flake
+files; ADR 0008)

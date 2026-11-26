@@ -6,12 +6,12 @@ local Move = require "necro.game.system.Move"
 local Object = require "necro.game.object.Object"
 local Tile = require "necro.game.tile.Tile"
 
--- Optional dependency on HelloWorldTests; see HelloWorld/tests.lua.
-local ok, testsApi = pcall(require, "HelloWorldTests.api")
+-- Optional dependency on TestFramework; see HelloWorld/tests.lua.
+local ok, testsApi = pcall(require, "TestFramework.api")
 if not ok then
 	return
 end
-local fixtures = require "HelloWorldTests.fixtures"
+local fixtures = require "TestFramework.fixtures"
 
 -- Each test plays Cadence in
 -- no-beat mode on an open floor, with enemies spawned by hand. The framework's

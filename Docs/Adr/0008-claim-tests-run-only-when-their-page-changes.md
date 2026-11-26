@@ -28,7 +28,7 @@ on most commits and pushes.
   check requires each file to have its page. It does not check the reverse.
 * `HelloWorld` is never installed while claim tests run. A run that needs
   both kinds does two passes, which costs one more game reload.
-* A change to the harness (`Mods/HelloWorldTests/`, the runner and install
+* A change to the harness (`Mods/TestFramework/`, the runner and install
   scripts in `Mods/`, `Mods/flake-module.nix`, `flake.nix`, `flake.lock`)
   runs every test. A path that no list names also runs every test, so that
   the scope fails safe.

@@ -95,11 +95,11 @@ fi
 # instruction, and frees the lock. Needs an install that succeeds, so the repo
 # holds two minimal mods.
 goodRepo="$scratch/good-repo"
-for mod in HelloWorld HelloWorldTests; do
+for mod in HelloWorld TestFramework; do
 	mkdir -p "$goodRepo/Mods/$mod"
 	echo "{\"namespace\":\"$mod\",\"name\":\"$mod\",\"synchronyVersion\":\"1.0\"}" >"$goodRepo/Mods/$mod/mod.json"
 done
-touch "$goodRepo/Mods/HelloWorldTests/api.lua"
+touch "$goodRepo/Mods/TestFramework/api.lua"
 export ITJ_MODS_ROOT="$goodRepo/Mods"
 export ITJ_SUITE_STALL_SECONDS=2
 export ITJ_GAME_LOCK_TIMEOUT_SECONDS=5
@@ -137,8 +137,8 @@ fi
 		sleep 1
 		echo "line" >>"$COTN_LOG"
 	done
-	echo '[HelloWorldTests] PASS fakeTest' >>"$COTN_LOG"
-	echo '[HelloWorldTests] Test suite completed: 0 failure(s)' >>"$COTN_LOG"
+	echo '[TestFramework] PASS fakeTest' >>"$COTN_LOG"
+	echo '[TestFramework] Test suite completed: 0 failure(s)' >>"$COTN_LOG"
 ) &
 growerPid=$!
 status=0
@@ -161,7 +161,7 @@ fi
 # rather than exiting silently.
 (
 	sleep 1
-	echo '[HelloWorldTests] Test suite completed: 0 failure(s)' >>"$COTN_LOG"
+	echo '[TestFramework] Test suite completed: 0 failure(s)' >>"$COTN_LOG"
 ) &
 growerPid=$!
 status=0
@@ -187,8 +187,8 @@ echo '{"namespace":"ClaimTests","name":"ClaimTests","synchronyVersion":"1.0"}' >
 touch "$goodRepo/Mods/ClaimTests/weapons.lua"
 (
 	sleep 1
-	echo '[HelloWorldTests] PASS fakeClaimTest' >>"$COTN_LOG"
-	echo '[HelloWorldTests] Test suite completed: 0 failure(s)' >>"$COTN_LOG"
+	echo '[TestFramework] PASS fakeClaimTest' >>"$COTN_LOG"
+	echo '[TestFramework] Test suite completed: 0 failure(s)' >>"$COTN_LOG"
 ) &
 growerPid=$!
 status=0
@@ -201,7 +201,7 @@ if ((status != 0)) || [ ! -d "$modsDir/DevBundle/ClaimTests" ] || [ -e "$modsDir
 	exit 1
 fi
 
-if ! grep -qxF "file: weapons.lua" "$modsDir/DevBundle/HelloWorldTests/selected-test.txt"; then
+if ! grep -qxF "file: weapons.lua" "$modsDir/DevBundle/TestFramework/selected-test.txt"; then
 	echo "FAIL: the claim pass did not select the claim test file" >&2
 	exit 1
 fi
