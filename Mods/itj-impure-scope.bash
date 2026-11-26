@@ -23,7 +23,6 @@ harmlessPrefixes=(
 	"GameData/"
 	"DocDownloader/"
 	"Mods/ScrapeGameData/"
-	"Mods/Gary the Cowardly Sheep/"
 )
 
 harmlessGlobs=(

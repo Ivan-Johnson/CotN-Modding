@@ -177,8 +177,8 @@ let
                 text = builtins.readFile ./itj-impure-scope.bash;
         };
 
-        # Feeds the classifier fixture path lists; see
-        # `Mods/test-itj-impure-scope.bash`.
+        # Feeds the classifier fixture path lists and checks its prefix lists
+        # against the repo's tracked files; see `Mods/test-itj-impure-scope.bash`.
         impureScopeTest =
                 pkgs.runCommand "cotn-impure-scope-test"
                         {
@@ -188,7 +188,7 @@ let
                                 ];
                         }
                         ''
-                                bash ${./test-itj-impure-scope.bash}
+                                bash ${./test-itj-impure-scope.bash} ${../.}
                                 touch "$out"
                         '';
 in
