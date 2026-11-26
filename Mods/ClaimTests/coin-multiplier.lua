@@ -1,4 +1,3 @@
-local Damage = require "necro.game.system.Damage"
 local Entities = require "system.game.Entities"
 local GrooveChain = require "necro.game.character.GrooveChain"
 local Inventory = require "necro.game.item.Inventory"
@@ -335,6 +334,13 @@ local function chainProbe(label, setup, actions, expectedMultiplier, waitTicks)
 	}
 end
 
+-- A probe whose actions must also cost the player health.
+local function hurtProbe(label, setup, actions, expectedMultiplier)
+	local probe = chainProbe(label, setup, actions, expectedMultiplier)
+	probe.hurt = true
+	return probe
+end
+
 local function tile(tileType)
 	return function()
 		Tile.setType(1, 0, tileType)
@@ -361,23 +367,21 @@ scene("coinChainSurvivesOrBreaks", function(finish)
 		chainProbe("picking up a pile", spawnAt("ResourceCoin5"), { "right" }, 3),
 		chainProbe("picking up an item", spawnAt("Food1"), { "right" }, 3),
 		chainProbe("a bounce trap", spawnAt("BounceTrapRight"), { "right" }, 3),
+		-- The Blood Drum's 1-health cost is self-damage, which keeps the chain.
+		hurtProbe("the Blood Drum's cost", function()
+			Inventory.grant("BloodDrum", player())
+		end, { "item1" }, 3),
+		-- Damage from the player's own bomb ends it; the walk stays in the blast.
+		hurtProbe("the player's own bomb", function()
+			Inventory.grant("Bomb", player())
+		end, { "bomb", "right", "up", "down" }, 1),
 		chainProbe("idling", nothing, { "idle" }, 1),
 		chainProbe("bumping stone", tile("StoneWall"), { "right" }, 1),
 		chainProbe("bumping the level edge", tile("LevelBorder"), { "right" }, 1),
 		chainProbe("a bomb with none left", function()
 			removeItems({ "Bomb", "Bomb3" })
 		end, { "bomb" }, 1),
-		chainProbe("stepping on spikes", spawnAt("SpikeTrap"), { "right", "right" }, 1),
-		chainProbe("an enemy's hit", function()
-			local attacker = fixtures.spawn("Skeleton", 3, 0)
-			-- The spikes of the probe before leave invincibility frames.
-			Damage.inflict({
-				victim = player(),
-				attacker = attacker,
-				damage = 1,
-				type = Damage.Type.PHYSICAL + Damage.Flag.BYPASS_INVINCIBILITY,
-			})
-		end, { "left" }, 1),
+		hurtProbe("stepping on spikes", spawnAt("SpikeTrap"), { "right", "right" }, 1),
 		-- Last: the chain ends a fraction of a second after the step, and the
 		-- level changes a couple of seconds after it.
 		chainProbe("falling through a trapdoor", spawnAt("Trapdoor"), { "right" }, 1, 500),
@@ -391,10 +395,37 @@ scene("coinChainSurvivesOrBreaks", function(finish)
 				local multiplier = player().grooveChain.multiplier
 				assert(multiplier == probe.multiplier, string.format("%s: x%d, expected x%d", probe.label, multiplier,
 					probe.multiplier))
+				if probe.hurt then
+					assert(player().health.health < 200, probe.label .. " should hurt the player")
+				end
 				next()
 			end)
 		end)
 	end, finish)
+end)
+
+-- An enemy's own attack ends the chain: the player keeps hitting a skeleton
+-- too tough to die until it hits back.
+scene("coinChainEndsOnEnemyAttack", function(finish)
+	setItems({})
+	reset()
+	setChain(5, 3)
+	local skeleton = fixtures.spawn("Skeleton", 1, 0)
+	skeleton.health.maxHealth = 100
+	skeleton.health.health = 100
+	local steps = 0
+	local function step()
+		if player().health.health < 200 then
+			assert(player().grooveChain.multiplier == 1, "the skeleton's hit left x" .. player().grooveChain.multiplier)
+			finish()
+			return
+		end
+		assert(player().grooveChain.multiplier == 3, "the chain broke before the hit")
+		steps = steps + 1
+		assert(steps <= 6, "the skeleton never hit")
+		act("right", step)
+	end
+	step()
 end)
 
 -- A bomb counts every enemy it kills, each paid at the multiplier the earlier

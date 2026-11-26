@@ -25,12 +25,14 @@ Back to x1 with no kills counted, on:
 * a failed move: bumping a wall the shovel cannot dig (`StoneWall`, the level
   edge);
 * an invalid action, such as `bomb` with none left;
-* any damage, however small: a spike trap, an enemy's hit;
+* taking damage from an enemy's hit, a spike trap or a bomb's blast, your own
+  bomb included;
 * falling through a `Trapdoor`.
 
 These leave the chain alone: walking onto empty floor, digging a `DirtWall`,
-opening a door, placing a bomb, picking up a pile of gold or an item, and a
-bounce trap.
+opening a door, placing a bomb, picking up a pile of gold or an item, a
+bounce trap, and the health that the Blood Drum costs
+([action-items.md](./action-items.md)).
 
 ## Gold per kill
 
