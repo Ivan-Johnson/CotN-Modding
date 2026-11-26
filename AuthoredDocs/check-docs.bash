@@ -200,35 +200,19 @@ assert_anchors_resolve() {
 	[[ "$checked" -gt 0 ]] || fail "$tree: no anchors found to check"
 }
 
-# Player pages that still carry wording the cotn-document-mechanic sweep
-# removes: see the player-page bullet under Conventions in AuthoredDocs/AGENTS.md.
-readonly UNSWEPT_PLAYER_PAGES=(
-)
-
 # A player page states conclusions, so the wording of an experiment's setup or
 # of a claim it could not conclude is not on it. Matched case-blind across line
 # breaks, since prose wraps anywhere.
 assert_player_pages_state_conclusions() {
 	local tree="$1"
 	local banned='`guess`|untested|not measured|measured as|seen in one|no-beat mode|CotN 4\.'
-	local path page found checked=0
+	local path found checked=0
 
 	while IFS= read -r path; do
 		checked=$((checked + 1))
-		page="$(basename "$path")"
 		found="$(tr '\n' ' ' <"$path" | tr -s ' ' | grep -oiE "$banned" | sort -u | paste -sd, -)" || true
-		if [[ " ${UNSWEPT_PLAYER_PAGES[*]} " == *" $page "* ]]; then
-			[[ -n "$found" ]] ||
-				fail "$path is clean: delete it from UNSWEPT_PLAYER_PAGES"
-		elif [[ -n "$found" ]]; then
-			fail "$path is a player page but says: $found"
-		fi
+		[[ -z "$found" ]] || fail "$path is a player page but says: $found"
 	done < <(grep -l '^For players\.' "$tree"/*.md)
-
-	for page in "${UNSWEPT_PLAYER_PAGES[@]}"; do
-		[[ -f "$tree/$page" ]] ||
-			fail "UNSWEPT_PLAYER_PAGES names $page, which $tree does not hold"
-	done
 
 	[[ "$checked" -gt 0 ]] || fail "$tree: no player pages found to check"
 }
