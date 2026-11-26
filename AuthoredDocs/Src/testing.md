@@ -43,6 +43,11 @@ it as a regression test with real assertions.
   reload can run a mod's load-time `registerTest()` calls again, and the
   replacement keeps each test running once. The entrypoint fails if a test
   still reports twice.
+* Load-time code may not read the entity schema (Synchrony's `overview.md`,
+  "Load-time vs. run-time"): `Entities.getEntityTypesWithComponents` often
+  returns nothing there, so tests registered in a loop over it go missing.
+  Register per-type tests from a fixed list, and check the list against the
+  schema inside a test, where the schema is always built.
 * Results print as `PASS`, `FAIL`, `XFAIL` or `XPASS` lines to
   `NecroDancer.log`, each ending in how long the test took, e.g. `PASS name
   (212 ticks)`. A tick is about a millisecond, but the Synchrony sandbox has no
