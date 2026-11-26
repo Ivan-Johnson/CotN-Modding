@@ -34,6 +34,7 @@ do not: each group's role and what it is coupled to.
   the dev shell, and exports `liveGame` (`liveGameRun`) to
   `GameData/flake-module.nix`.
 * `test-<name>.*`: the offline test of `<name>`, run by `nix flake check`.
+  Changing one runs no live test (ADR 0008).
 
 ## API reference
 

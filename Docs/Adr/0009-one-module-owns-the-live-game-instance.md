@@ -20,9 +20,10 @@ held across the run would need the runner to take it and then tell each pass
 that the lock is already held, which widens the interface for no gain in
 correctness.
 
-A caller waits for the lock as long as a pass may take, 900 s by default, so
-it outwaits a whole pass of another caller instead of failing while that pass
-is still healthy.
+A caller waits for the lock as long as a pass may take: the lock wait
+defaults to the default pass timeout, 900 s, whatever timeout the caller sets
+for its own wait. It therefore outwaits a whole pass of another caller instead
+of failing while that pass is still healthy.
 
 ## Considered options
 

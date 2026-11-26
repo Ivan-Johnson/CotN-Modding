@@ -3,8 +3,8 @@
 To answer a question about game mechanics, an agent writes a unit test that
 reports the values it wants with `api.observe`, runs it alone with
 `nix run .#itj-impure-tests -- <testName>`, and reads the `OBSERVED` lines.
-Each run starts from a fixed seed, takes the game-instance lock, and needs no
-per-step turns. This replaces `AgentBridge` (see
+Each run starts from a fixed seed, locks the game instance for each pass, and
+needs no per-step turns. This replaces `AgentBridge` (see
 `0006-agent-bridge-uses-command-file-and-log.md`), which is deleted. The
 workflow lives in `AuthoredDocs/Src/testing.md`.
 
@@ -25,8 +25,9 @@ the answer is known.
 
 ## Consequences
 
-* Only one process may drive the game at a time, so `itj-impure-tests` takes
-  a lock on the game instance first; see the root `AGENTS.md`.
+* Only one process may drive the game at a time, so each `live-game-run`
+  call, which is one test pass, takes a lock on the game instance; see
+  `0009-one-module-owns-the-live-game-instance.md`.
 * An experiment that needs interactive steps must script them in the test's
   `onLoad`.
 * Game facts found by experiment go in `AuthoredDocs/Src/`, not in agent

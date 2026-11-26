@@ -29,6 +29,11 @@ expect none Mods/ScrapeGameData/ScrapeGameData.lua
 expect none open_files.txt Tmp/scratch/notes.txt README.md
 expect none Mods/HelloWorld/notes.md
 
+# The offline tests run under `nix flake check`, never in the live suite.
+expect none Mods/test-live-game-run.bash Mods/test-itj-impure-tests.bash
+expect none Mods/test-itj-impure-scope.bash
+expect none Mods/test-bundle-layout.lua Mods/test-bytecode-api.lua
+
 # A claim test file runs when it or its page changes, and not when it is gone.
 expect weapons.lua Mods/ClaimTests/weapons.lua
 expect weapons.lua AuthoredDocs/Src/weapons.md
@@ -48,8 +53,9 @@ expect all Mods/ClaimTests/weapons.lua Mods/TestFramework/api.lua
 expect all Mods/TestFramework/README.md
 expect all Mods/install-mods.bash
 expect all Mods/live-game-run.bash Mods/test-live-game-run.bash
-expect all Mods/test-itj-impure-tests.bash
 expect all Mods/itj-impure-tests.bash
+expect all Mods/itj-impure-scope.bash
+expect all Mods/bundle-layout.lua
 expect all Mods/flake-module.nix flake.nix flake.lock
 expect all Docs/a.md Mods/unknown.txt
 expect all some/new/place.txt

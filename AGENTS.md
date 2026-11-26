@@ -63,9 +63,11 @@ than silently overriding it.
   goes through `live-game-run` (`nix run .#live-game-run`; ADR 0009). Each
   call takes an advisory `flock` on the one game instance for its own install
   and wait, so a test run locks once per pass. If another caller holds it, it
-  waits, then fails naming the holder before installing anything. `nix flake
-  check` tests the lock without a game. The lock file, the timeouts and their
-  variables are in the header of `Mods/live-game-run.bash`.
+  waits, then fails naming the holder before installing anything. The wait
+  lasts up to a whole pass, 900 s by default, so a commit's hook can stall
+  that long while another caller, such as another session's tests, holds the
+  game. `nix flake check` tests the lock without a game. The lock file, the
+  timeouts and their variables are in the header of `Mods/live-game-run.bash`.
 * A crashed or hung game logs nothing, so a call whose `NecroDancer.log` stops
   growing fails with "game not responding" and frees the lock. Restarting the
   game is the user's job; agents cannot reach it from the sandbox.

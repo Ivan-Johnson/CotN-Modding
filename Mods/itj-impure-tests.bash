@@ -48,7 +48,7 @@ nameMissing=0
 runPass() {
         local selection=$1 expected=$2
         shift 2
-        local runStatus newOutput resultLines duplicates
+        local runStatus newOutput resultLines duplicates runArgs
         nameMissing=0
 
         # The framework reads the expected files and the selection from this
@@ -63,9 +63,12 @@ runPass() {
         # the suite reruns even with no new changes.
         #
         # runPass runs in a `||` list, where errexit is off, so check each step.
+        runArgs=(--until "[TestFramework] Test suite completed")
+        runArgs+=(--reload TestFramework/api.lua)
+        runArgs+=(--file "TestFramework/selected-test.txt=expect: $expected
+$selection")
         runStatus=0
-        newOutput=$(live-game-run --until "[TestFramework] Test suite completed" --reload TestFramework/api.lua --file "TestFramework/selected-test.txt=expect: $expected
-$selection" "$@" TestFramework) || runStatus=$?
+        newOutput=$(live-game-run "${runArgs[@]}" "$@" TestFramework) || runStatus=$?
         echo "$newOutput"
 
         # live-game-run has already said why on stderr, including the restart

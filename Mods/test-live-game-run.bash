@@ -69,6 +69,46 @@ grow() {
 	growerPid=$!
 }
 
+# expectSetupFailure WHAT: runs live-game-run with the environment the caller
+# set up and expects exit 3, the "failed before the wait" code, with a message
+# naming WHAT, and nothing installed.
+expectSetupFailure() {
+	local what=$1 status=0 stderr
+	stderr=$(live-game-run --until "never" --timeout 1 Alpha 2>&1 >/dev/null) || status=$?
+	if ((status != 3)); then
+		fail "$what did not exit 3 (status $status); stderr was:" "$stderr"
+	fi
+	if ! grep -qF "$what" <<<"$stderr"; then
+		fail "$what was not named; stderr was:" "$stderr"
+	fi
+	if [ -n "$(ls -A "$modsDir")" ]; then
+		fail "something was installed despite $what"
+	fi
+}
+
+# A missing variable, log or lock directory fails before the wait.
+(
+	unset COTN_LOCAL_MODS_DIR
+	expectSetupFailure COTN_LOCAL_MODS_DIR
+) || exit 1
+(
+	unset COTN_LOG
+	expectSetupFailure COTN_LOG
+) || exit 1
+(
+	export COTN_LOG="$scratch/missing.log"
+	expectSetupFailure "$COTN_LOG"
+) || exit 1
+(
+	chmod 000 "$COTN_LOG"
+	expectSetupFailure "$COTN_LOG"
+) || exit 1
+chmod 644 "$COTN_LOG"
+(
+	export ITJ_GAME_LOCK_FILE="$scratch/no-such-dir/game.lock"
+	expectSetupFailure "$ITJ_GAME_LOCK_FILE"
+) || exit 1
+
 # A caller that outwaits its lock timeout fails, names the holder, and installs
 # nothing.
 startHolder 30
@@ -185,6 +225,33 @@ if ((status != 0)); then
 fi
 if [ "$stdout" != "$(printf 'one\ntwo\nthree\nthe end line')" ]; then
 	fail "stdout was not exactly the new lines:" "$stdout"
+fi
+
+# A line followed by far more log than a pipe holds (64 KB) is still found: a
+# reader that quits at the first match would kill the writer with SIGPIPE,
+# which pipefail turns into a miss, and the wait would run to its timeout.
+# 116 KB did not fail that old wait, as grep reads ahead before it can quit;
+# about 1 MB did, every time.
+bigFile="$scratch/big.txt"
+for _ in $(seq 20000); do
+	echo "filler line of about fifty bytes, repeated over and over"
+done >"$bigFile"
+(
+	sleep 1
+	{
+		echo "the big end line"
+		cat "$bigFile"
+	} >>"$COTN_LOG"
+) &
+growerPid=$!
+status=0
+stdout=$(live-game-run --until "big end line" --timeout 5 --stall 0 Alpha 2>/dev/null) || status=$?
+wait "$growerPid"
+if ((status != 0)); then
+	fail "a line followed by about 1 MB of log was not found (status $status)"
+fi
+if [ "${stdout%%$'\n'*}" != "the big end line" ]; then
+	fail "the big log's first new line was wrong:" "${stdout:0:200}"
 fi
 
 echo "live-game-run test passed"

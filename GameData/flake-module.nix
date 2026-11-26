@@ -30,9 +30,10 @@ let
         '';
 
         # Runs ScrapeGameData through `live-game-run`, which waits for its
-        # "end" sentinel, saves the new log lines into a fresh per-run
-        # directory and reassembles the datasets there. Impure, like
-        # `itj-impure-tests`.
+        # "end" sentinel and prints the new log lines; this wrapper saves them
+        # into a fresh per-run directory and reassembles the datasets there.
+        # The stall is shorter than the timeout, so a dead game reads as not
+        # responding rather than as a timeout. Impure, like `itj-impure-tests`.
         scrapeGameData = pkgs.writeShellApplication {
                 name = "scrape-game-data";
                 runtimeInputs = pipelineTools;
@@ -41,7 +42,7 @@ let
                         mkdir -p "$outDir"
 
                         # live-game-run has said why on stderr.
-                        if ! ${liveGame.liveGameRun}/bin/live-game-run --until "[ScrapeGameData] end" --timeout 60 ScrapeGameData >"$outDir/NecroDancer.log"; then
+                        if ! ${liveGame.liveGameRun}/bin/live-game-run --until "[ScrapeGameData] end" --timeout 60 --stall 30 ScrapeGameData >"$outDir/NecroDancer.log"; then
                                 echo "scrape-game-data: the scrape did not finish; its log is in $outDir" >&2
                                 exit 1
                         fi
