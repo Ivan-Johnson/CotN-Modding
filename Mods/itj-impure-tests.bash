@@ -37,40 +37,44 @@ modsRoot="${ITJ_MODS_ROOT:-$(git rev-parse --show-toplevel)/Mods}"
 suiteTimeoutSeconds=${ITJ_SUITE_TIMEOUT_SECONDS:-900}
 suiteStallSeconds=${ITJ_SUITE_STALL_SECONDS:-120}
 
+# The test files of each pass, as itj-impure-scope.bash also finds them.
 claimFiles=()
-if [ -d "$modsRoot/ClaimTests" ]; then
-        for path in "$modsRoot"/ClaimTests/*.lua; do
-                if [ -e "$path" ]; then
-                        claimFiles+=("${path##*/}")
-                fi
-        done
-fi
+codeFiles=()
+for path in "$modsRoot"/ClaimTests/*.lua; do
+        if [ -e "$path" ]; then
+                claimFiles+=("${path##*/}")
+        fi
+done
+for path in "$modsRoot"/HelloWorld/tests.lua "$modsRoot"/HelloWorld/*-tests.lua; do
+        if [ -e "$path" ]; then
+                codeFiles+=("${path##*/}")
+        fi
+done
 
 # Set by runPass when the framework reports that no registered test has the
 # selected name.
 nameMissing=0
 
-# runPass SELECTION MOD...: installs the mods with the framework, runs the
-# selection (the framework's selected-test.txt content: empty for every
-# registered test, a bare test name, or `file: a.lua b.lua`), prints the new
-# log lines and returns non-zero unless every selected test passed.
+# runPass SELECTION EXPECTED MOD...: installs the mods with the framework and
+# runs the selection (empty for every registered test, a bare test name, or
+# `file: a.lua b.lua`) once each of the EXPECTED test files (space-separated
+# basenames) has registered a test. Prints the new log lines and returns
+# non-zero unless every selected test passed.
 runPass() {
-        local selection=$1
-        shift
+        local selection=$1 expected=$2
+        shift 2
         local baseline waitStatus newOutput resultLines duplicates
         nameMissing=0
         baseline=$(wc -l <"$COTN_LOG") || return 1
 
-        # The framework reads the selection from this file in the bundle.
-        # install-mods can create any file with any content, so it takes the
-        # path and content in its generic ITJ_BUNDLE_EXTRA_* variables; with no
-        # file it removes any left by an earlier selected run.
-        local selectedTestFile=""
-        if [ -n "$selection" ]; then
-                selectedTestFile="HelloWorldTests/selected-test.txt"
-        fi
-        export ITJ_BUNDLE_EXTRA_FILE="$selectedTestFile"
-        export ITJ_BUNDLE_EXTRA_CONTENT="$selection"
+        # The framework reads both from this file in the bundle. install-mods
+        # can create any file with any content, so it takes the path and
+        # content in its generic ITJ_BUNDLE_EXTRA_* variables. The expected
+        # files make the suite wait out the reload batches of a changed mod
+        # set; see EXPECT_TIMEOUT_TICKS in HelloWorldTests/api.lua.
+        export ITJ_BUNDLE_EXTRA_FILE="HelloWorldTests/selected-test.txt"
+        export ITJ_BUNDLE_EXTRA_CONTENT="expect: $expected
+$selection"
 
         # Installing appends a timestamp comment to api.lua, rather than to an
         # entry script. api.lua is the module every mod under test requires at
@@ -106,8 +110,11 @@ runPass() {
                 return 1
         fi
 
+        # Each reload batch reports a missing name again, so stop before the
+        # duplicate check.
         if grep -qF "no registered test has this name" <<<"$newOutput"; then
                 nameMissing=1
+                return 1
         fi
 
         # A test that reports twice was queued twice (a reload registered it
@@ -173,18 +180,18 @@ if [ -n "${1:-}" ] && [ "${1:-}" != "--files" ]; then
         # A named test lives in one pass. Try the claim pass first, as most
         # named runs explore the game, and fall back to the code pass.
         if ((runClaim)); then
-                runPass "$claimSelection" ClaimTests || status=$?
+                runPass "$claimSelection" "${claimFiles[*]}" ClaimTests || status=$?
         fi
         if ((!runClaim || nameMissing)); then
                 status=0
-                runPass "$codeSelection" HelloWorld || status=$?
+                runPass "$codeSelection" "${codeFiles[*]}" HelloWorld || status=$?
         fi
 else
         if ((runCode)); then
-                runPass "$codeSelection" HelloWorld || status=1
+                runPass "$codeSelection" "${codeFiles[*]}" HelloWorld || status=1
         fi
         if ((runClaim)); then
-                runPass "$claimSelection" ClaimTests || status=1
+                runPass "$claimSelection" "${claimFiles[*]}" ClaimTests || status=1
         fi
 fi
 

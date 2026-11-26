@@ -65,6 +65,10 @@ it as a regression test with real assertions.
 * The mod loader reloads a mod when a file's content changes, not its mtime.
 * Reloading a module reloads every other script with a load-time dependency on
   it, for example every mod that `require`s the changed module.
+* One install reloads the game in several batches, and a mod new to the
+  bundle can load after the framework. So `nix run .#itj-impure-tests` names
+  the test files it expects, and the suite starts only once each has
+  registered a test, or fails naming the ones that never did.
 * A mod's first-ever install beside `HelloWorldTests` can fail its `require`
   of `HelloWorldTests.api` if the framework has not loaded yet; the forced
   reload of `nix run .#itj-impure-tests` heals it.

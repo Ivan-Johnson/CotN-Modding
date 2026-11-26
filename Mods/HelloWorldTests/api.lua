@@ -103,29 +103,42 @@ local function callerFile()
 end
 
 -- Selects which tests run; `Mods/itj-impure-tests.bash` has install-mods write
--- it for a selected run, and it is absent (so the whole suite runs) otherwise.
--- A bare line is the exact name of one test; a line
--- `file: a-tests.lua b-tests.lua` selects every test registered by those files.
+-- it, and without it the whole suite runs. A line `expect: a.lua b.lua` names
+-- the files that must have registered a test before the suite starts. Of the
+-- other lines, the first non-empty one is the selection: a bare line is the
+-- exact name of one test, and `file: a.lua b.lua` selects every test
+-- registered by those files; with none, every test runs.
 local SELECTED_TEST_FILE = findOwnDirectory() .. "/selected-test.txt"
 
--- Returns nil, or "name" and a test name, or "files" and a set of basenames.
-local function readSelectedTest()
-	if not FileIO.exists(SELECTED_TEST_FILE) then
-		return nil
-	end
-	local text = FileIO.readFileToString(SELECTED_TEST_FILE, 4096):match("^%s*(.-)%s*$")
-	if text == "" then
-		return nil
-	end
-	local list = text:match("^file:%s*(.*)$")
-	if not list then
-		return "name", text
-	end
+-- Splits a list of basenames into a set.
+local function basenameSet(list)
 	local files = {}
 	for file in list:gmatch("%S+") do
 		files[file] = true
 	end
-	return "files", files
+	return files
+end
+
+-- Returns the selection (nil, or "name" and a test name, or "files" and a set
+-- of basenames) and then the set of expected files, or nil.
+local function readSelectedTest()
+	if not FileIO.exists(SELECTED_TEST_FILE) then
+		return nil
+	end
+	local kind, selected, expected
+	for line in FileIO.readFileToString(SELECTED_TEST_FILE, 4096):gmatch("[^\n]+") do
+		line = line:match("^%s*(.-)%s*$")
+		local expectList = line:match("^expect:%s*(.*)$")
+		local fileList = line:match("^file:%s*(.*)$")
+		if expectList then
+			expected = basenameSet(expectList)
+		elseif not kind and fileList then
+			kind, selected = "files", basenameSet(fileList)
+		elseif not kind and line ~= "" then
+			kind, selected = "name", line
+		end
+	end
+	return kind, selected, expected
 end
 
 -- Whether a selection, as readSelectedTest returns it, keeps the test. A test
@@ -403,16 +416,57 @@ end)
 
 local started = false
 
--- Kicks off the suite, running every test registered by then. Idempotent,
--- and safe to call more than once (e.g. once from this mod's own entry
--- script, and again from a Tick.delay-deferred call - see there for why):
--- only the first call has any effect.
+-- One install reloads the game in several batches, and a mod new to the
+-- bundle can load in a later batch than this framework. So the suite waits,
+-- up to this long, for each expected file to register a test.
+local EXPECT_TIMEOUT_TICKS = 10000
+local expectWaitStartedAt = nil
+local expectRecheckPending = false
+
+-- The expected files that have registered no test yet, sorted.
+local function missingFiles(expected)
+	local registered = {}
+	for _, test in ipairs(tests) do
+		if test.file then
+			registered[test.file] = true
+		end
+	end
+	local missing = {}
+	for file in pairs(expected) do
+		if not registered[file] then
+			missing[#missing + 1] = file
+		end
+	end
+	table.sort(missing)
+	return missing
+end
+
+-- Kicks off the suite, once every expected file has registered a test.
+-- Idempotent, and safe to call more than once (e.g. once from this mod's own
+-- entry script, and again from a Tick.delay-deferred call - see there for
+-- why): only the first call that starts the suite has any effect.
 local function start()
-	if started then
+	if started or expectRecheckPending then
 		return
 	end
+	local kind, selected, expected = readSelectedTest()
+	local missing = expected and missingFiles(expected) or {}
+	if #missing > 0 then
+		expectWaitStartedAt = expectWaitStartedAt or tickCount
+		if tickCount - expectWaitStartedAt < EXPECT_TIMEOUT_TICKS then
+			expectRecheckPending = true
+			afterTicks(1, function()
+				expectRecheckPending = false
+				start()
+			end)
+			return
+		end
+		failureCount = failureCount + 1
+		log("FAIL", "expectedFiles", "no test registered from " .. table.concat(missing, " "))
+		kind = nil
+		tests = {}
+	end
 	started = true
-	local kind, selected = readSelectedTest()
 	if kind then
 		local kept = {}
 		for _, test in ipairs(tests) do
