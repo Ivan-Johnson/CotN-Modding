@@ -6,14 +6,14 @@ local Move = require "necro.game.system.Move"
 local Object = require "necro.game.object.Object"
 local Tile = require "necro.game.tile.Tile"
 
--- Optional dependency on HelloWorldTests; see tests.lua.
+-- Optional dependency on HelloWorldTests; see HelloWorld/tests.lua.
 local ok, testsApi = pcall(require, "HelloWorldTests.api")
 if not ok then
 	return
 end
 local fixtures = require "HelloWorldTests.fixtures"
 
--- Backs AuthoredDocs/Src/weapons.md. Every test plays Cadence in no-beat mode
+-- Every test plays Cadence in no-beat mode
 -- on an open floor against tough Slimes spawned by hand. A step is one
 -- situation: the weapon, the targets, the presses, and what must hold after.
 -- Coordinates are in the facing frame: x is ahead, y is to the right-hand

@@ -3,14 +3,14 @@ local Inventory = require "necro.game.item.Inventory"
 local Object = require "necro.game.object.Object"
 local Tile = require "necro.game.tile.Tile"
 
--- Optional dependency on HelloWorldTests; see tests.lua.
+-- Optional dependency on HelloWorldTests; see HelloWorld/tests.lua.
 local ok, testsApi = pcall(require, "HelloWorldTests.api")
 if not ok then
 	return
 end
 local fixtures = require "HelloWorldTests.fixtures"
 
--- Backs AuthoredDocs/Src/bombs.md. Each test plays Cadence in no-beat mode on
+-- Each test plays Cadence in no-beat mode on
 -- an open floor with 100 health, so a hit shows as a small drop. The player
 -- starts at (0,0) with one bomb; "up" is toward negative y.
 

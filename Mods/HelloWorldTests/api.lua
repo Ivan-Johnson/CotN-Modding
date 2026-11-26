@@ -57,7 +57,7 @@ fixed-seed GameSession. A test is a table:
     finish(message) fails). Drive the game with afterTicks and play below; an
     error raised inside any callback they run fails the test
   file (string?)          - the basename of the file that registers this test,
-    e.g. "weapon-tests.lua"; registerTest fills it in from its caller, so set
+    e.g. "weapons.lua"; registerTest fills it in from its caller, so set
     it only when a shared helper module registers the test for another file (a
     helper can pass api.callerFile()).
     A test with no file matches every file selection (see selected-test.txt)

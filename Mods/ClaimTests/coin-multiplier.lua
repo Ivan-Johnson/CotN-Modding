@@ -6,14 +6,14 @@ local Move = require "necro.game.system.Move"
 local Object = require "necro.game.object.Object"
 local Tile = require "necro.game.tile.Tile"
 
--- Optional dependency on HelloWorldTests; see tests.lua.
+-- Optional dependency on HelloWorldTests; see HelloWorld/tests.lua.
 local ok, testsApi = pcall(require, "HelloWorldTests.api")
 if not ok then
 	return
 end
 local fixtures = require "HelloWorldTests.fixtures"
 
--- Backs AuthoredDocs/Src/coin-multiplier.md. Each test plays Cadence in
+-- Each test plays Cadence in
 -- no-beat mode on an open floor, with enemies spawned by hand. The framework's
 -- Cadence starts with the coin items CoinsX15 and CoinsX2, so every test
 -- starts by removing them and re-grants what it needs. "x1" is the chain

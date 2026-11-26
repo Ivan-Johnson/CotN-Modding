@@ -12,7 +12,8 @@ among them, in `Mods/HelloWorldTests/fixtures.lua`.
 Unit tests are the default way to learn how the game works. For a mechanics
 question:
 
-1. Register a test in a mod's `tests.lua` (see below). Its `onLoad` sets up
+1. Register a test in the claim test file of the page the answer belongs on,
+   `Mods/ClaimTests/<page>.lua` (see below). Its `onLoad` sets up
    the situation and calls `api.observe(key, value)` for each value you want.
 2. Lint with `luacheck --config Mods/.luacheckrc Mods`. It catches syntax
    errors and undefined globals in seconds; the live game only reports them
@@ -20,7 +21,7 @@ question:
 3. Run just that test: `nix run .#itj-impure-tests -- <testName>`. It runs
    from the same fixed seed as in the full suite. To run every test
    registered by some files instead: `nix run .#itj-impure-tests -- --files
-   weapon-tests.lua,bomb-tests.lua`.
+   weapons.lua,bombs.lua`.
 4. Read the `OBSERVED <test> <key>=<value>` lines and the `PASS`/`FAIL` line
    in what it prints. A Lua error in `onLoad` shows as `FAIL` with the message.
 
@@ -32,8 +33,10 @@ it as a regression test with real assertions.
 
 ## Writing tests
 
-* A mod under test contributes cases from its own `tests.lua` (for example
-  `HelloWorld/tests.lua`), guarding the cross-mod `require()` of
+* A mod under test contributes code tests from its own `tests.lua` (for
+  example `HelloWorld/tests.lua`). Claim tests, which back a page's claims
+  about the game, go in `Mods/ClaimTests/<page>.lua`, which the run installs
+  without `HelloWorld`. Either guards the cross-mod `require()` of
   `HelloWorldTests.api` in a `pcall()`, since the framework may not be loaded.
 * Registering a name that is already registered replaces the earlier test: a
   reload can run a mod's load-time `registerTest()` calls again, and the
@@ -51,7 +54,7 @@ it as a regression test with real assertions.
 * To play the game step by step, mark the test `noBeat = true` and
   `async = true` and drive it with `api.play`. Check `fixtures.lua` before
   writing your own scene, wallColumn, health or assertAt helper.
-  `Mods/HelloWorld/ghost-tests.lua` is a worked example.
+  `Mods/ClaimTests/ghost.lua` is a worked example.
 * If an assertion needs a handler to run before or after the mod-under-test's
   handler within the same event and order key, set `sequence` on the test's
   handler, not the mod's. Timing that exists only to make an assertion

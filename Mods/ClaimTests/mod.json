@@ -1,0 +1,12 @@
+{
+	"namespace": "ClaimTests",
+	"displayName": "Claim Tests",
+	"version": "0.1.0",
+	"synchronyVersion": "4.2.1",
+	"description": "Live tests that back the claims in the authored docs, one script per page. Not intended for players.",
+	"author": "error 255",
+	"dependencies": {},
+	"api": {"scriptPath":""},
+	"tags": [],
+	"name": "ClaimTests"
+}

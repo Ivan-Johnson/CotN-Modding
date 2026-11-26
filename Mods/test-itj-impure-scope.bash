@@ -26,13 +26,13 @@ expect none open_files.txt Tmp/scratch/notes.txt README.md
 expect none Mods/HelloWorld/notes.md
 
 expect all Mods/HelloWorld/HelloWorld.lua
-expect weapon-tests.lua Mods/HelloWorld/weapon-tests.lua
-expect weapon-tests.lua Docs/a.md Mods/HelloWorld/weapon-tests.lua
-expect "$(printf 'bomb-tests.lua\nweapon-tests.lua')" Mods/HelloWorld/weapon-tests.lua Mods/HelloWorld/bomb-tests.lua Mods/HelloWorld/weapon-tests.lua
+expect weapons.lua Mods/ClaimTests/weapons.lua
+expect weapons.lua Docs/a.md Mods/ClaimTests/weapons.lua
+expect "$(printf 'bombs.lua\nweapons.lua')" Mods/ClaimTests/weapons.lua Mods/ClaimTests/bombs.lua Mods/ClaimTests/weapons.lua
 expect all Mods/HelloWorld/tests.lua
-expect all Mods/HelloWorld/weapon-tests.lua Mods/HelloWorld/HelloWorld.lua
-expect all Mods/HelloWorld/sub/weapon-tests.lua
-expect all Mods/HelloWorld/weapon-tests.lua Mods/HelloWorldTests/api.lua
+expect all Mods/ClaimTests/weapons.lua Mods/HelloWorld/HelloWorld.lua
+expect all Mods/ClaimTests/sub/weapons.lua
+expect all Mods/ClaimTests/weapons.lua Mods/HelloWorldTests/api.lua
 expect all Mods/HelloWorldTests/README.md
 expect all Mods/install-mods.bash
 expect all Mods/flake-module.nix flake.nix flake.lock

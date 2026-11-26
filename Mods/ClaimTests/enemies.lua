@@ -1,14 +1,14 @@
 local Entities = require "system.game.Entities"
 local Tile = require "necro.game.tile.Tile"
 
--- Optional dependency on HelloWorldTests; see tests.lua.
+-- Optional dependency on HelloWorldTests; see HelloWorld/tests.lua.
 local ok, testsApi = pcall(require, "HelloWorldTests.api")
 if not ok then
 	return
 end
 local fixtures = require "HelloWorldTests.fixtures"
 
--- Backs AuthoredDocs/Src/enemies.md. Each test plays Cadence in no-beat mode on
+-- Each test plays Cadence in no-beat mode on
 -- an open floor, spawning enemies by hand at offsets from the player, who
 -- starts at (0,0); "up" is toward negative y. Enemies spawned in different
 -- quadrants do not interfere within the beats a test watches.

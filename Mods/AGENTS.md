@@ -9,8 +9,12 @@ optionally contribute test cases to.
 Each file's header comment says what it does; this map says what the names
 do not: each group's role and what it is coupled to.
 
-* `HelloWorld/`: a minimal mod that also hosts the tests behind the player
-  pages, one `<subject>-tests.lua` per subject of `AuthoredDocs/Src/`.
+* `HelloWorld/`: a minimal mod with gameplay code, and its code tests in
+  `tests.lua`.
+* `ClaimTests/`: the claim tests, with no gameplay code. `<page>.lua` backs
+  `AuthoredDocs/Src/<page>.md` and nothing else; the `claim-tests-layout`
+  check requires the page. The test run never installs it beside
+  `HelloWorld` (ADR 0008).
 * `HelloWorldTests/`: the test framework. `api.lua` holds the test contract,
   `fixtures.lua` the shared helpers, and `HelloWorldTests.lua` the framework's
   self-tests and the suite start.
@@ -49,8 +53,9 @@ do not: each group's role and what it is coupled to.
 
 ## Dev loop
 
-* `nix run .#itj-impure-tests` is the whole inner dev loop: it installs
-  `HelloWorld` and `HelloWorldTests` with `install-mods`, forces
+* `nix run .#itj-impure-tests` is the whole inner dev loop: in one pass it
+  installs `HelloWorld` and `HelloWorldTests` with `install-mods`, and in a
+  second pass `ClaimTests` and `HelloWorldTests`. Each pass forces
   `HelloWorldTests` to reload so its test run fires, waits for the suite, and
   prints only the new `NecroDancer.log` lines. CotN live-reloads unpacked
   mods, so no manual reload or log-tailing is needed. It's an `app`, not a

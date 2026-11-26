@@ -47,7 +47,8 @@ second derivation: `Docs/Adr/0002-*` at the repo root.
   `CotN 4.`. Pages written before the rule are on its `UNSWEPT_PLAYER_PAGES`
   list; rewriting one with the `cotn-document-mechanic` skill removes its
   entry, and the check fails until it does.
-* Every claim on a player page has a test in `Mods/HelloWorld/`. Check a claim
+* Every claim on a player page has a test in `Mods/ClaimTests/<page>.lua`,
+  which backs no other page. Check a claim
   that an enemy never does something on enemies that come with the level, not
   only spawned ones.
 * To document a game mechanic, use the `cotn-document-mechanic` skill.

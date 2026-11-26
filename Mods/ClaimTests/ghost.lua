@@ -4,14 +4,14 @@ local GameSession = require "necro.client.GameSession"
 local Inventory = require "necro.game.item.Inventory"
 local Tile = require "necro.game.tile.Tile"
 
--- Optional dependency on HelloWorldTests; see tests.lua.
+-- Optional dependency on HelloWorldTests; see HelloWorld/tests.lua.
 local ok, testsApi = pcall(require, "HelloWorldTests.api")
 if not ok then
 	return
 end
 local fixtures = require "HelloWorldTests.fixtures"
 
--- Backs AuthoredDocs/Src/ghost.md. Each test plays Cadence in no-beat mode on
+-- Each test plays Cadence in no-beat mode on
 -- an open floor, spawning Ghosts by hand; "up" is toward negative y.
 --
 -- A Ghost starts frozen and is freed only by the player's next move to a new

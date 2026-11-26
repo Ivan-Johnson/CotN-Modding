@@ -3,14 +3,14 @@ local Inventory = require "necro.game.item.Inventory"
 local Tile = require "necro.game.tile.Tile"
 local Turn = require "necro.cycles.Turn"
 
--- Optional dependency on HelloWorldTests; see tests.lua.
+-- Optional dependency on HelloWorldTests; see HelloWorld/tests.lua.
 local ok, testsApi = pcall(require, "HelloWorldTests.api")
 if not ok then
 	return
 end
 local fixtures = require "HelloWorldTests.fixtures"
 
--- Backs AuthoredDocs/Src/controls.md. Each test plays Cadence on an open
+-- Each test plays Cadence on an open
 -- floor in no-beat mode ("up" is toward negative y), except the rhythm test.
 
 local RIGHT, UP, LEFT, DOWN = 1, 3, 5, 7

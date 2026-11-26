@@ -55,6 +55,24 @@ let
                 touch "$out"
         '';
 
+        # Each claim test file backs the authored page it is named after, so a
+        # change to that page runs it
+        # (Docs/Adr/0008-claim-tests-run-only-when-their-page-changes.md).
+        claimTestsLayout = pkgs.runCommand "cotn-claim-tests-layout" { } ''
+                status=0
+                for path in ${./ClaimTests}/*.lua; do
+                        name=''${path##*/}
+                        if [ ! -e "${../AuthoredDocs/Src}/''${name%.lua}.md" ]; then
+                                echo "Mods/ClaimTests/$name backs no page: AuthoredDocs/Src/''${name%.lua}.md does not exist" >&2
+                                status=1
+                        fi
+                done
+                if ((status != 0)); then
+                        exit 1
+                fi
+                touch "$out"
+        '';
+
         # Tests the layout rules and the rewrite on fixtures, in-process and
         # through the real `bundle-layout` wrapper; see
         # `Mods/test-bundle-layout.lua`.
@@ -143,6 +161,7 @@ let
                 name = "itj-impure-tests";
                 runtimeInputs = [
                         pkgs.coreutils
+                        pkgs.git
                         pkgs.gnugrep
                         pkgs.util-linux
                         installMods
@@ -205,6 +224,7 @@ in
         checks = {
                 mods-lua-lint = modsLuaLint;
                 mods-layout = modsLayout;
+                claim-tests-layout = claimTestsLayout;
                 bytecode-api = bytecodeApiTest;
                 bundle-layout = bundleLayoutTest;
                 impure-tests-lock = impureTestsLockTest;

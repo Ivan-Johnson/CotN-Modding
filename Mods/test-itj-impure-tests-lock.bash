@@ -1,5 +1,6 @@
-# Behavior test for the unit-test entrypoint's game-instance lock. Needs no
-# live game: it holds the lock from outside and runs the entrypoint against it.
+# Behavior test for the unit-test entrypoint: its game-instance lock, its
+# stall detection and the mods each pass installs. Needs no live game: it
+# holds the lock from outside and runs the entrypoint against it.
 # Expects `itj-impure-tests` on PATH.
 set -u
 
@@ -173,9 +174,35 @@ if ((status == 0)); then
 	exit 1
 fi
 
-if ! grep -qF "itj-impure-tests: the run printed no PASS/FAIL lines" <<<"$stdout"; then
+if ! grep -qF "itj-impure-tests: the pass printed no PASS/FAIL lines" <<<"$stdout"; then
 	echo "FAIL: a run with no PASS/FAIL lines gave no message; output was:" >&2
 	echo "$stdout" >&2
+	exit 1
+fi
+
+# A claim test file runs in a pass that installs ClaimTests without HelloWorld,
+# whose gameplay code would change the claim test's level.
+mkdir -p "$goodRepo/Mods/ClaimTests"
+echo '{"namespace":"ClaimTests","name":"ClaimTests","synchronyVersion":"1.0"}' >"$goodRepo/Mods/ClaimTests/mod.json"
+touch "$goodRepo/Mods/ClaimTests/weapons.lua"
+(
+	sleep 1
+	echo '[HelloWorldTests] PASS fakeClaimTest' >>"$COTN_LOG"
+	echo '[HelloWorldTests] Test suite completed: 0 failure(s)' >>"$COTN_LOG"
+) &
+growerPid=$!
+status=0
+stdout=$(itj-impure-tests --files weapons.lua 2>&1) || status=$?
+wait "$growerPid"
+
+if ((status != 0)) || [ ! -d "$modsDir/DevBundle/ClaimTests" ] || [ -e "$modsDir/DevBundle/HelloWorld" ]; then
+	echo "FAIL: a claim test file did not run with ClaimTests alone (status $status); installed: $(ls "$modsDir/DevBundle"); output was:" >&2
+	echo "$stdout" >&2
+	exit 1
+fi
+
+if ! grep -qxF "file: weapons.lua" "$modsDir/DevBundle/HelloWorldTests/selected-test.txt"; then
+	echo "FAIL: the claim pass did not select the claim test file" >&2
 	exit 1
 fi
 

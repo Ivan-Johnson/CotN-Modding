@@ -30,7 +30,7 @@ Running many pages at once: [SWEEP.md](./SWEEP.md).
    traces or "untested". A question you could not settle is not on the page;
    say so in your return. Done when each sentence states something verified.
 4. **Test.** Keep the fewest permanent tests that back each claim, with real
-   assertions, in `Mods/HelloWorld/<subject>-tests.lua`. Delete the scratch
+   assertions, in `Mods/ClaimTests/<page>.lua`. Delete the scratch
    tests. Done when `luacheck --config Mods/.luacheckrc Mods` is clean and
    `nix run .#itj-impure-tests` passes in full.
 5. **Cross-check.** Grep `AuthoredDocs/Src/` for pages that quote or depend on
