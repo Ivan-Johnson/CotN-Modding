@@ -26,9 +26,8 @@ Running many pages at once: [SWEEP.md](./SWEEP.md).
    and level-generated enemies, each facing, each blocker. One run settles
    nothing; repeat until the answer does not change. Done when each question
    has a verified answer or is dropped.
-3. **Write.** Rewrite the page as conclusions only: no setup, trial counts,
-   traces or "untested". A question you could not settle is not on the page;
-   say so in your return. Done when each sentence states something verified.
+3. **Write.** Rewrite the page as conclusions only. Done when each sentence
+   states something verified.
 4. **Test.** Keep the fewest permanent tests that back each claim, with real
    assertions, in `Mods/ClaimTests/<page>.lua`. Delete the scratch
    tests. Done when `luacheck --config Mods/.luacheckrc Mods` is clean and
@@ -37,8 +36,7 @@ Running many pages at once: [SWEEP.md](./SWEEP.md).
    a claim you changed. Fix claims your findings contradict; report the rest
    instead of rewriting other subjects' pages. Done when the grep is clean or
    reported.
-6. **Commit** the page and its tests together, with the evidence in the
-   message (key measurements, the reason for each cut). Never push.
+6. **Commit** the page and its tests together.
 
 ## Return
 
