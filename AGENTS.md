@@ -93,9 +93,11 @@ To find out how the game works, write a unit test that observes it, as
   fine. This is not always possible; e.g. `README.md` files and the nix
   `result` symlink.
 * Each commit cleans up the docs that relate to its main purpose: update or
-  remove any claim it supersedes, in every page that states it (grep for the
-  old wording). If you notice stale docs unrelated to the commit, don't fix
-  them there; flag them for the user's review.
+  remove any claim it supersedes, in every page that states it. Grep for the
+  old wording, for the concept's key terms, and for any _Avoid_ term the
+  commit adds to a `GLOSSARY.md`, in `Docs/Adr/` too. If you notice stale
+  docs unrelated to the commit, don't fix them there; flag them for the
+  user's review.
 
 ## Agent skills
 
