@@ -87,7 +87,12 @@ it as a regression test with real assertions.
   beat, built on `api.atBeat`, `api.atMusicTime` and `api.send`, and
   records when each watched value changed, missed beats included. Music
   time moves every tick, so an input lands within about a millisecond of
-  its target.
+  its target. The game, though, judges an input against its beatmap, which
+  at times falls a beat or two behind the music; the timeline checks the
+  beatmap before each input and starts over at a later beat when it is
+  behind before the first. Before playing one, wait for the player's
+  `rhythmLeniency.remainingTurns` to reach 0, as well as its invincibility.
+  `Mods/ClaimTests/sub-beat-timing.lua` is a worked example.
   Name such tests with letters, digits and `_` only: the runner reads a
   test's name up to the first other character, so names that differ only
   after a `+`, `-` or `.` look like one test reported twice.

@@ -47,6 +47,9 @@ A wiki of linked pages about the game's things, for Cadence.
   use.
 * [stairs-and-levels.md](./stairs-and-levels.md): leaving a level, trapdoors
   and the boss level.
+* [sub-beat-timing.md](./sub-beat-timing.md): when within a beat a press
+  counts, trap fuses, and the stairs' descent; dodging spikes with food or
+  the heal spell, and free heals on the stairs.
 * [all-zones-mode.md](./all-zones-mode.md): the five-zone run, its bosses and
   its starting kit.
 * [shops.md](./shops.md): prices, buying, and the shopkeeper.

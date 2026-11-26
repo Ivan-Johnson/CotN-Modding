@@ -1,3 +1,4 @@
+local Beatmap = require "necro.audio.Beatmap"
 local CurrentLevel = require "necro.game.level.CurrentLevel"
 local Entities = require "system.game.Entities"
 local GameSession = require "necro.client.GameSession"
@@ -224,10 +225,20 @@ missed beat, as { key, value, at } with at in seconds from B and key
 "missedBeat" for a missed beat. It ends at B + seconds, or when the level
 changes (recorded under key "level"): the music, and so its time, restarts
 on a new level. Then it calls done(events, lastAt), where lastAt is the last
-time seen on the starting level.
+time seen on the starting level. Steps must be in time order.
+
+The game judges an input against its beatmap, not the music time. The
+beatmap skips a beat no one pressed for about 0.31 s after it, but at times
+it falls a beat or two behind the music for a while, and an input then
+counts for a beat long gone. So each input step first checks that the
+beatmap has kept up; if not, before the first step the timeline starts
+over at a later beat, and after it the test fails.
 ]]
-local function timeline(steps, watch, seconds, done)
-	testsApi.atBeat(-1, function(beat)
+local TIMELINE_ATTEMPTS = 5
+
+local function timeline(steps, watch, seconds, done, attempt)
+	attempt = attempt or 1
+	testsApi.atBeat(-1, function(beat, interval)
 		local events = {}
 		local function record(key, value)
 			events[#events + 1] = { key = key, value = value, at = Music.getMusicTime() - beat }
@@ -238,19 +249,59 @@ local function timeline(steps, watch, seconds, done)
 		end
 		local level = CurrentLevel.getNumber()
 		local lastAt = Music.getMusicTime() - beat
-		for _, step in ipairs(steps) do
+		local abandoned = false
+		-- Kept up: the beatmap's next beat is less than 0.75 of a beat behind the
+		-- music, well past the skip at about 0.31 s. A level about to end, as on
+		-- the stairs, already has the next level's beatmap; that one is not
+		-- checked.
+		local beatmap = Beatmap.getPrimary()
+		local function beatmapBehind()
+			if Beatmap.getPrimary() ~= beatmap then
+				return false
+			end
+			local behind = Music.getMusicTime() - beatmap:getNextBeatTime()
+			return behind > 0.75 * interval and behind
+		end
+		local function runStep(index)
+			local step = steps[index]
+			if not step then
+				return
+			end
 			testsApi.atMusicTime(beat + step[1], function()
+				if abandoned then
+					return
+				end
 				if type(step[2]) == "function" then
 					step[2]()
 				else
+					local behind = beatmapBehind()
+					if behind and index == 1 and attempt < TIMELINE_ATTEMPTS then
+						print(string.format(
+							"[TestFramework] timeline: the beatmap is %.3f s behind the music; starting over",
+							behind
+						))
+						abandoned = true
+						onMissedBeat = nil
+						timeline(steps, watch, seconds, done, attempt + 1)
+						return
+					end
+					assert(
+						not behind,
+						string.format("step %d: the beatmap is %.3f s behind the music", index, behind or 0)
+					)
 					testsApi.send(step[2])
 				end
+				runStep(index + 1)
 			end)
 		end
+		runStep(1)
 		onMissedBeat = function()
 			record("missedBeat", true)
 		end
 		local function poll()
+			if abandoned then
+				return
+			end
 			if CurrentLevel.getNumber() ~= level then
 				record("level", CurrentLevel.getNumber())
 				onMissedBeat = nil

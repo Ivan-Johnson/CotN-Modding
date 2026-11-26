@@ -5,7 +5,8 @@ destroys traps ([bombs.md](./bombs.md)); spikes set in walls are covered in
 [digging.md](./digging.md).
 
 Every trap but the bounce traps acts a moment after you land on it, not as
-you land.
+you land. How long, and what you can do meanwhile:
+[sub-beat-timing.md](./sub-beat-timing.md#trap-fuses).
 
 ## Spikes
 
