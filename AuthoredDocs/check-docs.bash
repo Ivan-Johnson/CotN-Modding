@@ -211,7 +211,6 @@ readonly UNSWEPT_PLAYER_PAGES=(
 	shrines.md
 	stairs-and-levels.md
 	traps.md
-	zombies.md
 )
 
 # A player page states conclusions, so the wording of an experiment's setup or

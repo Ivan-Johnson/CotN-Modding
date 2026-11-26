@@ -6,17 +6,20 @@ For players. Stats columns: [enemies.md](./enemies.md#stats-tables).
 |------|-------|----|--------|--------------|
 | `Zombie` | 2 | 1 | 2 | 1 |
 
-* A `Zombie` walks in a straight line, one tile every second beat. Its
-  initial direction is random (four directions were sampled from one tile),
-  not toward the player.
-* At a wall it pauses one move slot and turns round, so a corridor of n tiles
-  gives n-1 moves, a pause, and n-1 moves back.
-* It does not chase: it walked past a player standing one tile off its line.
-* It attacks only when the player is next on its line: it stops and hits for 2
-  every second beat. In 12 runs with a `Zombie` spawned beside the player,
-  3 pointed at the player and hit twice in 4 beats (4 damage), and 9 walked
-  away along another line and never attacked.
-* Whether a `Zombie` can be hit while it walks, and how it reacts to another
-  enemy in its way, are untested.
+A zombie walks back and forth along one straight line and never chases you.
 
-Gold per kill: [coin-multiplier.md](./coin-multiplier.md).
+* **Walking.** It starts facing up, down, left or right, at random, and steps
+  one tile that way every second beat from the first beat of a level.
+* **Turning.** When a wall, another enemy or a chest blocks its step, it spends
+  that move turning round in place and walks back on its next move. So in a
+  corridor n tiles long it makes n-1 moves, turns, and makes n-1 moves back.
+  Two zombies that meet head-on both turn round.
+* **Attacking.** It hits only when you stand on the next tile of its line:
+  instead of stepping onto you it hits for 2, and again every second beat while
+  you stay there. It never turns toward you, so beside its line or behind it you
+  are safe, even next to it. Step off its line and it walks on the same way,
+  through the tile you stood on.
+* **Bounce traps** push it a tile sideways; it keeps walking the way it was.
+* Zombies that come with the level follow the same rules.
+
+Gold per kill: [coin-multiplier.md](./coin-multiplier.md#gold-per-kill).
