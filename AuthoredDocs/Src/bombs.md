@@ -29,8 +29,9 @@ For players. How bombs are used and what their blast does. The bomb button:
 
 ## What it hurts
 
-* Everything with health in the blast takes 4: enemies, the shopkeeper and
-  you. A `Minotaur` (3 health) or `Dragon` (4) dies to one bomb. A frozen
+* As Cadence, everything with health in the blast takes 4: enemies, the
+  shopkeeper and you. Dove's bombs teleport enemies instead; see
+  [dove.md](./dove.md#bombs). A `Minotaur` (3 health) or `Dragon` (4) dies to one bomb. A frozen
   `Ghost` is the exception; see [ghost.md](./ghost.md).
 * You are safe from 2 tiles away, and hurt from 1 tile, diagonals included.
 * Armor reduces it like any hit: leather armor to 3, chainmail to 2, platemail
@@ -50,6 +51,9 @@ For players. How bombs are used and what their blast does. The bomb button:
 * Everything lying on the floor in the blast: coins, diamonds, keys, food,
   weapons, armor, other bombs and a shop's wares. Chests are untouched.
 * Traps in the blast: spike, bounce, tempo traps and trapdoors.
+* Shrines. Each leaves one item where it stood, except the Shrine of Fire,
+  which leaves one on each tile of the row below it. See
+  [shrines.md](./shrines.md#bombs).
 
 ## In a shop
 

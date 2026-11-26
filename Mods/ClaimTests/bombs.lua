@@ -452,3 +452,47 @@ shopScene("bombThatHurtsShopkeeperMakesHimAttack",
 			assert(health() == 100 - 3 * 20, "three hits of 20 in six beats, got " .. (100 - health()))
 		end,
 	})
+
+-- A blast destroys any shrine. Each leaves one item on its tile, except the
+-- Shrine of Fire, which leaves one on each tile of the row below it.
+local function unheldItemsAt(x, y)
+	local count = 0
+	for entity in Entities.entitiesWithComponents({ "item", "position" }) do
+		if entity.item.holder == 0 and entity.position.x == x and entity.position.y == y then
+			count = count + 1
+		end
+	end
+	return count
+end
+
+for _, typeName in ipairs({
+	"ShrineOfBlood",
+	"ShrineOfBoss",
+	"ShrineOfChance",
+	"ShrineOfDarkness",
+	"ShrineOfGlass",
+	"ShrineOfPain",
+	"ShrineOfPeace",
+	"ShrineOfRhythm",
+	"ShrineOfRisk",
+	"ShrineOfSacrifice",
+	"ShrineOfSpace",
+	"ShrineOfUncertainty",
+	"ShrineOfWar",
+	"Sync_ShrineOfFeast",
+	"Sync_ShrineOfFire",
+}) do
+	scene("bombDestroys" .. typeName, function()
+		return fixtures.spawn(typeName, 1, 0)
+	end, { "bomb", "left", "left", "idle" }, {
+		[4] = function(shrine)
+			assert(not exists(shrine), typeName .. " survived the blast")
+			local fire = typeName == "Sync_ShrineOfFire"
+			assert(unheldItemsAt(1, 0) == (fire and 0 or 1), typeName .. ": items on its tile: " .. unheldItemsAt(1, 0))
+			for x = 0, 2 do
+				local below = unheldItemsAt(x, 1)
+				assert(below == (fire and 1 or 0), string.format("%s: %d items at (%d,1)", typeName, below, x))
+			end
+		end,
+	})
+end
