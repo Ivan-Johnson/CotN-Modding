@@ -2,7 +2,7 @@
 
 For players. What Cadence's action items (used with `item1`) and spells (cast
 with `spell1`) do. What the inputs cost in beats and coin chain, and the Earth
-Spell's recharge: [controls.md](./controls.md). Where they are found:
+Spell's recharge: [controls.md](./controls.md). Which chests hold them:
 [chests-and-loot.md](./chests-and-loot.md).
 
 ## Blood Drum (`BloodDrum`)
@@ -45,4 +45,4 @@ beats, and enemies do not get through them. Opening one:
 
 An enemy on one of the 8 tiles is pushed one tile farther out, unhurt. If a
 wall or another enemy blocks that tile, it dies instead, whatever its health,
-and the kill is yours. Used against the boss: [king-conga.md](./king-conga.md).
+and the kill is yours.
