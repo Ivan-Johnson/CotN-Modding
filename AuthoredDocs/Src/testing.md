@@ -61,6 +61,10 @@ it as a regression test with real assertions.
   confusion trap takes hold only on the player's next move, a spike trap
   never hurts, and a trapdoor holds the player in place without dropping
   them. Play trap tests to the beat, as `Mods/ClaimTests/traps.lua` does.
+  Played to the beat, `api.play` holds each input until the next beat is
+  near, since an input sent a fixed number of ticks after the last drifts off
+  the beat and, once early enough, counts as a missed beat: the player stays
+  put although the turn advances.
 * If an assertion needs a handler to run before or after the mod-under-test's
   handler within the same event and order key, set `sequence` on the test's
   handler, not the mod's. Timing that exists only to make an assertion

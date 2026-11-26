@@ -6,6 +6,8 @@ local Action = require "necro.game.system.Action"
 local Input = require "necro.client.Input"
 local Turn = require "necro.cycles.Turn"
 local Player = require "necro.game.character.Player"
+local Beatmap = require "necro.audio.Beatmap"
+local Music = require "necro.audio.Music"
 
 --[[
 Generic, reusable test-running framework. Any mod may contribute test cases
@@ -345,6 +347,10 @@ local ACTIONS = {
 local SETTLE_TICKS = 30
 -- Ticks to wait for an action to advance the turn before giving up on it.
 local RESOLVE_TIMEOUT_TICKS = 1500
+-- Outside no-beat mode, an input waits until the next beat is this close (in
+-- seconds of music time), since one sent a fixed number of ticks after the
+-- last drifts off the beat and, over about 0.22 s early, becomes a missed beat.
+local BEAT_WINDOW_SECONDS = 0.04
 
 -- Sends player 1's actions one at a time, naming them as the keys of ACTIONS
 -- (e.g. "right", "idle", "bomb"). After each action resolves and settles,
@@ -368,8 +374,7 @@ local function play(names, afterEach, finished)
 			return
 		end
 		local action = assert(ACTIONS[names[index]], "unknown action " .. tostring(names[index]))
-		local turnBefore = Turn.getCurrentTurnID()
-		Input.add(action, 1)
+		local turnBefore
 		local waited = 0
 		local function waitForTurn()
 			waited = waited + 1
@@ -383,7 +388,20 @@ local function play(names, afterEach, finished)
 				afterTicks(1, waitForTurn)
 			end
 		end
-		afterTicks(1, waitForTurn)
+		local beatWaited = 0
+		local function sendOnBeat()
+			beatWaited = beatWaited + 1
+			local onBeat = currentTest and currentTest.noBeat
+				or math.abs(Beatmap.getPrimary():getNextBeatTime() - Music.getMusicTime()) <= BEAT_WINDOW_SECONDS
+			if onBeat or beatWaited >= RESOLVE_TIMEOUT_TICKS then
+				turnBefore = Turn.getCurrentTurnID()
+				Input.add(action, 1)
+				afterTicks(1, waitForTurn)
+			else
+				afterTicks(1, sendOnBeat)
+			end
+		end
+		sendOnBeat()
 	end
 	-- An input sent on the tick the level loaded is dropped.
 	afterTicks(1, nextAction)
