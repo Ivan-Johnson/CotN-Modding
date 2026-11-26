@@ -1,4 +1,5 @@
 local Entities = require "system.game.Entities"
+local Inventory = require "necro.game.item.Inventory"
 local Tile = require "necro.game.tile.Tile"
 
 -- Optional dependency on TestFramework; see HelloWorld/tests.lua.
@@ -219,6 +220,48 @@ end, { "left", "left", "left", "left", "left", "left" }, {
 	end,
 })
 
+-- A sleeper that has never been seen acts only while the player is within 3
+-- tiles. Behind a wall along y = -1, a Skeleton follows the player west until
+-- it falls 3.6 tiles behind, then stops for good; one in the open is seen and
+-- keeps following.
+scene("enemyUnseenSleeperStopsBeyondThreeTiles", 12, function()
+	for x = -12, 12 do
+		Tile.setType(x, -1, "DirtWall")
+	end
+	return {
+		hidden = fixtures.spawn("Skeleton", 0, -2),
+		seen = fixtures.spawn("Skeleton", 0, 2),
+	}
+end, {
+	"left", "left", "left", "left", "left", "left", "left", "left", "idle", "idle", "idle", "idle",
+}, {
+	[3] = function(things)
+		assertAt(things.hidden, -2, -2, "followed behind the wall while within 3 tiles")
+	end,
+	[12] = function(things)
+		assertAt(things.hidden, -2, -2, "stopped once the player was 3.6 tiles away")
+		assert(not things.hidden.aggro.active, "never woke for good")
+		assert(things.seen.aggro.active, "the seen one woke for good")
+		assert(things.seen.position.x <= -4, "and kept following, at x=" .. things.seen.position.x)
+	end,
+})
+
+-- Light decides how far a sleeper is seen: holding a Torch3, a Skeleton 5
+-- tiles away wakes and closes in; with no torch it sleeps.
+for _, case in ipairs({ { "Torch3", true }, { "NoTorch", false } }) do
+	local torch, wakes = case[1], case[2]
+	scene("enemySleeperFiveAwayWith" .. torch, 12, function()
+		if wakes then
+			Inventory.grant(torch, fixtures.player())
+		end
+		return fixtures.spawn("Skeleton", 0, 5)
+	end, fixtures.repeated("idle", 4), {
+		[4] = function(skeleton)
+			assert((skeleton.position.y < 5) == wakes, torch .. ": skeleton at y=" .. skeleton.position.y)
+		end,
+	})
+end
+
 -- Minotaurs wake within 7 tiles and Dragon2s within 10, even through a wall;
 -- a Dragon has no such radius and sleeps behind a wall at any distance.
 scene("enemyMinibossWakeRadiusThroughWalls", 14, function()
@@ -411,3 +454,4 @@ testsApi.registerTest({
 		end)
 	end,
 })
+

@@ -29,10 +29,15 @@ Each page's table has the same columns:
 
 * **Always active:** Slime2, Slime3 and Zombie act from the first beat and from
   any distance.
-* **Sleepers:** Skeletons, monkeys and bats do nothing until you come within 3
-  tiles of them, measured in a straight line: a tile 2 across and 2 up is in
-  range, 3 across and 1 up is not. Walls do not matter. Once awake, a skeleton
-  chases and a bat wanders however far you go.
+* **Sleepers:** Skeletons, monkeys and bats act only on beats when you are
+  within 3 tiles of them, measured in a straight line: a tile 2 across and 2
+  up is in range, 3 across and 1 up is not. Walls do not matter for this.
+* A sleeper wakes for good once you see it on a well-lit tile. From then on a
+  skeleton chases and a bat wanders however far you go. One you have not
+  seen, such as one behind a wall, stops again once you are more than 3 tiles
+  away.
+* Light decides how far that reaches: with no torch, a skeleton 5 tiles away
+  sleeps; holding a `Torch3`, it wakes and comes for you.
 * **Minotaurs and Dragons:** a Minotaur wakes within 7 tiles, a Dragon2 within
   10, and walls do not matter for that either. All Minotaurs and Dragons also
   wake once they have a clear line to you, even from across a room. A Dragon has
