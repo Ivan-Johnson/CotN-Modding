@@ -74,11 +74,11 @@ event.entitySchemaGenerate.add("addGary", { order = "customEntities", sequence =
 	character.characterWithFollower.followerType = M.SHEEP
 end)
 
--- How far, by taxicab distance and regardless of walls, a Hostile enemy makes
--- Gary Cower.
+-- The Cower zone's reach, by taxicab distance and regardless of walls.
 local COWER_DISTANCE = 2
 
 local FRIGHT_ZONE_COLOR = Color.rgba(255, 0, 0, 96)
+local COWER_ZONE_COLOR = Color.rgba(255, 255, 0, 96)
 
 -- Calls fn(character, gary) for each living Gary and the Gary the Cowardly
 -- Sheep he follows.
@@ -102,16 +102,35 @@ local function isHostileEnemy(gary, entity)
 		and not (entity.provokable and not entity.provokable.active)
 end
 
-local function cowers(gary)
-	for entity in Entities.entitiesWithComponents({ "enemy", "position" }) do
-		local dx = entity.position.x - gary.position.x
-		local dy = entity.position.y - gary.position.y
-		local distance = math.abs(dx) + math.abs(dy)
-		if distance <= COWER_DISTANCE and isHostileEnemy(gary, entity) then
-			return true
+-- Whether any entity on the {x, y} tiles satisfies predicate(entity).
+local function anyOn(tiles, predicate)
+	for _, tile in ipairs(tiles) do
+		for _, entityID in ipairs(Map.getAll(tile[1], tile[2])) do
+			local entity = Entities.getEntityByID(entityID)
+			if entity and predicate(entity) then
+				return true
+			end
 		end
 	end
 	return false
+end
+
+-- The Cower zone's tiles, as {x, y} pairs.
+local function cowerZone(gary)
+	local tiles = {}
+	for dx = -COWER_DISTANCE, COWER_DISTANCE do
+		local reach = COWER_DISTANCE - math.abs(dx)
+		for dy = -reach, reach do
+			tiles[#tiles + 1] = { gary.position.x + dx, gary.position.y + dy }
+		end
+	end
+	return tiles
+end
+
+local function cowers(gary)
+	return anyOn(cowerZone(gary), function(entity)
+		return isHostileEnemy(gary, entity)
+	end)
 end
 
 -- The Fright zone's tiles, as {x, y} pairs; empty when he has none.
@@ -152,28 +171,31 @@ end
 event.turn.add("frightenGary", { order = "nextTurnEffect", sequence = 1 }, function()
 	eachGary(function(character, gary)
 		updateFacing(gary)
-		if not cowers(gary) then
-			return
-		end
-		for _, tile in ipairs(frightZone(gary)) do
-			for _, entityID in ipairs(Map.getAll(tile[1], tile[2])) do
-				local entity = Entities.getEntityByID(entityID)
-				if entity and frightens(character, gary, entity) then
-					Object.kill(gary)
-					return
-				end
-			end
+		local frightened = cowers(gary)
+			and anyOn(frightZone(gary), function(entity)
+				return frightens(character, gary, entity)
+			end)
+		if frightened then
+			Object.kill(gary)
 		end
 	end)
 end)
 
-event.render.add("renderFrightZone", { order = "tells" }, function()
+-- Highlights the Fright zone while Gary Cowers, and the Cower zone otherwise.
+event.render.add("renderGaryZones", { order = "tells" }, function()
 	local buffer = Render.getBuffer(Render.Buffer.FLOOR)
 	eachGary(function(_, gary)
+		local tiles
+		local color
 		if cowers(gary) then
-			for _, tile in ipairs(frightZone(gary)) do
-				buffer.draw({ rect = { Render.tileRect(tile[1], tile[2], 1, 1) }, color = FRIGHT_ZONE_COLOR })
-			end
+			tiles = frightZone(gary)
+			color = FRIGHT_ZONE_COLOR
+		else
+			tiles = cowerZone(gary)
+			color = COWER_ZONE_COLOR
+		end
+		for _, tile in ipairs(tiles) do
+			buffer.draw({ rect = { Render.tileRect(tile[1], tile[2], 1, 1) }, color = color })
 		end
 	end)
 end)

@@ -23,10 +23,16 @@ which is no enemy at all.
 _Avoid_: Threat, aggressive enemy
 
 **Cower**:
-The state **Gary** is in while any **Hostile enemy** is within two tiles of him
-by taxicab distance, regardless of walls. It changes nothing about how Gary
-moves or acts, and does not exist in the vanilla game.
+The state **Gary** is in while any **Hostile enemy** is in his **Cower zone**.
+It changes nothing about how Gary moves or acts, and does not exist in the
+vanilla game.
 _Avoid_: Scared, afraid, frightened
+
+**Cower zone**:
+The tiles within two tiles of **Gary** by taxicab distance, his own included,
+regardless of walls: a **Hostile enemy** in it makes him **Cower**.
+Highlighted yellow while he does not Cower.
+_Avoid_: Danger radius, cower radius
 
 **Facing**:
 The direction of **Gary**'s most recent move. He has none until he first
