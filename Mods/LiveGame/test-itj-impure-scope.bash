@@ -21,7 +21,7 @@ expect() {
 }
 
 # Harmless paths run nothing.
-expect none AuthoredDocs/Src/testing.md
+expect none AuthoredDocs/Src/gotchas.md
 expect none AuthoredDocs/AGENTS.md AuthoredDocs/Src/Sub/weapons.md
 expect none Docs/Adr/0001-crawl-is-mirrored-not-built.md AGENTS.md
 expect none GameData/foo.nix DocDownloader/bar.rs

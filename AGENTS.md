@@ -58,7 +58,8 @@ than silently overriding it.
 ## Learning about the game
 
 To find out how the game works, write a unit test that observes it, as
-`AuthoredDocs/Src/testing.md` describes. Why: `Docs/Adr/0007-unit-tests-are-the-default-way-to-learn-the-game.md`.
+`AuthoredDocs/Src/testing.md` describes. When something seems not to happen
+in no-beat mode, read its "No-beat mode" section before concluding so. Why: `Docs/Adr/0007-unit-tests-are-the-default-way-to-learn-the-game.md`.
 
 ## Conventions
 

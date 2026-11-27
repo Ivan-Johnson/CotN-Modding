@@ -73,8 +73,9 @@ healthScene("damageArmorReducesBlast", { "bomb", "idle", "idle", "idle" }, funct
 	grant("Bomb", "ArmorChainmail")
 end, { [4] = 98 })
 
--- Spike traps only spring to the beat, so these tests play in beat mode; the
--- first wait lets the invincibility a level starts with run out.
+-- These tests play to the beat, so the first wait lets the invincibility a
+-- level starts with run out; in no-beat mode it would last until the first
+-- action.
 for _, case in ipairs({ { "ArmorChainmail", 2 }, { "FeetBootsLead", 0 } }) do
 	local itemType, loss = case[1], case[2]
 	testsApi.registerTest({

@@ -7,8 +7,8 @@ for players or for mod authors; read the one whose trigger matches your task.
 
 * [gotchas.md](./gotchas.md): Lua errors at load time, event ordering,
   `Tick.delay`, or stairs markers.
-* [testing.md](./testing.md): writing or debugging tests, or a mod that does
-  not reload.
+* [testing.md](./testing.md): writing or debugging tests, an effect that
+  seems not to happen in no-beat mode, or a mod that does not reload.
 * [game-data-sources.md](./game-data-sources.md): which game data a running
   mod can read (`GameXML`, `FileIO`, versions), which APIs fail, or
   reverse-engineering an entity's behavior with `print(ev)`.

@@ -56,7 +56,8 @@ fixed-seed GameSession. A test is a table:
     bug this test guards against got fixed, or the test itself broke)
   noBeat (boolean?)       - plays in no-beat mode, where beats pass only when
     the player acts, so a test can step enemies one action at a time; delayed
-    effects such as traps still land in real time
+    effects such as traps still land in real time (AuthoredDocs/Src/testing.md,
+    "No-beat mode")
   async (boolean?)        - lets onLoad outlive its own return: the test then
     ends only when onLoad's second argument, finish, is called (finish() passes,
     finish(message) fails). Drive the game with afterTicks and play below; an

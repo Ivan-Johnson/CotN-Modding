@@ -66,18 +66,15 @@ it as a regression test with real assertions.
   tags them with `api.callerFile()` so `--files` selects them with the
   caller's file; a test with no tag runs in every file selection.
 * To play the game step by step, mark the test `noBeat = true` and
-  `async = true` and drive it with `api.play`. Check `fixtures.lua` before
-  writing your own scene, wallColumn, health or assertAt helper.
+  `async = true` and drive it with `api.play`; read "No-beat mode" below
+  first. Check `fixtures.lua` before writing your own scene, wallColumn,
+  health or assertAt helper.
 * To check what a zone's levels hold, survey them with `fixtures.zoneCensus`,
   which generates the same set of seeded levels every time. A test that
   wants other seeds than the fixed one sets them with
   `api.setSeedOverride`: the framework's `levelGenerate` handler can run
   after a test file's own, undoing its seed.
   `Mods/ClaimTests/ghost.lua` is a worked example.
-* In no-beat mode, beats and turns pass only on input, but a trap's fuse
-  runs in real time and lands in a turn of its own, without input; the
-  level's starting invincibility is set a tick after `onLoad`, so idle until
-  `invincibility.remainingTurns` is 0, as `Mods/ClaimTests/traps.lua` does.
 * Played to the beat, `api.play` holds each input until the next beat is
   near, since an input sent a fixed number of ticks after the last drifts off
   the beat and, once early enough, counts as a missed beat: the player stays
@@ -100,6 +97,47 @@ it as a regression test with real assertions.
   handler within the same event and order key, set `sequence` on the test's
   handler, not the mod's. Timing that exists only to make an assertion
   observable belongs in the test, not in the production mod.
+
+## No-beat mode
+
+No-beat mode runs the game on two clocks, and a test that checks the wrong
+one sees an effect that "never happens". Every effect that has seemed
+missing in no-beat mode so far turned out to land at a different time.
+
+* **Beats pass only on input.** Whatever counts beats or turns waits for the
+  player's next action: enemy moves, a bomb's fuse, the length of a
+  confusion, and the invincibility a level starts with. Waiting ticks
+  advances none of them. After 3000 ticks a lit bomb is still lit and the
+  player still invincible, so a spike trap stepped onto as the first action
+  costs nothing. The game sets that invincibility a tick after `onLoad`, so
+  clearing it there does nothing; idle until
+  `invincibility.remainingTurns` is 0, as `Mods/ClaimTests/traps.lua` does.
+* **Delays run in real time.** An effect that lands a moment after the action
+  that caused it lands with or without another input, as
+  `necro.game.system.Delay` describes its timed delays. A trap's effect
+  (spikes, confusion, teleport, scatter, a bomb trap's bomb) lands after its
+  fuse ([sub-beat-timing.md](./sub-beat-timing.md#trap-fuses)), 100 to 300
+  ticks after the step onto it, as does a travel rune's trip, and a trapdoor's level change
+  about 3000 ticks after. That is later than `api.play` settles, so a check
+  run as `api.play` returns sees nothing yet. The delay lands in a turn of
+  its own, so `Turn.getCurrentTurnID()` advances with no input.
+* **The next input lands a pending delay first.** An input sent before a
+  delay runs out, as `api.play` sends a list, lands the effect before the
+  input acts (`Delay.Flags.processOnPlayerAction`): a confusion trap
+  reverses the very next move. It is the fuse rule of sub-beat-timing.md,
+  which `api.play`'s quick inputs hit every time. A level change still waits
+  out its own delay.
+
+On the beat, `api.play` sends at most one input a beat, which outlasts most
+delays, so the same scene there shows each effect between two inputs.
+
+Before concluding that something does not happen in no-beat mode, rule out
+both clocks: poll for a few thousand ticks after the action with no input,
+then send a few idles and check again. If the effect shows up after either,
+it is a timing difference, not a mode difference. A difference that survives
+both is a real one only once the same scene, played to the beat, shows the
+effect; back it with a test that runs both modes. The tests in
+`Mods/ClaimTests/testing.lua` are worked examples.
 
 ## Reloading
 
