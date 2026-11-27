@@ -93,15 +93,17 @@ local function eachGary(fn)
 	end
 end
 
--- Whether entity, which may be anything on a tile, is a Hostile enemy.
+-- Whether entity, which may be anything on a tile, is a Hostile enemy. The
+-- game puts crates and barrels on a team hostile to Gary, and a barrel has an
+-- `ai`, so only the `enemy` component tells them apart from enemies.
 local function isHostileEnemy(gary, entity)
-	return entity.ai ~= false
+	return entity.enemy ~= nil
 		and Team.isHostile(gary, entity)
 		and not (entity.provokable and not entity.provokable.active)
 end
 
 local function cowers(gary)
-	for entity in Entities.entitiesWithComponents({ "ai", "position" }) do
+	for entity in Entities.entitiesWithComponents({ "enemy", "position" }) do
 		local dx = entity.position.x - gary.position.x
 		local dy = entity.position.y - gary.position.y
 		local distance = math.abs(dx) + math.abs(dy)

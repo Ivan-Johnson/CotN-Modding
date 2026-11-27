@@ -1,4 +1,5 @@
 local Action = require "necro.game.system.Action"
+local Damage = require "necro.game.system.Damage"
 local Entities = require "system.game.Entities"
 
 -- Optional dependency on TestFramework; see HelloWorld/tests.lua.
@@ -87,6 +88,54 @@ scene("unprovokedShopkeeperBehindGaryLeavesHimAlive", { "right", "right", "idle"
 		assertAlive("an unprovoked shopkeeper in the Fright zone of a Cowering Gary")
 	end,
 })
+
+-- A provoked shopkeeper kills Mary within a turn of reaching her, so he starts
+-- behind Gary, who stands between them, and chasing her keeps him in the
+-- Fright zone.
+scene("provokedShopkeeperBehindGaryFrightensHimToDeath", { "right", "right", "idle" }, {
+	[2] = function()
+		local keeper = fixtures.spawn("Shopkeeper", -1, 0)
+		Damage.inflict({
+			victim = keeper,
+			attacker = fixtures.player(),
+			damage = 1,
+			type = Damage.Type.EXPLOSIVE,
+		})
+		assert(keeper.provokable.active, "the explosion provoked the shopkeeper")
+	end,
+	[3] = function()
+		assertDead("a provoked shopkeeper in the Fright zone")
+	end,
+})
+
+-- The game puts crates and barrels on a team hostile to Gary, but they are not
+-- enemies: near him they do not make him Cower, and in his Fright zone they
+-- cause no Death by fright. Crate2 is the barrel.
+for _, containerType in ipairs({ "Crate", "Crate2" }) do
+	scene(containerType .. "BehindCoweringGaryLeavesHimAlive", { "right", "right", "idle" }, {
+		[2] = function()
+			fixtures.spawn("Slime", 1, 2)
+			fixtures.spawn(containerType, 0, 1)
+		end,
+		[3] = function()
+			assertAlive(containerType .. " in the Fright zone of a Cowering Gary")
+		end,
+	})
+
+	maryBacksIntoGary(containerType .. "NearGaryLeavesHimCalm", function()
+		fixtures.spawn(containerType, 1, 2)
+	end, function()
+		assertAlive("Mary behind Gary while the only thing near is a " .. containerType)
+	end)
+end
+
+-- A dormant exploding mushroom is provokable and unprovoked, like a shopkeeper.
+maryBacksIntoGary("dormantExplodingMushroomLeavesGaryCalm", function()
+	local mushroom = fixtures.spawn("MushroomExploding", 1, 2)
+	assert(not mushroom.provokable.active, "the exploding mushroom is unprovoked")
+end, function()
+	assertAlive("Mary behind Gary while the only enemy near is a dormant exploding mushroom")
+end)
 
 scene("garyFacingDiagonallyHasNoFrightZone", { "right", "right", "idle" }, {
 	[2] = function()

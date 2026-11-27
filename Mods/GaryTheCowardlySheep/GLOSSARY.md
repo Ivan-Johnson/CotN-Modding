@@ -18,7 +18,8 @@ _Avoid_: Lamb, pet, familiar
 
 **Hostile enemy**:
 An enemy hostile to **Gary** that is not passive, so an unprovoked shopkeeper
-is not one.
+or dormant exploding mushroom is not one, and neither is a crate or barrel,
+which is no enemy at all.
 _Avoid_: Threat, aggressive enemy
 
 **Cower**:
