@@ -47,11 +47,12 @@ harmlessPrefixes=(
 	"Mods/ScrapeGameData/"
 )
 
-# Mods/LiveGame/test-* are the offline tests that `nix flake check` runs; the
-# live suite never reads them.
+# Mods/LiveGame/test-* are the offline tests that `nix flake check` runs, and
+# cotn-log-idle-notify.bash is a dev-shell tool; the live suite reads neither.
 harmlessGlobs=(
 	"*.md"
 	"Mods/LiveGame/test-*"
+	"Mods/LiveGame/cotn-log-idle-notify.bash"
 	"open_files.txt"
 	"Tmp/*"
 )

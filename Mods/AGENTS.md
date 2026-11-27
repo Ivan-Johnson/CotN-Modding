@@ -95,7 +95,9 @@ do not: each group's role and what it is coupled to.
   liveness by hand (rather than via `nix run .#itj-impure-tests`), judge it
   by log growth (e.g. `wc -l "$COTN_LOG"`, the game's `NecroDancer.log`,
   before/after a change) and fresh `Mounting`/output lines, never by process
-  listing.
+  listing. For the user, the dev shell's `cotn-log-idle-notify [SECONDS]`
+  sends a desktop notification when the log has been idle for more than
+  `SECONDS` (default 45).
 
 ## Architecture
 

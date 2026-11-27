@@ -135,6 +135,17 @@ let
                 text = builtins.readFile ./LiveGame/live-game-run.bash;
         };
 
+        # Notifies the desktop when the game's log goes idle; see
+        # `Mods/LiveGame/cotn-log-idle-notify.bash`.
+        logIdleNotify = pkgs.writeShellApplication {
+                name = "cotn-log-idle-notify";
+                runtimeInputs = [
+                        pkgs.coreutils
+                        pkgs.libnotify
+                ];
+                text = builtins.readFile ./LiveGame/cotn-log-idle-notify.bash;
+        };
+
         # Tests the lock, the wait and the install options against a fake
         # game log; see `Mods/LiveGame/test-live-game-run.bash`.
         liveGameRunTest =
@@ -258,6 +269,7 @@ in
                 buildInputs = [
                         impureTests
                         liveGameRun
+                        logIdleNotify
 
                         # For packaging mods
                         pkgs.zip
