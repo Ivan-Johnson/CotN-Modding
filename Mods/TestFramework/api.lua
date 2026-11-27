@@ -54,8 +54,9 @@ fixed-seed GameSession. A test is a table:
     overall suite success), and an onLoad that runs to completion without
     failing is logged as XPASS (an anomaly worth investigating: either the
     bug this test guards against got fixed, or the test itself broke)
-  noBeat (boolean?)       - plays in no-beat mode, where time passes only when
-    the player acts, so a test can step enemies one action at a time
+  noBeat (boolean?)       - plays in no-beat mode, where beats pass only when
+    the player acts, so a test can step enemies one action at a time; delayed
+    effects such as traps still land in real time
   async (boolean?)        - lets onLoad outlive its own return: the test then
     ends only when onLoad's second argument, finish, is called (finish() passes,
     finish(message) fails). Drive the game with afterTicks and play below; an

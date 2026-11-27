@@ -74,12 +74,11 @@ it as a regression test with real assertions.
   `api.setSeedOverride`: the framework's `levelGenerate` handler can run
   after a test file's own, undoing its seed.
   `Mods/ClaimTests/ghost.lua` is a worked example.
-* No-beat mode stalls the traps whose effect lands a moment after the step
-  onto them: every trap but the bounce trap. Idling never sets one off; a
-  confusion trap takes hold only on the player's next move, a spike trap
-  never hurts, and a trapdoor holds the player in place without dropping
-  them. Play trap tests to the beat, as `Mods/ClaimTests/traps.lua` does.
-  Played to the beat, `api.play` holds each input until the next beat is
+* In no-beat mode, beats and turns pass only on input, but a trap's fuse
+  runs in real time and lands in a turn of its own, without input; the
+  level's starting invincibility is set a tick after `onLoad`, so idle until
+  `invincibility.remainingTurns` is 0, as `Mods/ClaimTests/traps.lua` does.
+* Played to the beat, `api.play` holds each input until the next beat is
   near, since an input sent a fixed number of ticks after the last drifts off
   the beat and, once early enough, counts as a missed beat: the player stays
   put although the turn advances.

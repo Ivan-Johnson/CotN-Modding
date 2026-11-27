@@ -4,6 +4,7 @@ local Inventory = require "necro.game.item.Inventory"
 local Music = require "necro.audio.Music"
 local Object = require "necro.game.object.Object"
 local Tile = require "necro.game.tile.Tile"
+local Turn = require "necro.cycles.Turn"
 
 -- Optional dependency on TestFramework; see HelloWorld/tests.lua.
 local ok, testsApi = pcall(require, "TestFramework.api")
@@ -12,10 +13,12 @@ if not ok then
 end
 local fixtures = require "TestFramework.fixtures"
 
--- Most traps act a fraction of a second after the step that lands on them,
--- which no-beat mode never lets pass, so those tests play to the beat: the
--- player stands still between inputs and waits are in ticks. Bounce traps act
--- at once, so their tests use no-beat scenes. "up" is toward negative y.
+-- Most traps act a moment after the step onto them, when their fuse
+-- (trap.triggerDelay, 0.2 s for every trap here) runs out. Their tests play in
+-- no-beat mode, where the fuse still runs in real time and lands in a turn of
+-- its own, without input, while beats pass only on input: a wait that counts
+-- beats is a run of idles. Tempo traps change the music's speed, so their tests
+-- play to the beat. "up" is toward negative y.
 
 local health = fixtures.health
 local player = fixtures.player
@@ -48,41 +51,96 @@ local function replaceSlot(slot, itemType)
 	end
 end
 
--- Ticks to wait after each action, so that the next one lands on a later beat
--- instead of counting as a second input within one beat.
+local function vulnerable()
+	return player().invincibility.remainingTurns == 0
+end
+
+-- A step that waits, without input, for the fuse of the trap that the last
+-- action stepped onto. It runs out about 200 ticks after the step, later on a
+-- loaded machine.
+local FUSE = {}
+local FUSE_TIMEOUT_TICKS = 3000
+
+-- Played to the beat, ticks to wait after each action, so that the next one
+-- lands on a later beat instead of counting as a second input within one beat.
 local ACTION_GAP = 600
 
 --[[
-Registers a test played to the beat on an open arena. setup runs first and
-its result is passed to every check. steps is a list run in order: an action
-name (e.g. "right", followed by ACTION_GAP ticks of waiting), a number of
-ticks to wait, a function(state) holding assertions, or
-{ poll = function(state), every = ticks, times = n }, which calls poll every
-`every` ticks until it returns true or has run n times, or { walkTo = { x, y } },
-which moves (along x first) until the player stands there. The first step waits
-out the invincibility a level starts with.
+Registers a trap test on an open arena, in no-beat mode unless onBeat is set.
+The test first waits out the invincibility the level starts with, which the
+game sets a tick after onLoad, so clearing it in setup does nothing. setup
+runs next, and its result is passed to every check. steps is a list run in
+order:
+  * an action name (e.g. "right"), sent with api.play; played to the beat, it
+    is followed by ACTION_GAP ticks of waiting
+  * FUSE: waits for the fuse of the trap just stepped onto to run out
+  * a function(state) holding assertions
+  * { idles = n }: idles n times
+  * { idleUntil = function(state), within = n, what = string }: idles until
+    idleUntil holds, failing with what after n idles
+  * { waitFor = function(state), within = ticks, what = string }: waits until
+    waitFor holds, failing with what after that many ticks
+  * { walkTo = { x, y } }: moves (along x first) until the player stands there
 ]]
-local function beatTest(name, setup, steps)
+local function trapTest(name, setup, steps, onBeat)
+	-- Played to the beat, the invincibility wears off on its own.
+	local wearOff = { within = 10, what = "the level's starting invincibility wears off" }
+	if onBeat then
+		wearOff.waitFor = vulnerable
+		wearOff.within = 5000
+	else
+		wearOff.idleUntil = vulnerable
+	end
 	testsApi.registerTest({
 		name = name,
+		noBeat = not onBeat,
 		async = true,
 		timeoutTicks = 60000,
 		onLoad = function(_, finish)
 			fixtures.openArena(8)
-			local state = setup and setup() or {}
+			local state
+			local sequence = {
+				wearOff,
+				function()
+					state = setup and setup() or {}
+				end,
+			}
+			for _, current in ipairs(steps) do
+				sequence[#sequence + 1] = current
+			end
 			local index = 0
 			local step
-			local function poll(spec, count)
-				if count >= spec.times or spec.poll(state) then
-					step()
-				else
-					testsApi.afterTicks(spec.every, function()
-						poll(spec, count + 1)
-					end)
-				end
+			local function act(actions, andThen)
+				testsApi.play(actions, nil, function()
+					if onBeat then
+						testsApi.afterTicks(ACTION_GAP, andThen)
+					else
+						andThen()
+					end
+				end)
 			end
-			-- An input can miss its beat, so walking moves until the player is
-			-- there rather than a fixed number of times.
+			local function idleUntil(spec, count)
+				if spec.idleUntil(state) then
+					step()
+					return
+				end
+				assert(count < spec.within, spec.what)
+				act({ "idle" }, function()
+					idleUntil(spec, count + 1)
+				end)
+			end
+			local function waitFor(spec, waited)
+				if spec.waitFor(state) then
+					step()
+					return
+				end
+				assert(waited < spec.within, spec.what)
+				testsApi.afterTicks(10, function()
+					waitFor(spec, waited + 10)
+				end)
+			end
+			-- An input played to the beat can miss it, so walking moves until
+			-- the player is there rather than a fixed number of times.
 			local function walk(x, y, count)
 				local position = player().position
 				local dx = x - position.x
@@ -93,63 +151,73 @@ local function beatTest(name, setup, steps)
 				end
 				assert(count < 40, string.format("could not walk to (%d,%d)", x, y))
 				local direction = dx > 0 and "right" or dx < 0 and "left" or dy > 0 and "down" or "up"
-				testsApi.play({ direction }, nil, function()
-					testsApi.afterTicks(ACTION_GAP, function()
-						walk(x, y, count + 1)
-					end)
+				act({ direction }, function()
+					walk(x, y, count + 1)
 				end)
 			end
 			step = function()
 				index = index + 1
-				local current = steps[index]
+				local current = sequence[index]
 				if current == nil then
 					finish()
-				elseif type(current) == "number" then
-					testsApi.afterTicks(current, step)
+				elseif current == FUSE then
+					local turn = Turn.getCurrentTurnID()
+					waitFor({
+						waitFor = function()
+							return Turn.getCurrentTurnID() ~= turn
+						end,
+						within = FUSE_TIMEOUT_TICKS,
+						what = "the trap's fuse runs out",
+					}, 0)
 				elseif type(current) == "function" then
 					current(state)
 					step()
-				elseif type(current) == "table" and current.walkTo then
+				elseif type(current) == "string" then
+					act({ current }, step)
+				elseif current.idles then
+					act(fixtures.repeated("idle", current.idles), step)
+				elseif current.walkTo then
 					walk(current.walkTo[1], current.walkTo[2], 0)
-				elseif type(current) == "table" then
-					poll(current, 0)
+				elseif current.idleUntil then
+					idleUntil(current, 0)
 				else
-					testsApi.play({ current }, nil, function()
-						testsApi.afterTicks(ACTION_GAP, step)
-					end)
+					waitFor(current, 0)
 				end
 			end
-			testsApi.afterTicks(1200, step)
+			-- An input sent on the tick the level loaded is dropped, and the
+			-- starting invincibility is not set yet.
+			testsApi.afterTicks(10, step)
 		end,
 	})
 end
 
 -- A spike trap hits for 4 a moment after you land on it, once per step onto
 -- it: standing on it is safe, stepping off and back on hits again.
-beatTest("trapsSpikeHitsOncePerStepOnto", function()
+trapTest("trapsSpikeHitsOncePerStepOnto", function()
 	fixtures.spawn("SpikeTrap", 1, 0)
 	return { start = health() }
 end, {
 	"right",
-	1500,
+	FUSE,
 	function(state)
 		assert(health() == state.start - 4, "landing on spikes costs 4, got " .. state.start - health())
 	end,
-	1500,
+	-- Outlast the invincibility the hit gives.
+	{ idleUntil = vulnerable, within = 5, what = "the hit's invincibility wears off" },
+	{ idles = 2 },
 	function(state)
 		assert(health() == state.start - 4, "standing on the spikes costs nothing more")
 	end,
 	"right",
-	1500,
 	"left",
-	1500,
+	FUSE,
 	function(state)
 		assert(health() == state.start - 8, "stepping back on hits again")
 	end,
 })
 
 -- The level's own spike traps hit the same as spawned ones.
-beatTest("trapsLevelSpikeHits", function()
+trapTest("trapsLevelSpikeHits", function()
 	assert(entityAt("SpikeTrap", 0, 7), "the fixed-seed level has a spike trap at (0,7)")
 	fixtures.openArena(9)
 	return { start = health() }
@@ -160,7 +228,7 @@ end, {
 	{ walkTo = { 2, 8 } },
 	{ walkTo = { 0, 8 } },
 	{ walkTo = { 0, 7 } },
-	1500,
+	FUSE,
 	function(state)
 		assertAt(player(), 0, 7, "on the level's spike trap")
 		assert(health() == state.start - 4, "the level's spike trap costs 4, got " .. state.start - health())
@@ -169,14 +237,14 @@ end, {
 
 -- Enemies take the same 4 each time they land on spikes. A Slime2 bounces
 -- between (3,2) and the spikes at (3,3) every other beat.
-beatTest("trapsSpikeHurtsEnemies", function()
+trapTest("trapsSpikeHurtsEnemies", function()
 	fixtures.spawn("SpikeTrap", 3, 3)
 	local slime = fixtures.spawn("Slime2", 3, 2)
 	slime.health.maxHealth = 20
 	slime.health.health = 20
 	return slime
 end, {
-	5000,
+	{ idles = 12 },
 	function(slime)
 		local lost = 20 - slime.health.health
 		assert(lost >= 8 and lost % 4 == 0, "each landing on the spikes costs 4, lost " .. lost)
@@ -186,68 +254,89 @@ end, {
 -- An automatic spike trap springs on its own: it hits a player who is placed
 -- on it and never moves. Then it leaves them alone until they step off and
 -- back on.
-beatTest("trapsAutoSpikeSpringsOnItsOwn", function()
+trapTest("trapsAutoSpikeSpringsOnItsOwn", function()
 	fixtures.spawn("Sync_AutoSpikeTrap", 0, 0)
 	return { start = health() }
 end, {
-	4000,
+	{
+		idleUntil = function(state)
+			return health() < state.start
+		end,
+		within = 10,
+		what = "it springs without a step",
+	},
 	function(state)
-		assert(health() == state.start - 4, "it springs without a step, for 4; lost " .. state.start - health())
+		assert(health() == state.start - 4, "it hits for 4; lost " .. state.start - health())
 	end,
-	3000,
+	{ idles = 6 },
 	function(state)
 		assert(health() == state.start - 4, "no second hit while standing still")
 	end,
 	"right",
-	1000,
 	"left",
-	4000,
+	{
+		idleUntil = function(state)
+			return health() < state.start - 4
+		end,
+		within = 10,
+		what = "stepping off and back on lets it hit again",
+	},
 	function(state)
-		assert(health() == state.start - 8, "stepping off and back on lets it hit again")
+		assert(health() == state.start - 8, "the second hit costs 4 too; lost " .. state.start - health())
 	end,
 })
 
+local function bombGoneOff()
+	return not entityAt("BombLit", 1, 0)
+end
+
 -- A bomb trap drops a lit bomb on itself; the blast hurts like the player's own
 -- bomb and destroys the trap.
-beatTest("trapsBombTrapStayAndGetHit", function()
+trapTest("trapsBombTrapStayAndGetHit", function()
 	fixtures.spawn("BombTrap", 1, 0)
 	return { start = health() }
 end, {
 	"right",
-	600,
+	FUSE,
 	function()
 		assert(entityAt("BombLit", 1, 0), "a lit bomb lies on the trap")
 	end,
-	3000,
+	{ idleUntil = bombGoneOff, within = 6, what = "the bomb goes off" },
 	function(state)
 		assert(health() == state.start - 4, "the blast costs 4, got " .. state.start - health())
 		assert(not entityAt("BombTrap", 1, 0), "the blast destroys the bomb trap")
 	end,
 })
 
-beatTest("trapsBombTrapRunAway", function()
+trapTest("trapsBombTrapRunAway", function()
 	fixtures.spawn("BombTrap", 1, 0)
 	return { start = health() }
 end, {
 	"right",
+	FUSE,
 	"right",
 	"right",
-	3500,
+	{ idleUntil = bombGoneOff, within = 6, what = "the bomb goes off" },
 	function(state)
-		assert(not entityAt("BombLit", 1, 0), "the bomb has gone off")
 		assert(health() == state.start, "two tiles from the bomb is safe")
 	end,
 })
 
 -- A trapdoor drops the player to the next level, with health and items kept.
-beatTest("trapsTrapdoorDescends", function()
+trapTest("trapsTrapdoorDescends", function()
 	return { level = CurrentLevel.getNumber(), start = health(), items = #Inventory.getItems(player()) }
 end, {
 	function()
 		fixtures.spawn("Trapdoor", 1, 0)
 	end,
 	"right",
-	6000,
+	{
+		waitFor = function(state)
+			return CurrentLevel.getNumber() ~= state.level
+		end,
+		within = 10000,
+		what = "the trapdoor drops the player",
+	},
 	function(state)
 		assert(CurrentLevel.getNumber() == state.level + 1, "the trapdoor leads to the next level")
 		assert(health() == state.start, "health is unchanged")
@@ -259,15 +348,15 @@ end, {
 -- poll records the furthest the speed got from normal, and stops once it is
 -- back to normal.
 local function tempoTest(name, trapType, factor)
-	beatTest(name, function()
+	trapTest(name, function()
 		fixtures.spawn(trapType, 1, 0)
 		return { extreme = 1 }
 	end, {
 		"right",
 		{
-			every = 200,
-			times = 150,
-			poll = function(state)
+			within = 30000,
+			what = "the music returns to normal speed",
+			waitFor = function(state)
 				local pitch = Music.getEffectivePitch()
 				if math.abs(pitch - 1) > math.abs(state.extreme - 1) then
 					state.extreme = pitch
@@ -280,22 +369,24 @@ local function tempoTest(name, trapType, factor)
 			assert(math.abs(state.extreme - factor) < 0.001, message)
 			assert(Music.getEffectivePitch() == 1, "the music is back to normal speed")
 		end,
-	})
+	}, true)
 end
 
 tempoTest("trapsTempoUpSpeedsMusic", "TempoUpTrap", 1.125)
 tempoTest("trapsTempoDownSlowsMusic", "TempoDownTrap", 0.875)
 
--- A confusion trap reverses the player's directions for about ten beats.
-beatTest("trapsConfusionReversesControls", function()
-	fixtures.spawn("ConfusionTrap", 1, 0)
-	return {}
+-- A confusion trap reverses the player's directions for about ten beats. The
+-- four moves below lead back onto the trap, so it is removed once it has taken
+-- hold: stepping back on would confuse the player again.
+trapTest("trapsConfusionReversesControls", function()
+	return { trap = fixtures.spawn("ConfusionTrap", 1, 0) }
 end, {
 	"right",
-	1000,
-	function()
+	FUSE,
+	function(state)
 		local turns = player().confusable.remainingTurns
 		assert(turns >= 7 and turns <= 10, "confused for about ten beats, " .. turns .. " left")
+		Object.delete(state.trap)
 	end,
 	"right",
 	function()
@@ -313,10 +404,13 @@ end, {
 	function()
 		assertAt(player(), 1, 0, "down moves up")
 	end,
-	8000,
-	function()
-		assert(player().confusable.remainingTurns == 0, "the confusion wears off")
-	end,
+	{
+		idleUntil = function()
+			return player().confusable.remainingTurns == 0
+		end,
+		within = 12,
+		what = "the confusion wears off",
+	},
 	"right",
 	function()
 		assertAt(player(), 2, 0, "right moves right again")
@@ -326,7 +420,7 @@ end, {
 -- A scatter trap knocks the player's equipment onto the tiles around them;
 -- bombs and spells stay.
 local SCATTERED = { "WeaponDagger", "ShovelBasic", "RingCourage", "ArmorLeather", "HeadMinersCap", "Torch1", "Food1" }
-beatTest("trapsScatterDropsEquipment", function()
+trapTest("trapsScatterDropsEquipment", function()
 	replaceSlot("weapon", "WeaponDagger")
 	replaceSlot("shovel", "ShovelBasic")
 	replaceSlot("ring", "RingCourage")
@@ -343,7 +437,7 @@ beatTest("trapsScatterDropsEquipment", function()
 	return {}
 end, {
 	"right",
-	1000,
+	FUSE,
 	function()
 		for _, itemType in ipairs(SCATTERED) do
 			assert(not holds(itemType), itemType .. " is knocked out of the inventory")
@@ -363,12 +457,12 @@ end, {
 })
 
 -- A teleport trap sends the player to another spot on the level.
-beatTest("trapsTeleportMovesAway", function()
+trapTest("trapsTeleportMovesAway", function()
 	fixtures.spawn("TeleportTrap", 1, 0)
 	return {}
 end, {
 	"right",
-	1000,
+	FUSE,
 	function()
 		local position = player().position
 		local distance = math.abs(position.x - 1) + math.abs(position.y)
@@ -421,16 +515,16 @@ bounce("trapsBounceIntoWall", { { "BounceTrapUp", 1, 0 } }, { "right" }, 1, 0, "
 
 -- Enemies bounce too: a Slime2 that hops down onto a right arrow at (3,3)
 -- lands on (4,3).
-beatTest("trapsBounceMovesEnemies", function()
+trapTest("trapsBounceMovesEnemies", function()
 	fixtures.spawn("BounceTrapRight", 3, 3)
 	return fixtures.spawn("Slime2", 3, 2)
 end, {
 	{
-		every = 100,
-		times = 40,
-		poll = function(slime)
+		idleUntil = function(slime)
 			return slime.position.y ~= 2
 		end,
+		within = 6,
+		what = "the slime hops",
 	},
 	function(slime)
 		assertAt(slime, 4, 3, "the slime is pushed along the arrow")
@@ -438,13 +532,13 @@ end, {
 })
 
 -- A bounce onto spikes sets the spikes off.
-beatTest("trapsBounceOntoSpikes", function()
+trapTest("trapsBounceOntoSpikes", function()
 	fixtures.spawn("BounceTrapUp", 1, 0)
 	fixtures.spawn("SpikeTrap", 1, -1)
 	return { start = health() }
 end, {
 	"right",
-	1500,
+	FUSE,
 	function(state)
 		assertAt(player(), 1, -1, "bounced onto the spikes")
 		assert(health() == state.start - 4, "the spikes hit for 4")
