@@ -66,4 +66,6 @@ A wiki of linked pages about the game's things, for Cadence.
 * [shriner.md](./shriner.md): the secret room that sells shrines, and its
   dragon fight.
 * [arena.md](./arena.md): the secret room with a free item and a fight.
+* [pawnbroker.md](./pawnbroker.md): the secret room that buys your items,
+  its wares and special offer, and what it refuses.
 * [cadence.md](./cadence.md) and [dove.md](./dove.md): the characters.
