@@ -41,6 +41,12 @@ it as a regression test with real assertions.
   run installs without the mods under test. Either guards the cross-mod
   `require()` of `TestFramework.api` in a `pcall()`, since the framework may
   not be loaded.
+* A test must pass every time it plays. Whatever the fixed seed does not fix
+  changes from run to run, such as what the game rolls during play: where a
+  shopkeeper teleports, or where a skeleton runs once its head is knocked off.
+  Pin it in the test, or assert only what holds every time. One pass does not
+  show this, so run a new or changed test's file several times in a row before
+  committing it.
 * Registering a name that is already registered replaces the earlier test: a
   reload can run a mod's load-time `registerTest()` calls again, and the
   replacement keeps each test running once. The entrypoint fails if a test
