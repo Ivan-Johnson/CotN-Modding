@@ -31,7 +31,8 @@ Running many pages at once: [SWEEP.md](./SWEEP.md).
    states something verified.
 4. **Test.** Keep the fewest permanent tests that back each claim, with real
    assertions, in `Mods/ClaimTests/<page>.lua`. Delete the scratch
-   tests. Done when `luacheck --config Mods/.luacheckrc Mods` is clean and
+   tests. Done when `luacheck --config Mods/.luacheckrc Mods` is clean,
+   `nix run .#itj-impure-tests -- --repeat 3 --files <page>.lua` passes, and
    `nix run .#itj-impure-tests` passes in full.
 5. **Cross-check.** Grep `AuthoredDocs/Src/` for pages that quote or depend on
    a claim you changed. Fix claims your findings contradict; report the rest

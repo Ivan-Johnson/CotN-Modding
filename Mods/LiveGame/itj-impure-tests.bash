@@ -15,8 +15,9 @@
 # reinstalls the whole bundle (Docs/Adr/0009-one-module-owns-the-live-game-instance.md).
 usage() {
         cat <<'EOF'
-Usage: itj-impure-tests [TEST_NAME | --files FILE,FILE... |
-                         --small-samples [FILE,FILE...] | --help]
+Usage: itj-impure-tests [--repeat N] [TEST_NAME | --files FILE,FILE... |
+                         --small-samples [FILE,FILE...]]
+       itj-impure-tests --help
 
 With no argument, runs every test. With a name, runs only that test (still
 from the fixed seed) and fails if no registered test has it; it takes one
@@ -25,6 +26,11 @@ registered by the named test files (basenames, e.g. weapons.lua), in
 registration order. With --small-samples, runs every test, and each survey
 test takes its small sample unless its file is named (`api.smallSample` in
 TestFramework/api.lua).
+
+With --repeat N (1 to 9999), runs the selection in N rounds in a row,
+stopping at the first round that fails, and totals every round's results;
+when N > 1 the last line ends with " over R of N rounds". --repeat comes
+first.
 
 Values a test reports with `api.observe` appear as
 `OBSERVED <test> <key>=<value>` lines in the output.
@@ -44,6 +50,17 @@ usageError() {
         echo "Run 'itj-impure-tests --help' for usage." >&2
         exit 2
 }
+
+repeat=1
+if [ "${1:-}" = --repeat ]; then
+        # A cap on the digits keeps bash from wrapping a huge count to 0, which
+        # would run nothing and report a pass.
+        if ! [[ "${2:-}" =~ ^[1-9][0-9]{0,3}$ ]]; then
+                usageError "--repeat needs a count from 1 to 9999"
+        fi
+        repeat=$2
+        shift 2
+fi
 
 # The selection form (all, name, files or small-samples) and the most
 # arguments it takes, counting the option itself.
@@ -235,26 +252,38 @@ if ((${#claimFiles[@]} == 0)); then
 fi
 
 status=0
-if [ "$mode" = name ]; then
-        # A named test lives in one pass. Try the claim pass first, as most
-        # named runs explore the game, and fall back to the code pass.
-        if ((runClaim)); then
-                runPass "$claimSelection" "${claimFiles[*]}" ClaimTests || status=$?
+round=0
+while ((status == 0 && round < repeat)); do
+        round=$((round + 1))
+        if ((repeat > 1)); then
+                echo "itj-impure-tests: round $round of $repeat"
         fi
-        if ((!runClaim || nameMissing)); then
-                status=0
-                runPass "$codeSelection" "${codeFiles[*]}" "${codeMods[@]}" || status=$?
+        if [ "$mode" = name ]; then
+                # A named test lives in one pass. Try the claim pass first, as
+                # most named runs explore the game, and fall back to the code
+                # pass; later rounds skip a claim pass that lacked the name.
+                if ((runClaim)); then
+                        runPass "$claimSelection" "${claimFiles[*]}" ClaimTests || status=$?
+                fi
+                if ((!runClaim || nameMissing)); then
+                        runClaim=0
+                        status=0
+                        runPass "$codeSelection" "${codeFiles[*]}" "${codeMods[@]}" || status=$?
+                fi
+        else
+                if ((runCode)); then
+                        runPass "$codeSelection" "${codeFiles[*]}" "${codeMods[@]}" || status=1
+                fi
+                if ((runClaim)); then
+                        runPass "$claimSelection" "${claimFiles[*]}" ClaimTests || status=1
+                fi
         fi
-else
-        if ((runCode)); then
-                runPass "$codeSelection" "${codeFiles[*]}" "${codeMods[@]}" || status=1
-        fi
-        if ((runClaim)); then
-                runPass "$claimSelection" "${claimFiles[*]}" ClaimTests || status=1
-        fi
-fi
+done
 
 summary="${counts[PASS]} PASS, ${counts[XFAIL]} XFAIL, ${counts[FAIL]} FAIL, ${counts[XPASS]} XPASS"
+if ((repeat > 1)); then
+        summary="$summary over $round of $repeat rounds"
+fi
 if ((status != 0)); then
         echo "itj-impure-tests: run failed: $summary"
         exit 1

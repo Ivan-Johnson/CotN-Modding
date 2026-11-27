@@ -63,6 +63,11 @@ expectUsageError "unexpected arguments: scratchB scratchC" scratchA scratchB scr
 expectUsageError "unexpected arguments: b.lua" --files a.lua b.lua
 expectUsageError "unexpected arguments: b.lua" --small-samples a.lua b.lua
 expectUsageError "--files needs a comma-separated list" --files
+expectUsageError "--repeat needs a count from 1 to 9999" --repeat
+expectUsageError "--repeat needs a count from 1 to 9999" --repeat 0 --files a.lua
+# A count bash would wrap to 0 must not run nothing and pass.
+expectUsageError "--repeat needs a count from 1 to 9999" --repeat 18446744073709551616
+expectUsageError "unexpected arguments: b.lua" --repeat 2 --files a.lua b.lua
 
 # A game whose log goes silent fails the run, and the restart instruction
 # reaches the user.
@@ -165,6 +170,69 @@ if ! grep -qxF "file: weapons.lua" "$modsDir/DevBundle/TestFramework/selected-te
 	exit 1
 fi
 
+# loadedCount: how many installs the fake game has loaded so far.
+loadedCount() {
+	grep -c "\[install-mods\] loaded" "$COTN_LOG"
+}
+
+# fakePasses LOADS VERDICT...: completes one pass per VERDICT, each once the
+# game has loaded that pass's install, with one result line of that verdict,
+# and saves the selection pass I installed as $scratch/pass-I-selection.txt.
+# LOADS is loadedCount before the run. Take it in the foreground: an
+# argument's $(loadedCount) would run in the background job, where the run's
+# first install could land before it is counted.
+fakePasses() {
+	local verdict loads=$1 pass=0
+	shift
+	for verdict in "$@"; do
+		loads=$((loads + 1))
+		pass=$((pass + 1))
+		for _ in $(seq 100); do
+			if (($(loadedCount) >= loads)); then
+				break
+			fi
+			sleep 0.1
+		done
+		cp "$modsDir/DevBundle/TestFramework/selected-test.txt" "$scratch/pass-$pass-selection.txt"
+		# The next install must land in a later second: rsync's quick check
+		# compares size and whole-second mtime, and the reload file of the
+		# next pass has the same size.
+		sleep 1.1
+		echo "[TestFramework] $verdict fakePass${pass}Test" >>"$COTN_LOG"
+		if [ "$verdict" = FAIL ]; then
+			echo '[TestFramework] Test suite completed: 1 failure(s)' >>"$COTN_LOG"
+		else
+			echo '[TestFramework] Test suite completed: 0 failure(s)' >>"$COTN_LOG"
+		fi
+	done
+}
+
+# --repeat runs the selection in that many rounds and totals every round.
+loads=$(loadedCount)
+fakePasses "$loads" PASS PASS &
+growerPid=$!
+status=0
+stdout=$(itj-impure-tests --repeat 2 --files weapons.lua 2>&1) || status=$?
+wait "$growerPid"
+if ((status != 0)) || [ "$(tail -n 1 <<<"$stdout")" != "itj-impure-tests: all tests pass: 2 PASS, 0 XFAIL, 0 FAIL, 0 XPASS over 2 of 2 rounds" ]; then
+	echo "FAIL: --repeat 2 did not total two passing rounds (status $status); output was:" >&2
+	echo "$stdout" >&2
+	exit 1
+fi
+
+# A failing round ends the repeats, so the round after it never installs.
+loads=$(loadedCount)
+fakePasses "$loads" FAIL &
+growerPid=$!
+status=0
+stdout=$(itj-impure-tests --repeat 3 --files weapons.lua 2>&1) || status=$?
+wait "$growerPid"
+if ((status != 1)) || [ "$(tail -n 1 <<<"$stdout")" != "itj-impure-tests: run failed: 0 PASS, 0 XFAIL, 1 FAIL, 0 XPASS over 1 of 3 rounds" ]; then
+	echo "FAIL: --repeat 3 did not stop at its failing first round (status $status); output was:" >&2
+	echo "$stdout" >&2
+	exit 1
+fi
+
 # A code test file runs in a pass that installs every mod with code tests, and
 # not ClaimTests.
 mkdir -p "$goodRepo/Mods/OtherMod"
@@ -192,28 +260,9 @@ if ! grep -qxF "expect: tests.lua other-tests.lua" "$modsDir/DevBundle/TestFrame
 fi
 
 # A small-sample run runs both passes, each told which files keep their full
-# sample. The fake suite completes each pass once the game has loaded its
-# install, saving the selection that pass installed.
-selectionFile="$modsDir/DevBundle/TestFramework/selected-test.txt"
-loads=$(grep -c "\[install-mods\] loaded" "$COTN_LOG")
-(
-	for pass in code claim; do
-		loads=$((loads + 1))
-		for _ in $(seq 100); do
-			if (($(grep -c "\[install-mods\] loaded" "$COTN_LOG") >= loads)); then
-				break
-			fi
-			sleep 0.1
-		done
-		cp "$selectionFile" "$scratch/$pass-selection.txt"
-		# The next install must land in a later second: rsync's quick check
-		# compares size and whole-second mtime, and the reload file of the
-		# next pass has the same size.
-		sleep 1.1
-		echo "[TestFramework] PASS fake${pass}Test" >>"$COTN_LOG"
-		echo '[TestFramework] Test suite completed: 0 failure(s)' >>"$COTN_LOG"
-	done
-) &
+# sample.
+loads=$(loadedCount)
+fakePasses "$loads" PASS PASS &
 growerPid=$!
 status=0
 stdout=$(itj-impure-tests --small-samples weapons.lua 2>&1) || status=$?
@@ -225,14 +274,14 @@ if ((status != 0)) || ! grep -qF "all tests pass: 2 PASS" <<<"$stdout"; then
 	exit 1
 fi
 
-for pass in code claim; do
-	if ! grep -qxF "small-samples-except: weapons.lua" "$scratch/$pass-selection.txt"; then
-		echo "FAIL: the $pass pass was not told which files keep their full sample:" >&2
-		cat "$scratch/$pass-selection.txt" >&2
+for pass in 1 2; do
+	if ! grep -qxF "small-samples-except: weapons.lua" "$scratch/pass-$pass-selection.txt"; then
+		echo "FAIL: pass $pass was not told which files keep their full sample:" >&2
+		cat "$scratch/pass-$pass-selection.txt" >&2
 		exit 1
 	fi
 done
-if grep -q "^file:" "$scratch/code-selection.txt" || ! grep -qxF "file: weapons.lua" "$scratch/claim-selection.txt"; then
+if grep -q "^file:" "$scratch/pass-1-selection.txt" || ! grep -qxF "file: weapons.lua" "$scratch/pass-2-selection.txt"; then
 	echo "FAIL: a small-sample run did not select every test of each pass" >&2
 	exit 1
 fi

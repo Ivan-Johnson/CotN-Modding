@@ -73,7 +73,8 @@ do not: each group's role and what it is coupled to.
   second pass `ClaimTests` and `TestFramework`. Each pass locks the game,
   forces `TestFramework` to reload so its test run fires, waits for the
   suite, and prints only the new `NecroDancer.log` lines. The run's last
-  line totals both passes, e.g. `itj-impure-tests: all tests pass: 132 PASS,
+  line totals both passes, and every round with `--repeat`, e.g.
+  `itj-impure-tests: all tests pass: 132 PASS,
   3 XFAIL, 0 FAIL, 0 XPASS`; read that rather than counting lines in
   `NecroDancer.log`. CotN live-reloads
   unpacked mods, so no manual reload or log-tailing is needed. It's an `app`, not a
