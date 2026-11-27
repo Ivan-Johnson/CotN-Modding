@@ -439,7 +439,14 @@ local CHARACTER_RETRIES = 3
 
 event.levelLoad.add("TestFrameworkRunOnLoad", { order = "extraEntities", sequence = 1 }, function()
 	local test = currentTest
-	if test and test.started then
+	-- With no current test, the suite has not started (runSuite starts the
+	-- first test itself) or has finished, so the level is not the framework's.
+	-- Running the queue here would print the completion line again on every
+	-- level the player loads, which reads as a fresh suite passing.
+	if not test then
+		return
+	end
+	if test.started then
 		-- A level change during an async test is part of that test.
 		return
 	end
@@ -447,19 +454,17 @@ event.levelLoad.add("TestFrameworkRunOnLoad", { order = "extraEntities", sequenc
 	-- spawn the player as Cadence, even though the test's character, say one a
 	-- mod defines, is valid by the time the level loads. Restart the session
 	-- then, rather than run the test as the wrong character.
-	local retries = test and test.characterRetries or 0
+	local retries = test.characterRetries or 0
 	local spawnedAs = Player.getCharacterType(1)
-	if test and spawnedAs ~= (test.character or DEFAULT_CHARACTER) and retries < CHARACTER_RETRIES then
+	if spawnedAs ~= (test.character or DEFAULT_CHARACTER) and retries < CHARACTER_RETRIES then
 		test.characterRetries = retries + 1
 		print(string.format("[TestFramework] Restarting %s: the player spawned as %s", test.name, tostring(spawnedAs)))
 		TestFramework_startGameSession()
 		return
 	end
-	if test then
-		test.started = true
-		runTest(test)
-	end
-	if not (test and test.async) then
+	test.started = true
+	runTest(test)
+	if not test.async then
 		runNextTest()
 	end
 end)
