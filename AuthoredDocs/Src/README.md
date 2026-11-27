@@ -57,4 +57,6 @@ A wiki of linked pages about the game's things, for Cadence.
   where each secret room appears.
 * [food-shop.md](./food-shop.md): the secret food shop, its food and heart
   container prices, and its bomb-throwing shopkeeper.
+* [conjurer.md](./conjurer.md): the Conjurer's secret room, where gold buys
+  a random item for a chosen slot.
 * [cadence.md](./cadence.md) and [dove.md](./dove.md): the characters.
