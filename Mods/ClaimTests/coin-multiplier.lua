@@ -168,16 +168,31 @@ end
 -- actions), and walks onto what it dropped. Calls after(gold collected, coin
 -- multiplier before the last action). opts.chain re-sets the chain before every
 -- action, so an enemy's hits cannot change the multiplier under test.
+-- A skeleton that can lose its head fights with a wall behind it: the hit
+-- that knocks the head off would otherwise send it running until something
+-- stops it, maybe out of the arena, with the player chasing it.
 local function kill(typeName, after, opts)
 	opts = opts or {}
 	local entity = player()
 	local side = entity.position.x > 3 and -1 or 1
-	local spawned = fixtures.spawn(typeName, entity.position.x + (opts.dx or side), entity.position.y + (opts.dy or 0))
+	local offsetX = opts.dx or side
+	local offsetY = opts.dy or 0
+	local spawned = fixtures.spawn(typeName, entity.position.x + offsetX, entity.position.y + offsetY)
+	local behindX = entity.position.x + 2 * offsetX
+	local behindY = entity.position.y + 2 * offsetY
+	local behindTile = fixtures.tileName(behindX, behindY)
+	local walled = typeName == "Skeleton2" or typeName == "Skeleton3"
+	if walled then
+		Tile.setType(behindX, behindY, "StoneWall")
+	end
 	local actionIndex = 0
 	local lastMultiplier = coinMultiplier()
 	local goldBefore = gold()
 	local function step()
 		if not Entities.entityExists(spawned.id) then
+			if walled then
+				Tile.setType(behindX, behindY, behindTile)
+			end
 			collectPiles(function()
 				after(gold() - goldBefore, lastMultiplier)
 			end)
@@ -185,6 +200,10 @@ local function kill(typeName, after, opts)
 		end
 		actionIndex = actionIndex + 1
 		assert(actionIndex <= 30, typeName .. " would not die")
+		if walled then
+			local x, y = spawned.position.x, spawned.position.y
+			assert(x == behindX - offsetX and y == behindY - offsetY, string.format("%s ran to (%d,%d)", typeName, x, y))
+		end
 		if opts.chain then
 			setChain(opts.chain[1], opts.chain[2])
 		end
