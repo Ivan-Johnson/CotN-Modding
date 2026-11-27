@@ -38,6 +38,9 @@ The last line totals the run's results, e.g.
 `itj-impure-tests: all tests pass: 132 PASS, 3 XFAIL, 0 FAIL, 0 XPASS`, or
 `run failed:` in place of `all tests pass:`.
 
+At start it warns on stderr when local `mainline` has harness commits
+(`itj-impure-scope --harness-paths`) that this checkout lacks.
+
 Environment:
   ITJ_MODS_ROOT  default <git toplevel>/Mods
   live-game-run's variables (the lock, its timeouts) apply to each pass.
@@ -96,6 +99,21 @@ if (($# > maxArgs)); then
 fi
 
 modsRoot="${ITJ_MODS_ROOT:-$(git rev-parse --show-toplevel)/Mods}"
+
+# A checkout's dev shell and TestFramework come from its own commit, so a
+# harness fix landed on mainline does not reach a session on an older branch
+# until it rebases. Warn rather than fail; skip where there is no local
+# mainline (a fork, CI, the nix sandbox).
+checkout=$(git -C "$modsRoot" rev-parse --show-toplevel 2>/dev/null) || checkout=""
+if [ -n "$checkout" ] && git -C "$checkout" rev-parse --verify --quiet refs/heads/mainline >/dev/null; then
+        harnessList=$(itj-impure-scope --harness-paths)
+        mapfile -t harnessPaths <<<"$harnessList"
+        missing=$(git -C "$checkout" log --format='  %h %s' HEAD..mainline -- "${harnessPaths[@]}" 2>/dev/null) || missing=""
+        if [ -n "$missing" ]; then
+                echo "itj-impure-tests: warning: this checkout lacks these harness commits from mainline; rebase onto mainline:" >&2
+                echo "$missing" >&2
+        fi
+fi
 
 # The test files of each pass, and the code-test mods, as itj-impure-scope.bash
 # also finds them.

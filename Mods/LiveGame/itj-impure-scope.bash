@@ -17,6 +17,7 @@
 #   file fails safe. So does empty input (e.g. a message-only amend).
 #
 # Usage: itj-impure-scope [REPO_ROOT] <paths
+#        itj-impure-scope --harness-paths
 # REPO_ROOT (default: the git toplevel) is the tree whose claim test and code
 # test files exist.
 
@@ -35,6 +36,14 @@ harnessPrefixes=(
 	"flake.nix"
 	"flake.lock"
 )
+
+# `itj-impure-tests` passes this list to `git log` as pathspecs to warn when
+# mainline has harness commits the checkout lacks, so each entry is a whole
+# directory ending in `/` or a whole file path.
+if [[ ${1:-} == --harness-paths ]]; then
+	printf '%s\n' "${harnessPrefixes[@]}"
+	exit 0
+fi
 
 # Paths that no live test reads. The suite installs only the code-test mods,
 # ClaimTests and TestFramework, so none of these can change it; a claim page is

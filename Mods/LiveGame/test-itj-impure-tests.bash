@@ -86,6 +86,13 @@ if ! grep -qF "game not responding" <<<"$stderr"; then
 	exit 1
 fi
 
+# The fixture is not a git repo, so the stale-harness check skips silently.
+if grep -qF "lacks these harness commits" <<<"$stderr"; then
+	echo "FAIL: a tree outside git warned about harness commits; stderr was:" >&2
+	echo "$stderr" >&2
+	exit 1
+fi
+
 # A pass whose suite completes with 0 failures passes the run, even when the
 # log took longer than the stall limit in total, and its last line totals the
 # results.
@@ -294,6 +301,62 @@ rm "$goodRepo/Mods/OtherMod/tests.lua"
 if ((status == 0)) || ! grep -qF "share the basename tests.lua" <<<"$stdout"; then
 	echo "FAIL: a duplicate code test basename was not refused (status $status); output was:" >&2
 	echo "$stdout" >&2
+	exit 1
+fi
+
+# A worktree behind mainline is warned of the harness commits it lacks, and of
+# no others, and the run still passes.
+export HOME="$scratch"
+export GIT_AUTHOR_NAME=test
+export GIT_AUTHOR_EMAIL=test@example.com
+export GIT_COMMITTER_NAME=test
+export GIT_COMMITTER_EMAIL=test@example.com
+git -C "$goodRepo" init -q -b mainline
+git -C "$goodRepo" add -A
+git -C "$goodRepo" commit -qm base
+git -C "$goodRepo" branch topic
+echo "-- fix" >>"$goodRepo/Mods/TestFramework/api.lua"
+git -C "$goodRepo" commit -qam "harness fix"
+touch "$goodRepo/Mods/HelloWorld/hello.lua"
+git -C "$goodRepo" add -A
+git -C "$goodRepo" commit -qm "mod change"
+mkdir -p "$goodRepo/Mods/LiveGame"
+touch "$goodRepo/Mods/LiveGame/test-x.bash"
+git -C "$goodRepo" add -A
+git -C "$goodRepo" commit -qm "offline test"
+git -C "$goodRepo" worktree add -q "$scratch/topic-tree" topic
+
+# runClaimPass MODS_ROOT: runs weapons.lua's single pass against MODS_ROOT,
+# setting status and stderr.
+runClaimPass() {
+	(
+		sleep 1
+		echo '[TestFramework] PASS fakeClaimTest' >>"$COTN_LOG"
+		echo '[TestFramework] Test suite completed: 0 failure(s)' >>"$COTN_LOG"
+	) &
+	growerPid=$!
+	status=0
+	stderr=$(ITJ_MODS_ROOT=$1 itj-impure-tests --files weapons.lua 2>&1 >/dev/null) || status=$?
+	wait "$growerPid"
+}
+
+runClaimPass "$scratch/topic-tree/Mods"
+if ((status != 0)) || ! grep -qF "harness fix" <<<"$stderr" || ! grep -qF "rebase onto mainline" <<<"$stderr"; then
+	echo "FAIL: a worktree behind mainline was not warned of its harness commit (status $status); stderr was:" >&2
+	echo "$stderr" >&2
+	exit 1
+fi
+if grep -qF "mod change" <<<"$stderr" || grep -qF "offline test" <<<"$stderr"; then
+	echo "FAIL: the warning listed commits that touch no harness path; stderr was:" >&2
+	echo "$stderr" >&2
+	exit 1
+fi
+
+# The checkout on mainline lacks nothing, so it is not warned.
+runClaimPass "$goodRepo/Mods"
+if ((status != 0)) || grep -qF "lacks these harness commits" <<<"$stderr"; then
+	echo "FAIL: a checkout on mainline was warned or failed (status $status); stderr was:" >&2
+	echo "$stderr" >&2
 	exit 1
 fi
 

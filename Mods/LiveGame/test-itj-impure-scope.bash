@@ -90,6 +90,16 @@ for prefix in "${harnessPrefixes[@]}" "${harmlessPrefixes[@]}"; do
 		failures=$((failures + 1))
 	fi
 done
+shopt -u nullglob
+
+# `itj-impure-tests` passes the harness list to `git log` as pathspecs, which
+# match whole path components, so each entry names a whole directory or file.
+for prefix in "${harnessPrefixes[@]}"; do
+	if [[ $prefix == */ && ! -d $root/$prefix ]] || [[ $prefix != */ && ! -f $root/$prefix ]]; then
+		echo "FAIL: harness entry '$prefix' is not a directory ending in / or an existing file" >&2
+		failures=$((failures + 1))
+	fi
+done
 
 if [ "$failures" -ne 0 ]; then
 	exit 1

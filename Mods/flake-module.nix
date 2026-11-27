@@ -175,6 +175,7 @@ let
                         pkgs.coreutils
                         pkgs.git
                         pkgs.gnugrep
+                        impureScope
                         liveGameRun
                 ];
                 text = builtins.readFile ./LiveGame/itj-impure-tests.bash;
@@ -188,6 +189,7 @@ let
                                 nativeBuildInputs = [
                                         impureTests
                                         pkgs.coreutils
+                                        pkgs.git
                                         pkgs.gnugrep
                                         pkgs.util-linux
                                 ];
