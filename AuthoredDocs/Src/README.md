@@ -68,4 +68,6 @@ A wiki of linked pages about the game's things, for Cadence.
 * [arena.md](./arena.md): the secret room with a free item and a fight.
 * [pawnbroker.md](./pawnbroker.md): the secret room that buys your items,
   its wares and special offer, and what it refuses.
+* [glass-shop.md](./glass-shop.md): the secret glass shop, its half-price
+  glass gear, how that gear breaks, and its shopkeeper.
 * [cadence.md](./cadence.md) and [dove.md](./dove.md): the characters.

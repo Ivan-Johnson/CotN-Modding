@@ -19,7 +19,7 @@ bullet names another character.
 | Cracked wall | Toughness | Room behind it |
 |--------------|-----------|----------------|
 | Cracked dirt wall (`DirtWallCracked`) | 1 | [Arena](./arena.md), [Conjurer](./conjurer.md) or [Shriner](./shriner.md) |
-| Cracked stone wall (`StoneWallCracked`) | 2 | [Transmogrifier](./transmogrifier.md), [Blood shop](./blood-shop.md) or Glass shop |
+| Cracked stone wall (`StoneWallCracked`) | 2 | [Transmogrifier](./transmogrifier.md), [Blood shop](./blood-shop.md) or [Glass shop](./glass-shop.md) |
 | Cracked catacomb wall (`CatacombWallCracked`) | 3 | [Food shop](./food-shop.md) or [Pawnbroker](./pawnbroker.md) |
 
 ## The travel rune
