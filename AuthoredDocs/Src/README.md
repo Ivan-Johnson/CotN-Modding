@@ -61,4 +61,6 @@ A wiki of linked pages about the game's things, for Cadence.
   a random item for a chosen slot.
 * [blood-shop.md](./blood-shop.md): the secret shop that sells for health, and
   its shopkeeper.
+* [transmogrifier.md](./transmogrifier.md): the secret room that swaps an
+  item for a random new one, its price and its slot tiles.
 * [cadence.md](./cadence.md) and [dove.md](./dove.md): the characters.
