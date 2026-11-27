@@ -307,17 +307,26 @@ for _, shrineType in ipairs({ "ShrineOfBoss", "ShrineOfRisk", "ShrineOfSpace" })
 end
 
 -- Chance: 10 gold, doubling each use, any number of uses; some uses drop an
--- item. With too little gold nothing happens.
-local CHANCE_USES = 8
+-- item. With too little gold nothing happens. About half the uses drop an
+-- item, decided by the run's random seed, so 20 uses all match only about
+-- twice in a million runs.
+local CHANCE_USES = 20
+local CHANCE_GOLD = 20000000
 local chanceChecks = {}
+local itemsBefore, dropUses
 for use = 1, CHANCE_USES do
 	local paid = 10 * (2 ^ use - 1)
 	chanceChecks[use] = function(shrine)
 		local gold = player().goldCounter.amount
-		assert(gold == 10000 - paid, string.format("after use %d expected %d gold, got %d", use, 10000 - paid, gold))
+		local expected = CHANCE_GOLD - paid
+		assert(gold == expected, string.format("after use %d expected %d gold, got %d", use, expected, gold))
+		local items = #itemsNear(8)
+		if items > itemsBefore then
+			dropUses = dropUses + 1
+		end
+		itemsBefore = items
 		if use == CHANCE_USES then
-			local drops = #itemsNear(3)
-			assert(drops > 0 and drops < CHANCE_USES, "some uses, not all, drop an item: " .. drops)
+			assert(dropUses > 0 and dropUses < CHANCE_USES, "some uses, not all, drop an item: " .. dropUses)
 			assert(not shrine.shrine.active, "it never runs out")
 		end
 	end
@@ -325,7 +334,9 @@ end
 shrineScene("shrineChancePriceDoubles", {
 	shrine = "ShrineOfChance",
 	setup = function()
-		player().goldCounter.amount = 10000
+		player().goldCounter.amount = CHANCE_GOLD
+		itemsBefore = 0
+		dropUses = 0
 	end,
 	actions = fixtures.repeated("right", CHANCE_USES),
 	checks = chanceChecks,
