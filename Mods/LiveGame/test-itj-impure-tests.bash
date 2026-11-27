@@ -124,6 +124,26 @@ if [ "$(tail -n 1 <<<"$stdout")" != "itj-impure-tests: all tests pass: 1 PASS, 1
 	exit 1
 fi
 
+# A test reported twice fails the run, even with different verdicts: a suite
+# started twice by one reload can fail a test, then pass it and complete with
+# 0 failures.
+(
+	sleep 1
+	echo '[TestFramework] FAIL fakeTest' >>"$COTN_LOG"
+	echo '[TestFramework] PASS fakeTest' >>"$COTN_LOG"
+	echo '[TestFramework] Test suite completed: 0 failure(s)' >>"$COTN_LOG"
+) &
+growerPid=$!
+status=0
+stdout=$(itj-impure-tests 2>&1) || status=$?
+wait "$growerPid"
+
+if ((status != 1)) || ! grep -qF "itj-impure-tests: tests reported more than once:" <<<"$stdout"; then
+	echo "FAIL: a test reported as FAIL then PASS did not fail the run (status $status); output was:" >&2
+	echo "$stdout" >&2
+	exit 1
+fi
+
 # A run that printed no PASS/FAIL line at all fails with a clear message,
 # rather than exiting silently.
 (

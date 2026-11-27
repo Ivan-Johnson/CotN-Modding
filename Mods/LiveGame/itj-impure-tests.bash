@@ -211,12 +211,15 @@ $selection")
         fi
 
         # A test that reports twice was queued twice (a reload registered it
-        # again), so the pass is not the single fixed-seed run the tests assume.
+        # again, or started the suite twice), so the pass is not the single
+        # fixed-seed run the tests assume. Compare names, not whole lines: a
+        # suite started twice can fail a test, then pass it and complete with
+        # 0 failures.
         if [ -z "$resultLines" ]; then
                 echo "itj-impure-tests: the pass printed no PASS/FAIL lines" >&2
                 return 1
         fi
-        duplicates=$(sort <<<"$resultLines" | uniq -d)
+        duplicates=$(awk '{ print $3 }' <<<"$resultLines" | sort | uniq -d)
         if [ -n "$duplicates" ]; then
                 echo "itj-impure-tests: tests reported more than once:" >&2
                 echo "$duplicates" >&2
@@ -297,6 +300,12 @@ while ((status == 0 && round < repeat)); do
                 fi
         fi
 done
+
+# Whatever a pass's own checks missed, a FAIL or XPASS never ends in "all
+# tests pass".
+if ((counts[FAIL] + counts[XPASS] > 0)); then
+        status=1
+fi
 
 summary="${counts[PASS]} PASS, ${counts[XFAIL]} XFAIL, ${counts[FAIL]} FAIL, ${counts[XPASS]} XPASS"
 if ((repeat > 1)); then
