@@ -20,7 +20,7 @@ bullet names another character.
 |--------------|-----------|----------------|
 | Cracked dirt wall (`DirtWallCracked`) | 1 | Arena, Conjurer or Shriner |
 | Cracked stone wall (`StoneWallCracked`) | 2 | Transmogrifier, Blood shop or Glass shop |
-| Cracked catacomb wall (`CatacombWallCracked`) | 3 | Food shop or Pawnbroker |
+| Cracked catacomb wall (`CatacombWallCracked`) | 3 | [Food shop](./food-shop.md) or Pawnbroker |
 
 ## The travel rune
 

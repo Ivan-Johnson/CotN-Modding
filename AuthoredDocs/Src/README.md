@@ -55,4 +55,6 @@ A wiki of linked pages about the game's things, for Cadence.
 * [shops.md](./shops.md): prices, buying, and the shopkeeper.
 * [secret-shops.md](./secret-shops.md): cracked walls, the travel rune, and
   where each secret room appears.
+* [food-shop.md](./food-shop.md): the secret food shop, its food and heart
+  container prices, and its bomb-throwing shopkeeper.
 * [cadence.md](./cadence.md) and [dove.md](./dove.md): the characters.
