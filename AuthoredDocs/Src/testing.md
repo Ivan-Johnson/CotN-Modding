@@ -87,6 +87,12 @@ it as a regression test with real assertions.
   near, since an input sent a fixed number of ticks after the last drifts off
   the beat and, once early enough, counts as a missed beat: the player stays
   put although the turn advances.
+* A test played to the beat runs at 8 times the music's speed, and the game
+  with it: enemies act, and inputs must land, 8 times as often. Its `tempo`
+  field changes the factor or, set to 1, plays at normal speed (see
+  `api.lua`). A wait counted in ticks covers 8 times as many beats, so it
+  saves no time and can overshoot an effect that lasts a few beats: give
+  such a test `tempo = 1`.
 * To time inputs within a beat, for a trap's fuse or the stairs' descent,
   play a `fixtures.timeline`: it sends each input at a set offset from a
   beat, built on `api.atBeat`, `api.atMusicTime` and `api.send`, and
@@ -97,6 +103,7 @@ it as a regression test with real assertions.
   beatmap before each input and starts over at a later beat when it is
   behind before the first. Before playing one, wait for the player's
   `rhythmLeniency.remainingTurns` to reach 0, as well as its invincibility.
+  Its offsets are in music time, so give the test `tempo = 1`.
   `Mods/ClaimTests/sub-beat-timing.lua` is a worked example.
   Name such tests with letters, digits and `_` only: the runner reads a
   test's name up to the first other character, so names that differ only

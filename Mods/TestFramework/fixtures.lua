@@ -234,7 +234,8 @@ missed beat, as { key, value, at } with at in seconds from B and key
 "missedBeat" for a missed beat. It ends at B + seconds, or when the level
 changes (recorded under key "level"): the music, and so its time, restarts
 on a new level. Then it calls done(events, lastAt), where lastAt is the last
-time seen on the starting level. Steps must be in time order.
+time seen on the starting level. Steps must be in time order. Its offsets
+are in music time, so the test needs tempo = 1 to time the game's own delays.
 
 The game judges an input against its beatmap, not the music time. The
 beatmap skips a beat no one pressed for about 0.31 s after it, but at times

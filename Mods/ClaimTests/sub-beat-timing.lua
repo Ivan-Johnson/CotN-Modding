@@ -30,6 +30,9 @@ local WATCH = {
 local function timingTest(name, prepare, steps, check)
 	testsApi.registerTest({
 		name = name,
+		-- Its offsets are in seconds of music time, which a higher tempo
+		-- shrinks against the game's own delays.
+		tempo = 1,
 		async = true,
 		timeoutTicks = 20000,
 		onLoad = function(_, finish)

@@ -94,6 +94,8 @@ local function trapTest(name, setup, steps, onBeat)
 	testsApi.registerTest({
 		name = name,
 		noBeat = not onBeat,
+		-- The tests played to the beat measure the music's speed.
+		tempo = onBeat and 1 or nil,
 		async = true,
 		timeoutTicks = 60000,
 		onLoad = function(_, finish)

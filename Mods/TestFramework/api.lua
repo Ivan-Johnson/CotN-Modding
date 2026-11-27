@@ -8,6 +8,7 @@ local Turn = require "necro.cycles.Turn"
 local Player = require "necro.game.character.Player"
 local Beatmap = require "necro.audio.Beatmap"
 local Music = require "necro.audio.Music"
+local TimeScale = require "necro.audio.TimeScale"
 
 --[[
 Generic, reusable test-running framework. Any mod may contribute test cases
@@ -58,6 +59,11 @@ fixed-seed GameSession. A test is a table:
     the player acts, so a test can step enemies one action at a time; delayed
     effects such as traps still land in real time (AuthoredDocs/Src/testing.md,
     "No-beat mode")
+  tempo (number?)         - how many times its normal speed a beat-mode test
+    plays the music, and with it the game (default 8, the most the game
+    allows); 1 plays it at normal speed, e.g. to measure a tempo trap.
+    No-beat tests ignore it. It is never removed mid-test, since removing it
+    stalls the beat; a session the test starts itself plays at normal speed
   async (boolean?)        - lets onLoad outlive its own return: the test then
     ends only when onLoad's second argument, finish, is called (finish() passes,
     finish(message) fails). Drive the game with afterTicks and play below; an
@@ -507,12 +513,21 @@ local function atBeat(offset, fn, lead)
 	waitForGrid()
 end
 
+-- A beat-mode test's tempo unless it sets one; see the tempo field above.
+local DEFAULT_TEMPO = 8
+
 -- Runs one test's onLoad, which asserts its expectations with the builtin
 -- assert(condition, reason). Any Lua error it raises (a failing assert, or
 -- any other error, e.g. a bad API call) is caught here and logged as FAIL,
 -- or XFAIL if the test declares expectFail; otherwise the test passed. An
 -- async test's outcome is logged when it calls finish instead.
 local function runTest(test)
+	local tempo = test.tempo or DEFAULT_TEMPO
+	if not test.noBeat and tempo ~= 1 then
+		-- From time 0: at level load the music time is still the previous
+		-- song's, and the new song restarts it near 0.
+		TimeScale.addInfiniteRegion(0, tempo, 0)
+	end
 	if test.async then
 		local ok, err = pcall(test.onLoad, FIXED_SEED, function(message)
 			finishAsync(test, message)

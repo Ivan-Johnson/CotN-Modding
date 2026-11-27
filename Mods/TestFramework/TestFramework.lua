@@ -1,8 +1,10 @@
 local CurrentLevel = require "necro.game.level.CurrentLevel"
 local Map = require "necro.game.object.Map"
+local Music = require "necro.audio.Music"
 local Tick = require "necro.cycles.Tick"
 
 local api = require "TestFramework.api"
+local fixtures = require "TestFramework.fixtures"
 
 -- Self-tests exercising the framework itself (api.lua's expectFail/crash
 -- recovery machinery), not any particular mod under test.
@@ -180,6 +182,75 @@ api.registerTest({
 		end)
 		api.afterTicks(40, function()
 			waited = true
+		end)
+	end,
+})
+
+-- Spawns a Slime3, which moves once per beat, and passes done the music's
+-- speed and the moves the slime made in the given ticks.
+local function slimeMoves(ticks, done)
+	fixtures.openArena(6)
+	local slime = fixtures.spawn("Slime3", 3, 3)
+	local moves = 0
+	local lastX = slime.position.x
+	local lastY = slime.position.y
+	local ticksLeft = ticks
+	local function sample()
+		if slime.position.x ~= lastX or slime.position.y ~= lastY then
+			moves = moves + 1
+			lastX = slime.position.x
+			lastY = slime.position.y
+		end
+		ticksLeft = ticksLeft - 1
+		if ticksLeft > 0 then
+			api.afterTicks(1, sample)
+		else
+			done(Music.getEffectivePitch(), moves)
+		end
+	end
+	sample()
+end
+
+-- Beat-mode tests play at 8 times the music's speed unless they set tempo.
+-- At normal speed a Slime3 moves about twice in 1000 ticks.
+api.registerTest({
+	name = "tempoDefaultsToEight",
+	async = true,
+	onLoad = function(_, finish)
+		slimeMoves(1000, function(pitch, moves)
+			api.observe("moves", moves)
+			assert(pitch == 8, "the music plays at " .. pitch .. " times its speed")
+			assert(moves >= 8, "the slime moved only " .. moves .. " times")
+			finish()
+		end)
+	end,
+})
+
+-- tempo = 1 plays a beat-mode test at the music's normal speed.
+api.registerTest({
+	name = "tempoOneIsNormalSpeed",
+	tempo = 1,
+	async = true,
+	onLoad = function(_, finish)
+		slimeMoves(1000, function(pitch, moves)
+			api.observe("moves", moves)
+			assert(pitch == 1, "the music plays at " .. pitch .. " times its speed")
+			assert(moves <= 3, "the slime moved " .. moves .. " times")
+			finish()
+		end)
+	end,
+})
+
+-- No-beat tests keep the music at its normal speed.
+api.registerTest({
+	name = "tempoIgnoredInNoBeat",
+	noBeat = true,
+	async = true,
+	onLoad = function(_, finish)
+		api.afterTicks(100, function()
+			local pitch = Music.getEffectivePitch()
+			assert(pitch == 1, "the music plays at " .. pitch .. " times its speed")
+			finish()
 		end)
 	end,
 })
