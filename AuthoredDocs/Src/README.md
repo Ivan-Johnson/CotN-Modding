@@ -53,4 +53,6 @@ A wiki of linked pages about the game's things, for Cadence.
 * [all-zones-mode.md](./all-zones-mode.md): the five-zone run, its bosses and
   its starting kit.
 * [shops.md](./shops.md): prices, buying, and the shopkeeper.
+* [secret-shops.md](./secret-shops.md): cracked walls, the travel rune, and
+  where each secret room appears.
 * [cadence.md](./cadence.md) and [dove.md](./dove.md): the characters.

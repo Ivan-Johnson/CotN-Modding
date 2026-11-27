@@ -8,6 +8,7 @@ Cadence on the first floor of each zone.
   gold, in a row two tiles in front of him. Digging the walls:
   [digging.md](./digging.md). Weapons zone one's shops never sell:
   [weapons.md](./weapons.md).
+* The secret shops behind cracked walls: [secret-shops.md](./secret-shops.md).
 
 ## Buying
 

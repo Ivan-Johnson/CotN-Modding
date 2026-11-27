@@ -21,6 +21,7 @@ move breaks your coin multiplier. A successful dig keeps it
 * A wall torch is removed with its wall. A wall spike (`Sync_WallSpike`) set in
   the wall hurts you for 1 when you dig it out.
 * Bombs clear stone walls too: [bombs.md](./bombs.md).
+* Cracked walls hide secret rooms: [secret-shops.md](./secret-shops.md).
 
 ## Shovels
 
