@@ -65,4 +65,5 @@ A wiki of linked pages about the game's things, for Cadence.
   item for a random new one, its price and its slot tiles.
 * [shriner.md](./shriner.md): the secret room that sells shrines, and its
   dragon fight.
+* [arena.md](./arena.md): the secret room with a free item and a fight.
 * [cadence.md](./cadence.md) and [dove.md](./dove.md): the characters.
