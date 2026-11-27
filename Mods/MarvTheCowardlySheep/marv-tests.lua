@@ -13,7 +13,8 @@ local marvMod = require "MarvTheCowardlySheep.MarvTheCowardlySheep"
 -- Each test plays Muriel in no-beat mode on an open floor.
 -- Muriel starts at (0,0) sharing Marv's tile; "up" is toward negative y. Two
 -- steps right leave Muriel at (2,0) and Marv at (1,0), so his Fright zone is
--- x in -4..0, y in -2..2, less any tile a wall hides from him.
+-- x in -4..0, y in -2..2, less its leading corners (0,-2) and (0,2) and any
+-- tile a wall hides from him.
 
 local function sheep()
 	return Entities.getEntityByID(fixtures.player().characterWithFollower.followerID)
@@ -57,9 +58,16 @@ end, function()
 end)
 
 sceneWithMarvBetween("hostileEnemyOnFrightZoneNearEdgeFrightensMarvToDeath", function()
-	fixtures.spawn("Slime", 0, -2)
+	fixtures.spawn("Slime", 0, -1)
 end, function()
 	assertDead("a green slime on the Fright zone's near edge")
+end)
+
+sceneWithMarvBetween("hostileEnemyOnLeadingCornerLeavesMarvAlive", function()
+	fixtures.spawn("Slime", 0, -2)
+	fixtures.spawn("Slime", 0, 2)
+end, function()
+	assertAlive("green slimes on the Fright zone's leading corners")
 end)
 
 -- Marv moved to (0,-1), two tiles over and one up from Muriel, puts his

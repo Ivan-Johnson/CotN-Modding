@@ -78,8 +78,8 @@ event.entitySchemaGenerate.add("addMarv", { order = "customEntities", sequence =
 	character.characterWithFollower.followerType = M.SHEEP
 end)
 
--- The Fright zone is a 5x5 square: FRIGHT_REACH tiles either side of its
--- centre tile.
+-- The Fright zone is based on a 5x5 square: FRIGHT_REACH tiles either side of
+-- its centre tile.
 local FRIGHT_REACH = 2
 
 local FRIGHT_ZONE_COLOR = Color.rgba(255, 0, 0, 96)
@@ -115,7 +115,8 @@ local function sign(n)
 end
 
 -- The Fright zone's tiles, as {x, y} pairs: the square on the far side of
--- Marv from Muriel, its near edge or corner touching his tile, keeping only the tiles Marv
+-- Marv from Muriel, its near edge or corner touching his tile, less the
+-- leading corners (the two ends of a near edge), keeping only the tiles Marv
 -- has line of sight to through walls. Empty while Muriel shares his tile.
 local function frightZone(character, marv)
 	local mx = marv.position.x
@@ -130,8 +131,11 @@ local function frightZone(character, marv)
 	local tiles = {}
 	for y = centerY - FRIGHT_REACH, centerY + FRIGHT_REACH do
 		for x = centerX - FRIGHT_REACH, centerX + FRIGHT_REACH do
+			local depth = (x - mx) * dx + (y - my) * dy
+			-- Only a straight square has tiles at depth 1.
+			local leadingCorner = depth == 1 and math.abs(x - mx) + math.abs(y - my) == FRIGHT_REACH + 1
 			-- check returns the blocking tile, or nothing when the line is clear.
-			if not LineOfSight.check(mx, my, x, y, Collision.Type.WALL) then
+			if not leadingCorner and not LineOfSight.check(mx, my, x, y, Collision.Type.WALL) then
 				tiles[#tiles + 1] = { x, y }
 			end
 		end

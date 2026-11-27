@@ -30,10 +30,11 @@ which is no enemy at all.
 _Avoid_: Threat, aggressive enemy
 
 **Fright zone**:
-The 5x5 square of tiles on **Marv**'s far side from **Muriel**, its near
+Tiles of a 5x5 square on **Marv**'s far side from **Muriel**, its near
 edge or corner touching his tile, less any tile walls hide from his line of
-sight. It is straight behind him when Muriel is in line with him on a row or
-column, and a diagonal square otherwise. Always highlighted red; there is none
+sight. It is straight behind him, less its leading corners (the two ends of
+its near edge), when Muriel is in line with him on a row or column, and a
+whole diagonal square otherwise. Always highlighted red; there is none
 while Muriel shares his tile.
 _Avoid_: Cower zone, behind zone, danger zone
 
