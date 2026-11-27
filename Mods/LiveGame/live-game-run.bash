@@ -44,6 +44,16 @@
 #   ITJ_GAME_RELOAD_SECONDS        how long --until waits for the reload
 #                                  token (default 30; a reload takes about
 #                                  1 s)
+#   ITJ_BUNDLE_STAMP_ALL           "1" to make every installed Lua file
+#                                  print the token with its path, not just
+#                                  the reload file, which reloads every file
+#                                  on each install. With --until, once the
+#                                  wait ends, stderr names each file that
+#                                  never printed this call's token and each
+#                                  that printed an older one. A diagnostic
+#                                  for reloads that load only part of an
+#                                  install; it does not change the exit
+#                                  status.
 
 usage() {
 	echo "live-game-run: $1" >&2
@@ -210,6 +220,36 @@ if ((waitStatus == 1)); then
 elif ((waitStatus == 2)); then
 	echo "live-game-run: game not responding (no new NecroDancer.log line for ${stallSeconds}s); restart the game and re-run. Last log lines:" >&2
 	tail -n 20 "$COTN_LOG" >&2
+fi
+
+# reportStamps: under ITJ_BUNDLE_STAMP_ALL, names on stderr each installed
+# Lua file that has not printed this call's token, and each stamped line with
+# an older token that the log gained since the install.
+reportStamps() {
+	local bundleDir=${COTN_LOCAL_MODS_DIR%/}/${ITJ_BUNDLE_NAME:-DevBundle}
+	local stamps file stale total=0 missing=()
+	stamps=$(tail -n "+$((baseline + 1))" "$COTN_LOG" | grep -oE '\[install-mods\] loaded [^ "]+ [^ "]+' || true)
+	shopt -s globstar nullglob
+	for file in "$bundleDir"/*/**/*.lua; do
+		file=${file#"$bundleDir"/}
+		total=$((total + 1))
+		if ! grep -qxF "[install-mods] loaded $reloadToken $file" <<<"$stamps"; then
+			missing+=("$file")
+		fi
+	done
+	echo "live-game-run: stamp check: $((total - ${#missing[@]})) of $total installed Lua files printed token $reloadToken" >&2
+	if ((${#missing[@]} > 0)); then
+		echo "live-game-run: stamp check: never printed it: ${missing[*]}" >&2
+	fi
+	stale=$(grep -vF "[install-mods] loaded $reloadToken " <<<"$stamps" | sort -u || true)
+	if [[ -n $stale ]]; then
+		echo "live-game-run: stamp check: older tokens printed since the install:" >&2
+		echo "${stale//\[install-mods\] loaded /  }" >&2
+	fi
+}
+
+if [[ ${ITJ_BUNDLE_STAMP_ALL:-} == 1 ]] && ((waitStatus != 4)); then
+	reportStamps
 fi
 
 tail -n "+$((baseline + 1))" "$COTN_LOG"

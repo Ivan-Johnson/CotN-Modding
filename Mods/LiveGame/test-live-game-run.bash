@@ -292,4 +292,37 @@ if [ "$(grep -vF "[install-mods] loaded" <<<"$stdout" | sed -n 1p)" != "the big 
 	fail "the big log's first new line was wrong:" "${stdout:0:200}"
 fi
 
+# ITJ_BUNDLE_STAMP_ALL stamps every installed Lua file, at any depth, with
+# the token and its path, keeping its lines; and stderr names each file the
+# game did not run (the fake game reads only <mod>/*.lua, so Sub/deep.lua
+# stays unloaded) and each older token the log gained.
+mkdir -p "$ITJ_MODS_ROOT/Alpha/Sub"
+echo "-- deep" >"$ITJ_MODS_ROOT/Alpha/Sub/deep.lua"
+grow 1 '[Debug] [info] "[install-mods] loaded 111-1 Beta/Beta.lua"' "the stamped end line"
+status=0
+stderr=$(ITJ_BUNDLE_STAMP_ALL=1 live-game-run --until "stamped end line" --stall 0 Alpha Beta 2>&1 >/dev/null) || status=$?
+wait "$growerPid"
+if ((status != 0)); then
+	fail "a stamped install failed (status $status); stderr was:" "$stderr"
+fi
+token=$(sed -n '1s/^print("\[install-mods\] loaded \([^ ]*\) Alpha\/Alpha.lua"); -- Alpha$/\1/p' "$bundle/Alpha/Alpha.lua")
+if [ -z "$token" ]; then
+	fail "Alpha/Alpha.lua was not stamped with its path:" "$(cat "$bundle/Alpha/Alpha.lua")"
+fi
+for file in Alpha/Sub/deep.lua Beta/Beta.lua; do
+	if [ "$(wc -l <"$bundle/$file")" != 1 ] || ! grep -qF "print(\"[install-mods] loaded $token $file\"); --" "$bundle/$file"; then
+		fail "$file was not stamped with the call's token and its path:" "$(cat "$bundle/$file")"
+	fi
+done
+if ! grep -qF "2 of 3 installed Lua files printed token $token" <<<"$stderr"; then
+	fail "the stamp check did not count the files that ran; stderr was:" "$stderr"
+fi
+if ! grep -qF "never printed it: Alpha/Sub/deep.lua" <<<"$stderr"; then
+	fail "the stamp check did not name the file that never ran; stderr was:" "$stderr"
+fi
+if ! grep -qxF "  111-1 Beta/Beta.lua" <<<"$stderr"; then
+	fail "the stamp check did not name the older token; stderr was:" "$stderr"
+fi
+rm -r "$ITJ_MODS_ROOT/Alpha/Sub"
+
 echo "live-game-run test passed"

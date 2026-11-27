@@ -27,6 +27,12 @@
 #   ITJ_BUNDLE_RELOAD_TOKEN     the token the trigger prints, as
 #                               "[install-mods] loaded <token>" (default: the
 #                               time in nanoseconds)
+#   ITJ_BUNDLE_STAMP_ALL        "1" to prefix line 1 of every installed Lua
+#                               file, the trigger too, with a print of
+#                               "[install-mods] loaded <token> <mod>/<path>",
+#                               so the log shows which files ran this copy.
+#                               Every file then changes on each install, so
+#                               the game reloads all of them each time.
 #   ITJ_BUNDLE_EXTRA_FILE       optional "<mod>/<file>" in the bundle to create
 #                               holding ITJ_BUNDLE_EXTRA_CONTENT, so the mod
 #                               sees it from its first load; a reinstall
@@ -92,13 +98,26 @@ if [[ -n ${ITJ_BUNDLE_RELOAD_TRIGGER:-} ]]; then
 		echo "install-mods: the reload trigger $ITJ_BUNDLE_RELOAD_TRIGGER is not a Lua file, so it cannot print the reload token" >&2
 		exit 1
 	fi
-	trigger="$stage/$ITJ_BUNDLE_RELOAD_TRIGGER"
-	token="${ITJ_BUNDLE_RELOAD_TOKEN:-$(date +%s%N)}"
+fi
+
+# stamp FILE TEXT: prefixes line 1 of FILE with a print of
+# "[install-mods] loaded TEXT"; prefixing line 1 keeps every line number.
+stamp() {
 	{
-		printf 'print("[install-mods] loaded %s"); ' "$token"
-		cat "$trigger"
-	} >"$trigger.new"
-	mv "$trigger.new" "$trigger"
+		printf 'print("[install-mods] loaded %s"); ' "$2"
+		cat "$1"
+	} >"$1.new"
+	mv "$1.new" "$1"
+}
+
+token="${ITJ_BUNDLE_RELOAD_TOKEN:-$(date +%s%N)}"
+if [[ ${ITJ_BUNDLE_STAMP_ALL:-} == 1 ]]; then
+	shopt -s globstar nullglob
+	for file in "$stage"/*/**/*.lua; do
+		stamp "$file" "$token ${file#"$stage"/}"
+	done
+elif [[ -n ${ITJ_BUNDLE_RELOAD_TRIGGER:-} ]]; then
+	stamp "$stage/$ITJ_BUNDLE_RELOAD_TRIGGER" "$token"
 fi
 
 if [[ -n ${ITJ_BUNDLE_EXTRA_FILE:-} ]]; then
