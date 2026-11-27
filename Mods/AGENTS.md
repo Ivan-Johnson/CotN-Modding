@@ -1,6 +1,6 @@
 # Mods
 
-The Synchrony mods themselves: `HelloWorld`, `GaryTheCowardlySheep`,
+The Synchrony mods themselves: `HelloWorld`, `MarvTheCowardlySheep`,
 `ScrapeGameData`, and `TestFramework`, a generic, reusable test-running
 framework any mod can optionally contribute test cases to.
 
@@ -18,9 +18,9 @@ do not: each group's role and what it is coupled to.
 * `TestFramework/`: the test framework. `api.lua` holds the test contract,
   `fixtures.lua` the shared helpers, and `TestFramework.lua` the framework's
   self-tests and the suite start.
-* `GaryTheCowardlySheep/`: the character mod for Muriel and her sheep Gary, and
-  its code tests in `gary-tests.lua`. Its game-design terms are in its own
-  `GLOSSARY.md`.
+* `MarvTheCowardlySheep/`: the character mod for Muriel and her sheep
+  Marv, and its code tests in `marv-tests.lua`. Its game-design terms are in
+  its own `GLOSSARY.md`.
 * `ScrapeGameData/`: the GameData context's scraper. Its `DATA` log lines are
   a format shared with `GameData/reassemble-scrape.bash`.
 * `LiveGame/`: the tooling that installs mods into the game and runs the

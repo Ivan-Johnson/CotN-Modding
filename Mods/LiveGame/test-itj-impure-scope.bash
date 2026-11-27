@@ -45,9 +45,9 @@ expect none Mods/ClaimTests/deleted.lua AuthoredDocs/Src/deleted.md
 expect tests.lua Mods/HelloWorld/HelloWorld.lua
 expect tests.lua Mods/HelloWorld/tests.lua
 expect "$(printf 'tests.lua\nweapons.lua')" Mods/HelloWorld/mod.json AuthoredDocs/Src/weapons.md
-expect gary-tests.lua Mods/GaryTheCowardlySheep/GaryTheCowardlySheep.lua
-expect "$(printf 'gary-tests.lua\ntests.lua')" Mods/GaryTheCowardlySheep/mod.json Mods/HelloWorld/tests.lua
-expect none Mods/GaryTheCowardlySheep/GLOSSARY.md
+expect marv-tests.lua Mods/MarvTheCowardlySheep/MarvTheCowardlySheep.lua
+expect "$(printf 'marv-tests.lua\ntests.lua')" Mods/MarvTheCowardlySheep/mod.json Mods/HelloWorld/tests.lua
+expect none Mods/MarvTheCowardlySheep/GLOSSARY.md
 
 # The harness runs everything, survey tests at their small sample except in
 # the files the other rules select.
