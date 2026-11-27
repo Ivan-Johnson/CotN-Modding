@@ -1,6 +1,6 @@
-local Action = require "necro.game.system.Action"
 local Damage = require "necro.game.system.Damage"
 local Entities = require "system.game.Entities"
+local Move = require "necro.game.system.Move"
 
 -- Optional dependency on TestFramework; see HelloWorld/tests.lua.
 local ok = pcall(require, "TestFramework.api")
@@ -12,8 +12,8 @@ local marvMod = require "MarvTheCowardlySheep.MarvTheCowardlySheep"
 
 -- Each test plays Muriel in no-beat mode on an open floor.
 -- Muriel starts at (0,0) sharing Marv's tile; "up" is toward negative y. Two
--- steps right leave Muriel at (2,0) and Marv at (1,0) facing right, so his
--- Fright zone is x in {-1, 0}, y in {-1, 0, 1}.
+-- steps right leave Muriel at (2,0) and Marv at (1,0), so his Fright zone is
+-- x in -4..0, y in -2..2, less any tile a wall hides from him.
 
 local function sheep()
 	return Entities.getEntityByID(fixtures.player().characterWithFollower.followerID)
@@ -38,118 +38,138 @@ scene("murielIsNamedMuriel", { "idle" }, {
 	end,
 })
 
-scene("hostileEnemyBehindCoweringMarvFrightensHimToDeath", { "right", "right", "idle" }, {
-	[2] = function()
-		fixtures.assertAt(sheep(), 1, 0, "Marv trails Muriel")
-		fixtures.spawn("Slime", 0, 1)
-	end,
-	[3] = function()
-		assertDead("a green slime two tiles away, in the Fright zone")
-	end,
-})
-
--- Muriel steps onto Marv's tile, which he does not leave, then into his Fright
--- zone, while a green slime two tiles to his side keeps him Cowering.
-local function murielBacksIntoMarv(name, prepare, verdict)
-	scene(name, { "right", "right", "left", "left" }, {
-		[2] = prepare,
-		[3] = function()
-			fixtures.assertAt(sheep(), 1, 0, "Marv stays put as Muriel steps onto his tile")
-			assertAlive("Muriel sharing Marv's tile")
+-- Two steps right put Marv between Muriel and the Fright zone; then spawn()
+-- runs, and the turn after shows whether Marv died.
+local function sceneWithMarvBetween(name, spawn, verdict)
+	scene(name, { "right", "right", "idle" }, {
+		[2] = function()
+			fixtures.assertAt(sheep(), 1, 0, "Marv trails Muriel")
+			spawn()
 		end,
-		[4] = verdict,
+		[3] = verdict,
 	})
 end
 
-murielBacksIntoMarv("murielBehindCoweringMarvFrightensHimToDeath", function()
-	fixtures.spawn("Slime", 1, 2)
+sceneWithMarvBetween("hostileEnemyInFrightZoneFrightensMarvToDeath", function()
+	fixtures.spawn("Slime", -4, 2)
 end, function()
-	assertDead("Muriel directly behind Marv while a slime is two tiles away")
+	assertDead("a green slime in the far corner of the Fright zone")
 end)
 
-murielBacksIntoMarv("enemyThreeTilesAwayLeavesMarvCalm", function()
-	fixtures.spawn("Slime", 1, 3)
+sceneWithMarvBetween("hostileEnemyOnFrightZoneNearEdgeFrightensMarvToDeath", function()
+	fixtures.spawn("Slime", 0, -2)
 end, function()
-	assertAlive("Muriel behind Marv while the only slime is three tiles away")
+	assertDead("a green slime on the Fright zone's near edge")
 end)
 
-murielBacksIntoMarv("wallDoesNotShieldMarvFromCowering", function()
+-- Marv moved to (0,-1), two tiles over and one up from Muriel, puts his
+-- Fright zone on his diagonal: x in -5..-1, y in -6..-2. Muriel teleported
+-- instead would bring him along.
+local function murielOffAxis(name, spawnX, spawnY, verdict)
+	sceneWithMarvBetween(name, function()
+		Move.absolute(sheep(), 0, -1, Move.Type.TELEPORT)
+		fixtures.spawn("Slime", spawnX, spawnY)
+	end, function()
+		fixtures.assertAt(sheep(), 0, -1, "Marv stays where he was teleported")
+		verdict()
+	end)
+end
+
+murielOffAxis("offAxisMurielPutsFrightZoneOnDiagonal", -2, -3, function()
+	assertDead("a slime in the diagonal Fright zone")
+end)
+
+murielOffAxis("offAxisMurielLeavesStraightZoneSafe", -1, -1, function()
+	assertAlive("a slime in the straight zone but not the diagonal one")
+end)
+
+sceneWithMarvBetween("hostileEnemyPastFrightZoneLeavesMarvAlive", function()
+	fixtures.spawn("Slime", -4, 3)
+	fixtures.spawn("Slime", -5, 0)
+end, function()
+	assertAlive("slimes just past the Fright zone")
+end)
+
+sceneWithMarvBetween("hostileEnemyBesideMarvLeavesHimAlive", function()
 	fixtures.spawn("Slime", 1, 2)
+end, function()
+	assertAlive("a slime two tiles to Marv's side, outside the Fright zone")
+end)
+
+sceneWithMarvBetween("wallHidesEnemyFromMarv", function()
+	fixtures.wallColumn(0, -1, 1)
+	fixtures.spawn("Slime", -2, 0)
+end, function()
+	assertAlive("a slime in the Fright zone's square, behind a wall")
+end)
+
+-- Line of sight passes between two diagonally touching walls.
+sceneWithMarvBetween("diagonalGapDoesNotHideEnemy", function()
+	fixtures.wallColumn(0, 0, 0)
 	fixtures.wallColumn(1, 1, 1)
+	fixtures.spawn("Slime", -1, 2)
 end, function()
-	assertDead("Muriel behind Marv while a slime two tiles away is behind a wall")
+	assertDead("a slime seen through a diagonal gap between walls")
 end)
 
-murielBacksIntoMarv("unprovokedShopkeeperLeavesMarvCalm", function()
-	fixtures.spawn("Shopkeeper", 1, 2)
-end, function()
-	assertAlive("Muriel behind Marv while the only enemy near is an unprovoked shopkeeper")
-end)
-
-scene("unprovokedShopkeeperBehindMarvLeavesHimAlive", { "right", "right", "idle" }, {
+scene("murielOnMarvDisablesFrightZone", { "right", "right", "left", "idle" }, {
 	[2] = function()
-		fixtures.spawn("Slime", 1, 2)
-		fixtures.spawn("Shopkeeper", 0, 0)
+		fixtures.spawn("Slime", -2, 0)
 	end,
 	[3] = function()
-		assertAlive("an unprovoked shopkeeper in the Fright zone of a Cowering Marv")
+		fixtures.assertAt(sheep(), 1, 0, "Marv stays put as Muriel steps onto his tile")
+	end,
+	[4] = function()
+		assertAlive("a slime in the old Fright zone while Muriel shares Marv's tile")
 	end,
 })
+
+-- Once Muriel walks past Marv to his other side, the Fright zone flips.
+scene("frightZoneFollowsMurielsSide", { "right", "right", "left", "left" }, {
+	[3] = function()
+		fixtures.spawn("Slime", 4, 0)
+	end,
+	[4] = function()
+		fixtures.assertAt(sheep(), 1, 0, "Marv stays put as Muriel passes him")
+		assertDead("a slime on Marv's far side from Muriel")
+	end,
+})
+
+sceneWithMarvBetween("unprovokedShopkeeperInFrightZoneLeavesMarvAlive", function()
+	fixtures.spawn("Shopkeeper", -2, 0)
+end, function()
+	assertAlive("an unprovoked shopkeeper in the Fright zone")
+end)
 
 -- A provoked shopkeeper kills Muriel within a turn of reaching her, so he starts
--- behind Marv, who stands between them, and chasing her keeps him in the
--- Fright zone.
-scene("provokedShopkeeperBehindMarvFrightensHimToDeath", { "right", "right", "idle" }, {
-	[2] = function()
-		local keeper = fixtures.spawn("Shopkeeper", -1, 0)
-		Damage.inflict({
-			victim = keeper,
-			attacker = fixtures.player(),
-			damage = 1,
-			type = Damage.Type.EXPLOSIVE,
-		})
-		assert(keeper.provokable.active, "the explosion provoked the shopkeeper")
-	end,
-	[3] = function()
-		assertDead("a provoked shopkeeper in the Fright zone")
-	end,
-})
+-- behind Marv, who stands between them.
+sceneWithMarvBetween("provokedShopkeeperInFrightZoneFrightensMarvToDeath", function()
+	local keeper = fixtures.spawn("Shopkeeper", -1, 0)
+	Damage.inflict({
+		victim = keeper,
+		attacker = fixtures.player(),
+		damage = 1,
+		type = Damage.Type.EXPLOSIVE,
+	})
+	assert(keeper.provokable.active, "the explosion provoked the shopkeeper")
+end, function()
+	assertDead("a provoked shopkeeper in the Fright zone")
+end)
 
 -- The game puts crates and barrels on a team hostile to Marv, but they are not
--- enemies: near him they do not make him Cower, and in his Fright zone they
--- cause no Death by fright. Crate2 is the barrel.
+-- enemies, so they cause no Death by fright. Crate2 is the barrel.
 for _, containerType in ipairs({ "Crate", "Crate2" }) do
-	scene(containerType .. "BehindCoweringMarvLeavesHimAlive", { "right", "right", "idle" }, {
-		[2] = function()
-			fixtures.spawn("Slime", 1, 2)
-			fixtures.spawn(containerType, 0, 1)
-		end,
-		[3] = function()
-			assertAlive(containerType .. " in the Fright zone of a Cowering Marv")
-		end,
-	})
-
-	murielBacksIntoMarv(containerType .. "NearMarvLeavesHimCalm", function()
-		fixtures.spawn(containerType, 1, 2)
+	sceneWithMarvBetween(containerType .. "InFrightZoneLeavesMarvAlive", function()
+		fixtures.spawn(containerType, 0, 1)
 	end, function()
-		assertAlive("Muriel behind Marv while the only thing near is a " .. containerType)
+		assertAlive(containerType .. " in the Fright zone")
 	end)
 end
 
 -- A dormant exploding mushroom is provokable and unprovoked, like a shopkeeper.
-murielBacksIntoMarv("dormantExplodingMushroomLeavesMarvCalm", function()
-	local mushroom = fixtures.spawn("MushroomExploding", 1, 2)
+sceneWithMarvBetween("dormantExplodingMushroomInFrightZoneLeavesMarvAlive", function()
+	local mushroom = fixtures.spawn("MushroomExploding", -1, 1)
 	assert(not mushroom.provokable.active, "the exploding mushroom is unprovoked")
 end, function()
-	assertAlive("Muriel behind Marv while the only enemy near is a dormant exploding mushroom")
+	assertAlive("a dormant exploding mushroom in the Fright zone")
 end)
-
-scene("marvFacingDiagonallyHasNoFrightZone", { "right", "right", "idle" }, {
-	[2] = function()
-		sheep().facingDirection.direction = Action.Direction.UP_RIGHT
-		fixtures.spawn("Slime", 0, 1)
-	end,
-	[3] = function()
-		assertAlive("a slime diagonally behind Marv while he faces diagonally")
-	end,
-})

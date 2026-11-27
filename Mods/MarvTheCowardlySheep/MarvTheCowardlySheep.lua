@@ -1,11 +1,11 @@
--- Marv the Cowardly Sheep: Muriel, a copy of Mary whose sheep, Marv, cowers
--- while a hostile enemy is near and dies of fright if something gets behind
--- him then.
+-- Marv the Cowardly Sheep: Muriel, a copy of Mary whose sheep, Marv, dies of
+-- fright if a hostile enemy he can see is on his far side from her.
 -- Terms: GLOSSARY.md beside this file.
-local Action = require "necro.game.system.Action"
+local Collision = require "necro.game.tile.Collision"
 local Color = require "system.utils.Color"
 local CustomEntities = require "necro.game.data.CustomEntities"
 local Entities = require "system.game.Entities"
+local LineOfSight = require "necro.game.system.LineOfSight"
 local Map = require "necro.game.object.Map"
 local Object = require "necro.game.object.Object"
 local Render = require "necro.render.Render"
@@ -51,9 +51,8 @@ local NOT_COPIED = {
 
 -- Vanilla Marv is the entity type Marv, which no template reaches, so Marv is
 -- a copy of Vanilla Marv's finished definition, added once every custom entity
--- is built. Vanilla Marv has no gameplay facing, so Marv gets one; Muriel gets
--- her own display name and every component of Mary's that the XML template
--- left out.
+-- is built. Muriel gets her own display name and every component of Mary's
+-- that the XML template left out.
 event.entitySchemaGenerate.add("addMarv", { order = "customEntities", sequence = 1 }, function(ev)
 	local mary
 	local vanillaMarv
@@ -75,17 +74,15 @@ event.entitySchemaGenerate.add("addMarv", { order = "customEntities", sequence =
 	character.friendlyName = { name = MURIEL }
 	local sheep = Utilities.deepCopy(vanillaMarv)
 	sheep.name = M.SHEEP
-	sheep.facingDirection = {}
-	sheep.turnStartPosition = {}
 	ev.entityTypes[#ev.entityTypes + 1] = sheep
 	character.characterWithFollower.followerType = M.SHEEP
 end)
 
--- The Cower zone's reach, by taxicab distance and regardless of walls.
-local COWER_DISTANCE = 2
+-- The Fright zone is a 5x5 square: FRIGHT_REACH tiles either side of its
+-- centre tile.
+local FRIGHT_REACH = 2
 
 local FRIGHT_ZONE_COLOR = Color.rgba(255, 0, 0, 96)
-local COWER_ZONE_COLOR = Color.rgba(255, 255, 0, 96)
 
 -- Calls fn(character, marv) for each living Marv and the Muriel player he follows.
 local function eachMarv(fn)
@@ -108,100 +105,61 @@ local function isHostileEnemy(marv, entity)
 		and not (entity.provokable and not entity.provokable.active)
 end
 
--- Whether any entity on the {x, y} tiles satisfies predicate(entity).
-local function anyOn(tiles, predicate)
-	for _, tile in ipairs(tiles) do
-		for _, entityID in ipairs(Map.getAll(tile[1], tile[2])) do
-			local entity = Entities.getEntityByID(entityID)
-			if entity and predicate(entity) then
-				return true
+local function sign(n)
+	if n > 0 then
+		return 1
+	elseif n < 0 then
+		return -1
+	end
+	return 0
+end
+
+-- The Fright zone's tiles, as {x, y} pairs: the square on the far side of
+-- Marv from Muriel, its near edge or corner touching his tile, keeping only the tiles Marv
+-- has line of sight to through walls. Empty while Muriel shares his tile.
+local function frightZone(character, marv)
+	local mx = marv.position.x
+	local my = marv.position.y
+	local dx = sign(mx - character.position.x)
+	local dy = sign(my - character.position.y)
+	if dx == 0 and dy == 0 then
+		return {}
+	end
+	local centerX = mx + dx * (FRIGHT_REACH + 1)
+	local centerY = my + dy * (FRIGHT_REACH + 1)
+	local tiles = {}
+	for y = centerY - FRIGHT_REACH, centerY + FRIGHT_REACH do
+		for x = centerX - FRIGHT_REACH, centerX + FRIGHT_REACH do
+			-- check returns the blocking tile, or nothing when the line is clear.
+			if not LineOfSight.check(mx, my, x, y, Collision.Type.WALL) then
+				tiles[#tiles + 1] = { x, y }
 			end
 		end
 	end
-	return false
-end
-
--- The Cower zone's tiles, as {x, y} pairs.
-local function cowerZone(marv)
-	local tiles = {}
-	for dx = -COWER_DISTANCE, COWER_DISTANCE do
-		local reach = COWER_DISTANCE - math.abs(dx)
-		for dy = -reach, reach do
-			tiles[#tiles + 1] = { marv.position.x + dx, marv.position.y + dy }
-		end
-	end
 	return tiles
-end
-
-local function cowers(marv)
-	return anyOn(cowerZone(marv), function(entity)
-		return isHostileEnemy(marv, entity)
-	end)
-end
-
--- The Fright zone's tiles, as {x, y} pairs; empty when he has none.
-local function frightZone(marv)
-	local direction = marv.facingDirection.direction
-	local dx = Action.dx(direction)
-	local dy = Action.dy(direction)
-	if (dx == 0) == (dy == 0) then
-		return {}
-	end
-	local tiles = {}
-	for depth = 1, 2 do
-		for side = -1, 1 do
-			tiles[#tiles + 1] = {
-				marv.position.x - depth * dx - side * dy,
-				marv.position.y - depth * dy + side * dx,
-			}
-		end
-	end
-	return tiles
-end
-
--- The game never sets a follower's facing as it moves, so this sets Marv's
--- Facing from his move this turn.
-local function updateFacing(marv)
-	local dx = marv.position.x - marv.turnStartPosition.x
-	local dy = marv.position.y - marv.turnStartPosition.y
-	if dx ~= 0 or dy ~= 0 then
-		marv.facingDirection.direction = Action.getDirection(dx, dy)
-	end
-end
-
-local function frightens(character, marv, entity)
-	return entity.id == character.id or isHostileEnemy(marv, entity)
 end
 
 -- Once per turn, after all movement (traps included) has resolved.
 event.turn.add("frightenMarv", { order = "nextTurnEffect", sequence = 1 }, function()
 	eachMarv(function(character, marv)
-		updateFacing(marv)
-		local frightened = cowers(marv)
-			and anyOn(frightZone(marv), function(entity)
-				return frightens(character, marv, entity)
-			end)
-		if frightened then
-			Object.kill(marv)
+		for _, tile in ipairs(frightZone(character, marv)) do
+			for _, entityID in ipairs(Map.getAll(tile[1], tile[2])) do
+				local entity = Entities.getEntityByID(entityID)
+				if entity and isHostileEnemy(marv, entity) then
+					Object.kill(marv)
+					return
+				end
+			end
 		end
 	end)
 end)
 
--- Highlights the Fright zone while Marv Cowers, and the Cower zone otherwise.
+-- Highlights the Fright zone.
 event.render.add("renderMarvZones", { order = "tells" }, function()
 	local buffer = Render.getBuffer(Render.Buffer.FLOOR)
-	eachMarv(function(_, marv)
-		local tiles
-		local color
-		if cowers(marv) then
-			tiles = frightZone(marv)
-			color = FRIGHT_ZONE_COLOR
-		else
-			tiles = cowerZone(marv)
-			color = COWER_ZONE_COLOR
-		end
-		for _, tile in ipairs(tiles) do
-			buffer.draw({ rect = { Render.tileRect(tile[1], tile[2], 1, 1) }, color = color })
+	eachMarv(function(character, marv)
+		for _, tile in ipairs(frightZone(character, marv)) do
+			buffer.draw({ rect = { Render.tileRect(tile[1], tile[2], 1, 1) }, color = FRIGHT_ZONE_COLOR })
 		end
 	end)
 end)

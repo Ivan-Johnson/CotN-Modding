@@ -3,7 +3,7 @@
 	"displayName": "Marv the Cowardly Sheep",
 	"version": "0.1.0",
 	"synchronyVersion": "4.2.1",
-	"description": "Muriel, a copy of Mary whose sheep Marv is a coward: he dies of fright if anything gets behind him while an enemy is near.",
+	"description": "Muriel, a copy of Mary whose sheep Marv is a coward: he dies of fright if he sees an enemy on his far side from her.",
 	"author": "error 255",
 	"dependencies": {},
 	"api": {"scriptPath":""},
