@@ -78,9 +78,12 @@ event.entitySchemaGenerate.add("addMarv", { order = "customEntities", sequence =
 	character.characterWithFollower.followerType = M.SHEEP
 end)
 
--- The Fright zone is based on a 5x5 square: FRIGHT_REACH tiles either side of
--- its centre tile.
+-- Straight behind Marv, the Fright zone is based on a 5x5 square:
+-- STRAIGHT_DEPTH tiles deep and FRIGHT_REACH tiles either side of his row or
+-- column. Diagonally, it is a DIAGONAL_DEPTH square.
+local STRAIGHT_DEPTH = 5
 local FRIGHT_REACH = 2
+local DIAGONAL_DEPTH = 2
 
 local FRIGHT_ZONE_COLOR = Color.rgba(255, 0, 0, 96)
 
@@ -116,8 +119,9 @@ end
 
 -- The Fright zone's tiles, as {x, y} pairs: the square on the far side of
 -- Marv from Muriel, its near edge or corner touching his tile, less the
--- leading corners (the two ends of a near edge), keeping only the tiles Marv
--- has line of sight to through walls. Empty while Muriel shares his tile.
+-- leading corners (the two ends of a straight square's near edge), keeping
+-- only the tiles Marv has line of sight to through walls. Empty while Muriel
+-- shares his tile.
 local function frightZone(character, marv)
 	local mx = marv.position.x
 	local my = marv.position.y
@@ -126,11 +130,22 @@ local function frightZone(character, marv)
 	if dx == 0 and dy == 0 then
 		return {}
 	end
-	local centerX = mx + dx * (FRIGHT_REACH + 1)
-	local centerY = my + dy * (FRIGHT_REACH + 1)
+	local zoneDepth = STRAIGHT_DEPTH
+	if dx ~= 0 and dy ~= 0 then
+		zoneDepth = DIAGONAL_DEPTH
+	end
+	-- The first, last and step of the zone's tiles along one axis.
+	local function span(m, d)
+		if d == 0 then
+			return m - FRIGHT_REACH, m + FRIGHT_REACH, 1
+		end
+		return m + d, m + d * zoneDepth, d
+	end
+	local firstX, lastX, stepX = span(mx, dx)
+	local firstY, lastY, stepY = span(my, dy)
 	local tiles = {}
-	for y = centerY - FRIGHT_REACH, centerY + FRIGHT_REACH do
-		for x = centerX - FRIGHT_REACH, centerX + FRIGHT_REACH do
+	for y = firstY, lastY, stepY do
+		for x = firstX, lastX, stepX do
 			local depth = (x - mx) * dx + (y - my) * dy
 			-- Only a straight square has tiles at depth 1.
 			local leadingCorner = depth == 1 and math.abs(x - mx) + math.abs(y - my) == FRIGHT_REACH + 1

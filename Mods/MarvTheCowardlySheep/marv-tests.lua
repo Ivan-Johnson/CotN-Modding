@@ -71,7 +71,7 @@ end, function()
 end)
 
 -- Marv moved to (0,-1), two tiles over and one up from Muriel, puts his
--- Fright zone on his diagonal: x in -5..-1, y in -6..-2. Muriel teleported
+-- Fright zone on his diagonal: x in -2..-1, y in -3..-2. Muriel teleported
 -- instead would bring him along.
 local function murielOffAxis(name, spawnX, spawnY, verdict)
 	sceneWithMarvBetween(name, function()
@@ -85,6 +85,10 @@ end
 
 murielOffAxis("offAxisMurielPutsFrightZoneOnDiagonal", -2, -3, function()
 	assertDead("a slime in the diagonal Fright zone")
+end)
+
+murielOffAxis("diagonalFrightZoneIsTwoByTwo", -3, -3, function()
+	assertAlive("a slime just past the diagonal Fright zone")
 end)
 
 murielOffAxis("offAxisMurielLeavesStraightZoneSafe", -1, -1, function()
