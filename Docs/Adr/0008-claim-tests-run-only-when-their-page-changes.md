@@ -19,6 +19,10 @@ on most commits and pushes.
 * **Install `HelloWorld` during claim runs, and run every claim test when
   its code changes.** Rejected in favour of never installing it with claim
   tests, which keeps a claim test's levels the same in every run.
+* **Skip survey tests on a harness change, and run them only when their own
+  file or page changes.** Rejected: they use harness code no other test
+  does (`fixtures.zoneCensus`, many runs back to back), so a harness change
+  could break them unseen until their page next changed.
 
 ## Consequences
 
@@ -31,8 +35,11 @@ on most commits and pushes.
   one more game reload.
 * A change to the harness (`Mods/TestFramework/`, the runner and install
   scripts in `Mods/LiveGame/`, `Mods/flake-module.nix`, `flake.nix`,
-  `flake.lock`) runs every test. A path that no list names also runs every
-  test, so that the scope fails safe. The offline tests
+  `flake.lock`) runs every test, but each survey test takes its small
+  sample: a few runs or trials that exercise the same code, with the
+  assertions that need the full sample skipped. A survey test whose own file
+  or page also changed keeps its full sample. A path that no list names runs
+  every test at full size, so that the scope fails safe. The offline tests
   (`Mods/LiveGame/test-*`) are not harness: `nix flake check` runs them, and
   the live suite never reads them.
 * A push applies the same rule to each pushed commit. A manual

@@ -26,7 +26,9 @@ for mod in HelloWorld TestFramework; do
 done
 touch "$goodRepo/Mods/TestFramework/api.lua"
 export ITJ_MODS_ROOT="$goodRepo/Mods"
-export ITJ_GAME_STALL_SECONDS=2
+# live-game-run counts a stall in whole seconds, so S can fire after S - 1 s;
+# a fake pass takes about 1.2 s.
+export ITJ_GAME_STALL_SECONDS=3
 startFakeGame "$modsDir/DevBundle" "$COTN_LOG" "$scratch/frozen"
 
 # Help prints the usage text and exits 0 without installing anything.
@@ -59,6 +61,7 @@ expectUsageError "unknown option --bogus" --bogus
 # like a pass.
 expectUsageError "unexpected arguments: scratchB scratchC" scratchA scratchB scratchC
 expectUsageError "unexpected arguments: b.lua" --files a.lua b.lua
+expectUsageError "unexpected arguments: b.lua" --small-samples a.lua b.lua
 expectUsageError "--files needs a comma-separated list" --files
 
 # A game whose log goes silent fails the run, and the restart instruction
@@ -185,6 +188,52 @@ fi
 
 if ! grep -qxF "expect: tests.lua other-tests.lua" "$modsDir/DevBundle/TestFramework/selected-test.txt"; then
 	echo "FAIL: the code pass did not expect every code test file" >&2
+	exit 1
+fi
+
+# A small-sample run runs both passes, each told which files keep their full
+# sample. The fake suite completes each pass once the game has loaded its
+# install, saving the selection that pass installed.
+selectionFile="$modsDir/DevBundle/TestFramework/selected-test.txt"
+loads=$(grep -c "\[install-mods\] loaded" "$COTN_LOG")
+(
+	for pass in code claim; do
+		loads=$((loads + 1))
+		for _ in $(seq 100); do
+			if (($(grep -c "\[install-mods\] loaded" "$COTN_LOG") >= loads)); then
+				break
+			fi
+			sleep 0.1
+		done
+		cp "$selectionFile" "$scratch/$pass-selection.txt"
+		# The next install must land in a later second: rsync's quick check
+		# compares size and whole-second mtime, and the reload file of the
+		# next pass has the same size.
+		sleep 1.1
+		echo "[TestFramework] PASS fake${pass}Test" >>"$COTN_LOG"
+		echo '[TestFramework] Test suite completed: 0 failure(s)' >>"$COTN_LOG"
+	done
+) &
+growerPid=$!
+status=0
+stdout=$(itj-impure-tests --small-samples weapons.lua 2>&1) || status=$?
+wait "$growerPid"
+
+if ((status != 0)) || ! grep -qF "all tests pass: 2 PASS" <<<"$stdout"; then
+	echo "FAIL: a small-sample run did not pass both passes (status $status); output was:" >&2
+	echo "$stdout" >&2
+	exit 1
+fi
+
+for pass in code claim; do
+	if ! grep -qxF "small-samples-except: weapons.lua" "$scratch/$pass-selection.txt"; then
+		echo "FAIL: the $pass pass was not told which files keep their full sample:" >&2
+		cat "$scratch/$pass-selection.txt" >&2
+		exit 1
+	fi
+done
+if grep -q "^file:" "$scratch/code-selection.txt" || ! grep -qxF "file: weapons.lua" "$scratch/claim-selection.txt"; then
+	echo "FAIL: a small-sample run did not select every test of each pass" >&2
 	exit 1
 fi
 

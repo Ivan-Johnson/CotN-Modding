@@ -190,7 +190,10 @@ let
         # see `Mods/LiveGame/itj-impure-scope.bash`.
         impureScope = pkgs.writeShellApplication {
                 name = "itj-impure-scope";
-                runtimeInputs = [ pkgs.git ];
+                runtimeInputs = [
+                        pkgs.coreutils
+                        pkgs.git
+                ];
                 text = builtins.readFile ./LiveGame/itj-impure-scope.bash;
         };
 
@@ -247,7 +250,7 @@ in
                 itj-impure-scope = {
                         type = "app";
                         program = "${impureScope}/bin/itj-impure-scope";
-                        meta.description = "Print none, all, or the test files that the changed paths on stdin can affect";
+                        meta.description = "Print none, all, small-sample args, or the test files that the changed paths on stdin can affect";
                 };
         };
 

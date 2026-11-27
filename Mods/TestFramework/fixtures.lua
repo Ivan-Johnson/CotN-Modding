@@ -119,9 +119,13 @@ Surveys the regular levels (floors 1 to 3) of one zone as Cadence, over
 all-zones runs, or single-zone runs if singleZone is set (zone 1 only):
 census.levels is the number of levels surveyed, and census.tiles and
 census.entities map each tile and entity type name to the number of those
-levels that hold it. Give the test a timeoutTicks of about 1500 per run.
+levels that hold it. Give the test a timeoutTicks of about 1500 per run. For
+a small sample (api.smallSample) it surveys one run.
 ]]
 local function zoneCensus(zone, runs, singleZone, andThen)
+	if testsApi.smallSample() then
+		runs = 1
+	end
 	local mode = singleZone and GameSession.Mode.SingleZone or GameSession.Mode.AllZones
 	local census = { levels = 0, tiles = {}, entities = {} }
 	local run, floor = 0, 3
@@ -179,7 +183,12 @@ local function zoneCensus(zone, runs, singleZone, andThen)
 end
 
 -- Asserts that each of names is a key of counts, such as a zoneCensus map.
+-- Asserts nothing for a small sample (api.smallSample), which a rare name can
+-- miss.
 local function assertAllPresent(counts, names, what)
+	if testsApi.smallSample() then
+		return
+	end
 	local missing = {}
 	for _, name in ipairs(names) do
 		if not counts[name] then

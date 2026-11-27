@@ -337,6 +337,13 @@ A live test that backs a claim made in one authored doc. Each file of claim
 tests backs exactly one doc.
 _Avoid_: Doc test, docs test
 
+**Survey test**:
+A live test whose claim holds over a sample: odds, or what a set of levels
+holds, drawn over many runs or trials. When only the harness changed, it
+takes its small sample (`api.smallSample`), which exercises the same code
+without the assertions that need the full sample (ADR 0008).
+_Avoid_: Statistical test, slow test
+
 **Test framework**:
 The **Mod** `TestFramework`, which mods optionally `require` to register
 **Code tests** and **Claim tests**, and which runs them. It never depends on a

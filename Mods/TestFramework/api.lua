@@ -114,8 +114,10 @@ end
 -- Selects which tests run; `Mods/LiveGame/itj-impure-tests.bash` has
 -- live-game-run write it, and without it the whole suite runs. A line
 -- `expect: a.lua b.lua` names the files that must have registered a test
--- before the suite starts. Of the other lines, the first non-empty one is the
--- selection: a bare line is the exact name of one test, and
+-- before the suite starts. A line `small-samples-except: a.lua b.lua` makes
+-- every survey test take its small sample (smallSample, below), except those
+-- registered by the listed files. Of the other lines, the first non-empty one
+-- is the selection: a bare line is the exact name of one test, and
 -- `file: a.lua b.lua` selects every test registered by those files; with
 -- none, every test runs.
 local SELECTED_TEST_FILE = findOwnDirectory() .. "/selected-test.txt"
@@ -131,22 +133,27 @@ end
 
 -- Parses the text of SELECTED_TEST_FILE (format above; "" when the file is
 -- missing). Returns the selection (nil, or "name" and a test name, or "files"
--- and a set of basenames) and then the set of expected files, or nil.
+-- and a set of basenames), then the set of expected files, or nil, and then
+-- the set of files whose survey tests keep their full sample when the others
+-- take their small one, or nil when every test takes its full sample.
 local function parseSelection(text)
-	local kind, selected, expected
+	local kind, selected, expected, fullSample
 	for line in text:gmatch("[^\n]+") do
 		line = line:match("^%s*(.-)%s*$")
 		local expectList = line:match("^expect:%s*(.*)$")
 		local fileList = line:match("^file:%s*(.*)$")
+		local fullList = line:match("^small%-samples%-except:%s*(.*)$")
 		if expectList then
 			expected = basenameSet(expectList)
+		elseif fullList then
+			fullSample = basenameSet(fullList)
 		elseif not kind and fileList then
 			kind, selected = "files", basenameSet(fileList)
 		elseif not kind and line ~= "" then
 			kind, selected = "name", line
 		end
 	end
-	return kind, selected, expected
+	return kind, selected, expected, fullSample
 end
 
 -- Whether a selection, as parseSelection returns it, keeps the test. A test
@@ -165,6 +172,20 @@ local failureCount = 0
 -- the test's PASS/FAIL line, so a test can answer a question about the game
 -- instead of only asserting. Call it from onLoad; value is printed with
 -- tostring().
+-- The files whose survey tests keep their full sample, as parseSelection
+-- returns it: nil until the suite starts, and for a run at full size.
+local fullSampleFiles = nil
+
+-- Whether the running survey test should take its small sample: a few runs or
+-- trials that exercise the same code, with the assertions that need the full
+-- sample skipped. `nix run .#itj-impure-tests -- --small-samples` asks for
+-- it, as the hooks do when only the harness changed (ADR 0008). A test with
+-- no file tag keeps its full sample.
+local function smallSample()
+	assert(currentTest, "smallSample may only be called from a running test")
+	return fullSampleFiles ~= nil and currentTest.file ~= nil and not fullSampleFiles[currentTest.file]
+end
+
 local function observe(key, value)
 	assert(currentTest, "observe may only be called from a running test's onLoad")
 	print(string.format("[TestFramework] OBSERVED %s %s=%s", currentTest.name, key, tostring(value)))
@@ -619,7 +640,8 @@ local function start()
 	end
 	started = true
 	local text = FileIO.exists(SELECTED_TEST_FILE) and FileIO.readFileToString(SELECTED_TEST_FILE, 4096) or ""
-	local kind, selected, expected = parseSelection(text)
+	local kind, selected, expected, fullSample = parseSelection(text)
+	fullSampleFiles = fullSample
 	waitForFiles(expected or {}, tests, EXPECT_TIMEOUT_TICKS, function()
 		runSuite(kind, selected)
 	end, function(missing)
@@ -650,6 +672,7 @@ return {
 	registerTest = registerTest,
 	send = send,
 	setSeedOverride = setSeedOverride,
+	smallSample = smallSample,
 	start = start,
 	waitForFiles = waitForFiles,
 }

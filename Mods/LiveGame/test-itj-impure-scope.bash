@@ -49,17 +49,26 @@ expect gary-tests.lua Mods/GaryTheCowardlySheep/GaryTheCowardlySheep.lua
 expect "$(printf 'gary-tests.lua\ntests.lua')" Mods/GaryTheCowardlySheep/mod.json Mods/HelloWorld/tests.lua
 expect none Mods/GaryTheCowardlySheep/GLOSSARY.md
 
-# The harness, and anything no rule names, runs everything.
+# The harness runs everything, survey tests at their small sample except in
+# the files the other rules select.
+small="args: --small-samples"
+expect "$small" Mods/TestFramework/README.md
+expect "$small" Mods/LiveGame/install-mods.bash
+expect "$small" Mods/LiveGame/live-game-run.bash Mods/LiveGame/test-live-game-run.bash
+expect "$small" Mods/LiveGame/itj-impure-tests.bash
+expect "$small" Mods/LiveGame/itj-impure-scope.bash
+expect "$small" Mods/LiveGame/bundle-layout.lua
+expect "$small" Mods/flake-module.nix flake.nix flake.lock
+expect "$small" Docs/a.md Mods/TestFramework/api.lua
+expect "$small weapons.lua" Mods/ClaimTests/weapons.lua Mods/TestFramework/api.lua
+expect "$small bombs.lua,tests.lua" flake.nix AuthoredDocs/Src/bombs.md Mods/HelloWorld/mod.json
+expect "$small" Mods/TestFramework/api.lua Mods/ClaimTests/deleted.lua
+
+# Anything no rule names runs everything at full size, even beside the harness.
 expect all Mods/ClaimTests/sub/weapons.lua
 expect all Mods/ClaimTests/mod.json
-expect all Mods/ClaimTests/weapons.lua Mods/TestFramework/api.lua
-expect all Mods/TestFramework/README.md
-expect all Mods/LiveGame/install-mods.bash
-expect all Mods/LiveGame/live-game-run.bash Mods/LiveGame/test-live-game-run.bash
-expect all Mods/LiveGame/itj-impure-tests.bash
-expect all Mods/LiveGame/itj-impure-scope.bash
-expect all Mods/LiveGame/bundle-layout.lua
-expect all Mods/flake-module.nix flake.nix flake.lock
+expect all Mods/TestFramework/api.lua Mods/unknown.txt
+expect all Mods/unknown.txt Mods/TestFramework/api.lua
 expect all Docs/a.md Mods/unknown.txt
 expect all some/new/place.txt
 expect all

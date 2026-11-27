@@ -69,6 +69,13 @@ it as a regression test with real assertions.
   `async = true` and drive it with `api.play`; read "No-beat mode" below
   first. Check `fixtures.lua` before writing your own scene, wallColumn,
   health or assertAt helper.
+* A survey test, one that checks odds or what a set of levels holds over
+  many runs or trials, calls `api.smallSample()` from `onLoad` and, when it
+  returns true, plays only a few runs or trials and skips the assertions
+  that need the full sample. A harness change runs every test that way
+  (`nix run .#itj-impure-tests -- --small-samples`), so that the change
+  still exercises the survey code without waiting minutes for it.
+  `fixtures.zoneCensus` and `fixtures.assertAllPresent` do this themselves.
 * To check what a zone's levels hold, survey them with `fixtures.zoneCensus`,
   which generates the same set of seeded levels every time. A test that
   wants other seeds than the fixed one sets them with

@@ -15,13 +15,16 @@
 # reinstalls the whole bundle (Docs/Adr/0009-one-module-owns-the-live-game-instance.md).
 usage() {
         cat <<'EOF'
-Usage: itj-impure-tests [TEST_NAME | --files FILE,FILE... | --help]
+Usage: itj-impure-tests [TEST_NAME | --files FILE,FILE... |
+                         --small-samples [FILE,FILE...] | --help]
 
 With no argument, runs every test. With a name, runs only that test (still
 from the fixed seed) and fails if no registered test has it; it takes one
 name, and --files runs several tests. With --files, runs only the tests
 registered by the named test files (basenames, e.g. weapons.lua), in
-registration order.
+registration order. With --small-samples, runs every test, and each survey
+test takes its small sample unless its file is named (`api.smallSample` in
+TestFramework/api.lua).
 
 Values a test reports with `api.observe` appear as
 `OBSERVED <test> <key>=<value>` lines in the output.
@@ -42,8 +45,8 @@ usageError() {
         exit 2
 }
 
-# The selection form (all, name or files) and the most arguments it takes,
-# counting the option itself.
+# The selection form (all, name, files or small-samples) and the most
+# arguments it takes, counting the option itself.
 mode=all
 maxArgs=0
 case "${1:-}" in
@@ -57,6 +60,10 @@ case "${1:-}" in
         if [ -z "${2:-}" ]; then
                 usageError "--files needs a comma-separated list of test files"
         fi
+        ;;
+--small-samples)
+        mode=small-samples
+        maxArgs=2
         ;;
 -*)
         usageError "unknown option $1"
@@ -116,8 +123,9 @@ declare -A counts=([PASS]=0 [XFAIL]=0 [FAIL]=0 [XPASS]=0)
 
 # runPass SELECTION EXPECTED MOD...: installs the mods with the framework and
 # runs the selection (empty for every registered test, a bare test name, or
-# `file: a.lua b.lua`) once each of the EXPECTED test files (space-separated
-# basenames) has registered a test. Prints the new log lines, adds their
+# `file: a.lua b.lua`, optionally followed by a `small-samples-except:` line)
+# once each of the EXPECTED test files (space-separated basenames) has
+# registered a test. Prints the new log lines, adds their
 # results to counts and returns non-zero unless every selected test passed.
 runPass() {
         local selection=$1 expected=$2
@@ -193,7 +201,13 @@ claimSelection=""
 runCode=1
 runClaim=1
 
-if [ "$mode" = files ]; then
+if [ "$mode" = small-samples ]; then
+        IFS=, read -ra fullList <<<"${2:-}"
+        smallSamples="small-samples-except: ${fullList[*]}"
+        codeSelection=$smallSamples
+        claimSelection="file: ${claimFiles[*]}
+$smallSamples"
+elif [ "$mode" = files ]; then
         codeList=()
         claimList=()
         IFS=, read -ra fileList <<<"$2"

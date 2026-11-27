@@ -98,7 +98,8 @@ local function setText(set)
 end
 
 -- The inputs are the shapes `runPass` in `Mods/LiveGame/itj-impure-tests.bash`
--- writes: an `expect:` line, then the selection, which may be empty.
+-- writes: an `expect:` line, then the selection, which may be empty, and a
+-- `small-samples-except:` line.
 api.registerTest({
 	name = "selectionParsing",
 	onLoad = function()
@@ -121,6 +122,18 @@ api.registerTest({
 		assert(kind == "files", "file: line parsed as " .. tostring(kind))
 		assert(setText(selected) == "b.lua c.lua", "selected files: " .. setText(selected))
 		assert(setText(expected) == "a.lua", "expected files beside file: " .. setText(expected))
+
+		local _, _, _, fullSample = api.parseSelection("expect: a.lua\n")
+		assert(fullSample == nil, "no small-samples-except: line, yet small samples")
+
+		kind, _, _, fullSample = api.parseSelection("expect: a.lua\nsmall-samples-except: \n")
+		assert(kind == nil, "an empty small-samples-except: line made a selection")
+		assert(setText(fullSample) == "", "full-sample files: " .. setText(fullSample))
+
+		kind, selected, _, fullSample =
+			api.parseSelection("expect: a.lua\nfile: b.lua\nsmall-samples-except: b.lua c.lua\n")
+		assert(kind == "files" and setText(selected) == "b.lua", "selection beside small samples")
+		assert(setText(fullSample) == "b.lua c.lua", "full-sample files: " .. setText(fullSample))
 	end,
 })
 

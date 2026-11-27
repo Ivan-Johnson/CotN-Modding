@@ -161,8 +161,10 @@ for _, typeName in ipairs(TYPES) do
 	asyncTest("batRandomWalk" .. typeName, function(_, finish)
 		local s = { acts = 0, moves = 0, diagonal = 0, closer = 0, expectedCloser = 0, outcomes = {} }
 		local last, hp, actedLast
-		-- A Bat acts half as often, so it gets twice the trials.
-		local count = typeName == "Bat" and 16 or 8
+		-- A Bat acts half as often, so it gets twice the trials. A small
+		-- sample (api.smallSample) plays one trial and skips the statistics.
+		local small = testsApi.smallSample()
+		local count = small and 1 or typeName == "Bat" and 16 or 8
 		trials(typeName, count, 2, 1, nil, fixtures.repeated("idle", 24), function(index, bat)
 			if index == 1 then
 				last = { x = 2, y = 1 }
@@ -218,6 +220,10 @@ for _, typeName in ipairs(TYPES) do
 				if type(value) == "number" then
 					testsApi.observe(key, value)
 				end
+			end
+			if small then
+				finish()
+				return
 			end
 			assert(s.moves >= 0.95 * s.acts, "a bat steps on nearly every action")
 			if typeName == "Bat3" then

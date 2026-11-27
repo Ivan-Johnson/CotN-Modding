@@ -1,15 +1,20 @@
 # Reads the repo paths a change touches, one per line on stdin, and prints
 # `none` if no live test (`itj-impure-tests`) can be affected by them, `all`
-# if every test must run, or else the test files to run, one basename per line
-# (e.g. `weapons.lua`), which `itj-impure-tests --files` runs alone. Called by
-# `build-release` (DevTools) from the git hooks. The rules are
+# if every test must run, `args: --small-samples [FILE,...]` if every test
+# must run but survey tests may take their small sample, or else the test
+# files to run, one basename per line (e.g. `weapons.lua`), which
+# `itj-impure-tests --files` runs alone. Called by `build-release` (DevTools)
+# from the git hooks, which runs `itj-impure-tests` with the words after
+# `args:`. The rules are
 # Docs/Adr/0008-claim-tests-run-only-when-their-page-changes.md:
 #
 # * A claim test file runs when it or its page changes.
 # * A code-test mod's tests (its `tests.lua` and `*-tests.lua`) run when
 #   anything in that mod changes.
-# * A harness path, or any path no rule names, runs everything, so a new kind
-#   of file fails safe. So does empty input (e.g. a message-only amend).
+# * A harness path runs everything, with survey tests taking their small
+#   sample, except those in the test files the other rules select.
+# * Any path no rule names runs everything at full size, so a new kind of
+#   file fails safe. So does empty input (e.g. a message-only amend).
 #
 # Usage: itj-impure-scope [REPO_ROOT] <paths
 # REPO_ROOT (default: the git toplevel) is the tree whose claim test and code
@@ -90,6 +95,7 @@ done
 shopt -u nullglob
 
 seen=0
+harness=0
 testFiles=()
 while IFS= read -r path; do
 	if [[ -z $path ]]; then
@@ -100,8 +106,7 @@ while IFS= read -r path; do
 	mod=${path#Mods/}
 	mod=${mod%%/*}
 	if hasPrefix "$path" "${harnessPrefixes[@]}"; then
-		echo all
-		exit 0
+		harness=1
 	elif [[ $path == Mods/ClaimTests/*.lua && $path != Mods/ClaimTests/*/* ]]; then
 		# A deleted claim test file has nothing left to run.
 		if [[ -e $root/$path ]]; then
@@ -128,6 +133,10 @@ done
 
 if ((seen == 0)); then
 	echo all
+elif ((harness)); then
+	# The files the other rules selected keep their survey tests' full sample.
+	full=$(printf '%s\n' "${testFiles[@]}" | sort -u | paste -sd, -)
+	echo "args: --small-samples${full:+ $full}"
 elif ((${#testFiles[@]} == 0)); then
 	echo none
 else

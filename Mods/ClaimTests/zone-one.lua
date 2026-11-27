@@ -35,7 +35,7 @@ testsApi.registerTest({
 		end
 		fixtures.zoneCensus(1, 8, false, function(allZones)
 			check(allZones)
-			assert(allZones.entities.Bat2, "Bat2 in an all-zones run")
+			assert(allZones.entities.Bat2 or testsApi.smallSample(), "Bat2 in an all-zones run")
 			fixtures.zoneCensus(1, 8, true, function(singleZone)
 				check(singleZone)
 				assert(not singleZone.entities.Bat2, "no Bat2 in a single-zone run")
