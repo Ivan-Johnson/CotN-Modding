@@ -2,21 +2,9 @@
 # which locks the game for that pass, waits for the suite and hands back the
 # new log lines; this script prints them and judges the results.
 #
-# Environment:
-#   ITJ_MODS_ROOT  default <git toplevel>/Mods
-#   live-game-run's variables (the lock, its timeouts) apply to each pass.
-#
-# Usage: itj-impure-tests [TEST_NAME | --files FILE,FILE...]
-# With no argument, runs every test. With a name, runs only that test (still
-# from the fixed seed) and fails if no registered test has it. With --files,
-# runs only the tests registered by the named test files (basenames, e.g.
-# weapons.lua), in registration order.
-# Values a test reports with `api.observe` appear as
-# `OBSERVED <test> <key>=<value>` lines in the output.
-# The last line totals the run's results, e.g.
-# `itj-impure-tests: all tests pass: 132 PASS, 3 XFAIL, 0 FAIL, 0 XPASS`, or
-# `run failed:` in place of `all tests pass:`. `build-release` shows the last
-# line of a successful run, so keep it last.
+# Usage: `itj-impure-tests --help`; the text lives in usage() below.
+# `build-release` shows the last line of a successful run, so keep the totals
+# line last.
 #
 # A run has up to two passes, each one install and one reload: the code pass
 # installs every code-test mod (a mod with a `tests.lua` or `*-tests.lua`), and
@@ -25,6 +13,64 @@
 # (Docs/Adr/0008-claim-tests-run-only-when-their-page-changes.md). Another
 # caller may use the game between the passes, which is safe because each pass
 # reinstalls the whole bundle (Docs/Adr/0009-one-module-owns-the-live-game-instance.md).
+usage() {
+        cat <<'EOF'
+Usage: itj-impure-tests [TEST_NAME | --files FILE,FILE... | --help]
+
+With no argument, runs every test. With a name, runs only that test (still
+from the fixed seed) and fails if no registered test has it; it takes one
+name, and --files runs several tests. With --files, runs only the tests
+registered by the named test files (basenames, e.g. weapons.lua), in
+registration order.
+
+Values a test reports with `api.observe` appear as
+`OBSERVED <test> <key>=<value>` lines in the output.
+The last line totals the run's results, e.g.
+`itj-impure-tests: all tests pass: 132 PASS, 3 XFAIL, 0 FAIL, 0 XPASS`, or
+`run failed:` in place of `all tests pass:`.
+
+Environment:
+  ITJ_MODS_ROOT  default <git toplevel>/Mods
+  live-game-run's variables (the lock, its timeouts) apply to each pass.
+EOF
+}
+
+# usageError REASON: exits 2 before anything is installed.
+usageError() {
+        echo "itj-impure-tests: $1" >&2
+        echo "Run 'itj-impure-tests --help' for usage." >&2
+        exit 2
+}
+
+# The selection form (all, name or files) and the most arguments it takes,
+# counting the option itself.
+mode=all
+maxArgs=0
+case "${1:-}" in
+-h | --help)
+        usage
+        exit 0
+        ;;
+--files)
+        mode=files
+        maxArgs=2
+        if [ -z "${2:-}" ]; then
+                usageError "--files needs a comma-separated list of test files"
+        fi
+        ;;
+-*)
+        usageError "unknown option $1"
+        ;;
+"") ;;
+*)
+        mode=name
+        maxArgs=1
+        ;;
+esac
+if (($# > maxArgs)); then
+        usageError "unexpected arguments: ${*:maxArgs+1} (one test name per run; --files selects several test files)"
+fi
+
 modsRoot="${ITJ_MODS_ROOT:-$(git rev-parse --show-toplevel)/Mods}"
 
 # The test files of each pass, and the code-test mods, as itj-impure-scope.bash
@@ -147,11 +193,7 @@ claimSelection=""
 runCode=1
 runClaim=1
 
-if [ "${1:-}" = "--files" ]; then
-        if [ -z "${2:-}" ]; then
-                echo "itj-impure-tests: --files needs a comma-separated list of test files" >&2
-                exit 1
-        fi
+if [ "$mode" = files ]; then
         codeList=()
         claimList=()
         IFS=, read -ra fileList <<<"$2"
@@ -166,7 +208,7 @@ if [ "${1:-}" = "--files" ]; then
         runClaim=$((${#claimList[@]} > 0))
         codeSelection="file: ${codeList[*]}"
         claimSelection="file: ${claimList[*]}"
-elif [ -n "${1:-}" ]; then
+elif [ "$mode" = name ]; then
         codeSelection=$1
         claimSelection=$1
 else
@@ -179,7 +221,7 @@ if ((${#claimFiles[@]} == 0)); then
 fi
 
 status=0
-if [ -n "${1:-}" ] && [ "${1:-}" != "--files" ]; then
+if [ "$mode" = name ]; then
         # A named test lives in one pass. Try the claim pass first, as most
         # named runs explore the game, and fall back to the code pass.
         if ((runClaim)); then

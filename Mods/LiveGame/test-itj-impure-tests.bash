@@ -29,6 +29,38 @@ export ITJ_MODS_ROOT="$goodRepo/Mods"
 export ITJ_GAME_STALL_SECONDS=2
 startFakeGame "$modsDir/DevBundle" "$COTN_LOG" "$scratch/frozen"
 
+# Help prints the usage text and exits 0 without installing anything.
+for helpArg in --help -h; do
+	status=0
+	stdout=$(itj-impure-tests "$helpArg" 2>&1) || status=$?
+	if ((status != 0)) || ! grep -q "^Usage: itj-impure-tests" <<<"$stdout" || [ -e "$modsDir/DevBundle" ]; then
+		echo "FAIL: $helpArg did not print the usage alone (status $status); output was:" >&2
+		echo "$stdout" >&2
+		exit 1
+	fi
+done
+
+# expectUsageError REASON ARG...: the run exits 2 with REASON on stderr and
+# installs nothing.
+expectUsageError() {
+	local reason=$1 stderr status=0
+	shift
+	stderr=$(itj-impure-tests "$@" 2>&1 >/dev/null) || status=$?
+	if ((status != 2)) || ! grep -qF -- "$reason" <<<"$stderr" || [ -e "$modsDir/DevBundle" ]; then
+		echo "FAIL: '$*' was not a usage error (status $status); stderr was:" >&2
+		echo "$stderr" >&2
+		exit 1
+	fi
+}
+
+# An unknown option is not taken for a test name.
+expectUsageError "unknown option --bogus" --bogus
+# A run takes no more arguments than its form, so a dropped one never looks
+# like a pass.
+expectUsageError "unexpected arguments: scratchB scratchC" scratchA scratchB scratchC
+expectUsageError "unexpected arguments: b.lua" --files a.lua b.lua
+expectUsageError "--files needs a comma-separated list" --files
+
 # A game whose log goes silent fails the run, and the restart instruction
 # reaches the user.
 status=0

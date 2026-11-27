@@ -19,9 +19,9 @@ question:
    errors and undefined globals in seconds; the live game only reports them
    after a full install and reload.
 3. Run just that test: `nix run .#itj-impure-tests -- <testName>`. It runs
-   from the same fixed seed as in the full suite. To run every test
-   registered by some files instead: `nix run .#itj-impure-tests -- --files
-   weapons.lua,bombs.lua`.
+   from the same fixed seed as in the full suite. It takes one name;
+   `-- --help` lists the other forms. To run every test registered by some
+   files instead: `nix run .#itj-impure-tests -- --files weapons.lua,bombs.lua`.
 4. Read the `OBSERVED <test> <key>=<value>` lines and the `PASS`/`FAIL` line
    in what it prints; the last line totals the results. A Lua error in
    `onLoad` shows as `FAIL` with the message.
