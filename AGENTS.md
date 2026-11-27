@@ -44,12 +44,6 @@ than silently overriding it.
   live tests that the changed paths can affect. The `commit-msg` and
   `pre-push` hooks run it. How it picks the live tests, and how to run them
   yourself: `Mods/AGENTS.md`, "Dev loop"; why: ADRs 0008 and 0009.
-* A commit that can affect the live tests reloads the game and wipes the live
-  run, and its hook may first wait up to a whole test pass while another
-  caller, such as another session's tests, holds the game. The build output
-  says when it skips them. During a live run, commit only paths that cannot
-  affect them, or skip the checks with a `WIP` subject or `--no-verify` and
-  run `build-release` at the end.
 * A crashed or hung game fails every live run with "game not responding".
   Restarting the game is the user's job; agents cannot reach it from the
   sandbox.
