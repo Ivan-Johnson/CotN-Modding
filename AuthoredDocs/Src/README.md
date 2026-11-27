@@ -59,4 +59,6 @@ A wiki of linked pages about the game's things, for Cadence.
   container prices, and its bomb-throwing shopkeeper.
 * [conjurer.md](./conjurer.md): the Conjurer's secret room, where gold buys
   a random item for a chosen slot.
+* [blood-shop.md](./blood-shop.md): the secret shop that sells for health, and
+  its shopkeeper.
 * [cadence.md](./cadence.md) and [dove.md](./dove.md): the characters.
