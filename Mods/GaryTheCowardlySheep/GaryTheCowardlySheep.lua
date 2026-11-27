@@ -1,5 +1,6 @@
--- Gary the Cowardly Sheep: a copy of Mary whose sheep, Gary, cowers while a
--- hostile enemy is near and dies of fright if something gets behind him then.
+-- Gary the Cowardly Sheep: Muriel, a copy of Mary whose sheep, Gary, cowers
+-- while a hostile enemy is near and dies of fright if something gets behind
+-- him then.
 -- Terms: GLOSSARY.md beside this file.
 local Action = require "necro.game.system.Action"
 local Color = require "system.utils.Color"
@@ -22,8 +23,12 @@ local NAMESPACE = (function()
 	return assert(message:match("^([^/]+)/"))
 end)()
 
+-- Muriel's entity name, which a custom entity type prefixes with the
+-- namespace, and her display name.
+local MURIEL = "Muriel"
+
 local M = {
-	CHARACTER = NAMESPACE .. "_GaryTheCowardlySheep",
+	CHARACTER = NAMESPACE .. "_" .. MURIEL,
 	SHEEP = NAMESPACE .. "_Gary",
 }
 
@@ -32,12 +37,12 @@ local M = {
 local MARY_XML_ID = 12
 
 CustomEntities.extend({
-	name = "GaryTheCowardlySheep",
+	name = MURIEL,
 	template = CustomEntities.template.player(MARY_XML_ID),
 })
 
--- Components Mary has that Gary the Cowardly Sheep must not copy: the XML
--- mapping would make the game treat him as Mary.
+-- Components Mary has that Muriel must not copy: the XML mapping would make
+-- the game treat her as Mary.
 local NOT_COPIED = {
 	name = true,
 	playerXMLMapping = true,
@@ -46,8 +51,8 @@ local NOT_COPIED = {
 
 -- Mary's sheep is the entity type Marv, which no template reaches, so Gary is
 -- a copy of Marv's finished definition, added once every custom entity is
--- built. Marv has no gameplay facing, so Gary gets one; Gary the Cowardly Sheep
--- also gets every component of Mary's that the XML template left out.
+-- built. Marv has no gameplay facing, so Gary gets one; Muriel gets her own
+-- display name and every component of Mary's that the XML template left out.
 event.entitySchemaGenerate.add("addGary", { order = "customEntities", sequence = 1 }, function(ev)
 	local mary
 	local marv
@@ -66,6 +71,7 @@ event.entitySchemaGenerate.add("addGary", { order = "customEntities", sequence =
 			character[component] = Utilities.deepCopy(fields)
 		end
 	end
+	character.friendlyName = { name = MURIEL }
 	local sheep = Utilities.deepCopy(marv)
 	sheep.name = M.SHEEP
 	sheep.facingDirection = {}
@@ -80,8 +86,7 @@ local COWER_DISTANCE = 2
 local FRIGHT_ZONE_COLOR = Color.rgba(255, 0, 0, 96)
 local COWER_ZONE_COLOR = Color.rgba(255, 255, 0, 96)
 
--- Calls fn(character, gary) for each living Gary and the Gary the Cowardly
--- Sheep he follows.
+-- Calls fn(character, gary) for each living Gary and the Muriel player he follows.
 local function eachGary(fn)
 	for character in Entities.entitiesWithComponents({ "characterWithFollower" }) do
 		if character.name == M.CHARACTER then

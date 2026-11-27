@@ -8,11 +8,11 @@ if not ok then
 	return
 end
 local fixtures = require "TestFramework.fixtures"
-local cowardlySheep = require "GaryTheCowardlySheep.GaryTheCowardlySheep"
+local garyMod = require "GaryTheCowardlySheep.GaryTheCowardlySheep"
 
--- Each test plays Gary the Cowardly Sheep in no-beat mode on an open floor.
--- Mary starts at (0,0) sharing Gary's tile; "up" is toward negative y. Two
--- steps right leave Mary at (2,0) and Gary at (1,0) facing right, so his
+-- Each test plays Muriel in no-beat mode on an open floor.
+-- Muriel starts at (0,0) sharing Gary's tile; "up" is toward negative y. Two
+-- steps right leave Muriel at (2,0) and Gary at (1,0) facing right, so his
 -- Fright zone is x in {-1, 0}, y in {-1, 0, 1}.
 
 local function sheep()
@@ -28,12 +28,19 @@ local function assertAlive(what)
 end
 
 local function scene(name, actions, checks)
-	fixtures.scene({ name = name, character = cowardlySheep.CHARACTER, actions = actions, checks = checks })
+	fixtures.scene({ name = name, character = garyMod.CHARACTER, actions = actions, checks = checks })
 end
+
+scene("murielIsNamedMuriel", { "idle" }, {
+	[1] = function()
+		local name = fixtures.player().friendlyName.name
+		assert(name == "Muriel", "the character is called " .. tostring(name))
+	end,
+})
 
 scene("hostileEnemyBehindCoweringGaryFrightensHimToDeath", { "right", "right", "idle" }, {
 	[2] = function()
-		fixtures.assertAt(sheep(), 1, 0, "Gary trails Mary")
+		fixtures.assertAt(sheep(), 1, 0, "Gary trails Muriel")
 		fixtures.spawn("Slime", 0, 1)
 	end,
 	[3] = function()
@@ -41,42 +48,42 @@ scene("hostileEnemyBehindCoweringGaryFrightensHimToDeath", { "right", "right", "
 	end,
 })
 
--- Mary steps onto Gary's tile, which he does not leave, then into his Fright
+-- Muriel steps onto Gary's tile, which he does not leave, then into his Fright
 -- zone, while a green slime two tiles to his side keeps him Cowering.
-local function maryBacksIntoGary(name, prepare, verdict)
+local function murielBacksIntoGary(name, prepare, verdict)
 	scene(name, { "right", "right", "left", "left" }, {
 		[2] = prepare,
 		[3] = function()
-			fixtures.assertAt(sheep(), 1, 0, "Gary stays put as Mary steps onto his tile")
-			assertAlive("Mary sharing Gary's tile")
+			fixtures.assertAt(sheep(), 1, 0, "Gary stays put as Muriel steps onto his tile")
+			assertAlive("Muriel sharing Gary's tile")
 		end,
 		[4] = verdict,
 	})
 end
 
-maryBacksIntoGary("maryBehindCoweringGaryFrightensHimToDeath", function()
+murielBacksIntoGary("murielBehindCoweringGaryFrightensHimToDeath", function()
 	fixtures.spawn("Slime", 1, 2)
 end, function()
-	assertDead("Mary directly behind Gary while a slime is two tiles away")
+	assertDead("Muriel directly behind Gary while a slime is two tiles away")
 end)
 
-maryBacksIntoGary("enemyThreeTilesAwayLeavesGaryCalm", function()
+murielBacksIntoGary("enemyThreeTilesAwayLeavesGaryCalm", function()
 	fixtures.spawn("Slime", 1, 3)
 end, function()
-	assertAlive("Mary behind Gary while the only slime is three tiles away")
+	assertAlive("Muriel behind Gary while the only slime is three tiles away")
 end)
 
-maryBacksIntoGary("wallDoesNotShieldGaryFromCowering", function()
+murielBacksIntoGary("wallDoesNotShieldGaryFromCowering", function()
 	fixtures.spawn("Slime", 1, 2)
 	fixtures.wallColumn(1, 1, 1)
 end, function()
-	assertDead("Mary behind Gary while a slime two tiles away is behind a wall")
+	assertDead("Muriel behind Gary while a slime two tiles away is behind a wall")
 end)
 
-maryBacksIntoGary("unprovokedShopkeeperLeavesGaryCalm", function()
+murielBacksIntoGary("unprovokedShopkeeperLeavesGaryCalm", function()
 	fixtures.spawn("Shopkeeper", 1, 2)
 end, function()
-	assertAlive("Mary behind Gary while the only enemy near is an unprovoked shopkeeper")
+	assertAlive("Muriel behind Gary while the only enemy near is an unprovoked shopkeeper")
 end)
 
 scene("unprovokedShopkeeperBehindGaryLeavesHimAlive", { "right", "right", "idle" }, {
@@ -89,7 +96,7 @@ scene("unprovokedShopkeeperBehindGaryLeavesHimAlive", { "right", "right", "idle"
 	end,
 })
 
--- A provoked shopkeeper kills Mary within a turn of reaching her, so he starts
+-- A provoked shopkeeper kills Muriel within a turn of reaching her, so he starts
 -- behind Gary, who stands between them, and chasing her keeps him in the
 -- Fright zone.
 scene("provokedShopkeeperBehindGaryFrightensHimToDeath", { "right", "right", "idle" }, {
@@ -122,19 +129,19 @@ for _, containerType in ipairs({ "Crate", "Crate2" }) do
 		end,
 	})
 
-	maryBacksIntoGary(containerType .. "NearGaryLeavesHimCalm", function()
+	murielBacksIntoGary(containerType .. "NearGaryLeavesHimCalm", function()
 		fixtures.spawn(containerType, 1, 2)
 	end, function()
-		assertAlive("Mary behind Gary while the only thing near is a " .. containerType)
+		assertAlive("Muriel behind Gary while the only thing near is a " .. containerType)
 	end)
 end
 
 -- A dormant exploding mushroom is provokable and unprovoked, like a shopkeeper.
-maryBacksIntoGary("dormantExplodingMushroomLeavesGaryCalm", function()
+murielBacksIntoGary("dormantExplodingMushroomLeavesGaryCalm", function()
 	local mushroom = fixtures.spawn("MushroomExploding", 1, 2)
 	assert(not mushroom.provokable.active, "the exploding mushroom is unprovoked")
 end, function()
-	assertAlive("Mary behind Gary while the only enemy near is a dormant exploding mushroom")
+	assertAlive("Muriel behind Gary while the only enemy near is a dormant exploding mushroom")
 end)
 
 scene("garyFacingDiagonallyHasNoFrightZone", { "right", "right", "idle" }, {

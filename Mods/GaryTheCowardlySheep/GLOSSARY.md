@@ -1,19 +1,19 @@
 # Gary the Cowardly Sheep
 
 Vocabulary for the `GaryTheCowardlySheep` mod's game design: a playable
-character like Mary whose sheep is a coward. Synchrony API terms are in
-`Mods/GLOSSARY.md`.
+character, **Muriel**, like Mary but whose sheep is a coward. Synchrony API
+terms are in `Mods/GLOSSARY.md`.
 
 ## Language
 
-**Gary the Cowardly Sheep**:
-A selectable playable character, identical to Mary except that her sheep is
-**Gary**. Mary herself is unchanged.
-_Avoid_: Gary mod, Mary variant
+**Muriel**:
+A selectable playable character, identical to Mary except for her name and
+that her sheep is **Gary**. Mary herself is unchanged.
+_Avoid_: Gary the Cowardly Sheep (the mod's name), Mary variant
 
 **Gary**:
-The sheep that accompanies **Gary the Cowardly Sheep**, in place of Mary's
-sheep. Always the sheep, never the character.
+The sheep that accompanies **Muriel**, in place of Mary's sheep. Always the
+sheep, never the character.
 _Avoid_: Lamb, pet, familiar
 
 **Hostile enemy**:
@@ -46,7 +46,7 @@ Facing is diagonal or before he has one.
 _Avoid_: Behind zone, danger zone
 
 **Death by fright**:
-**Gary**'s instant death when Mary or a **Hostile enemy** occupies the
+**Gary**'s instant death when **Muriel** or a **Hostile enemy** occupies the
 **Fright zone** while he **Cowers**. Its consequence is the same as a vanilla
 sheep's death; only the cause is new.
 _Avoid_: Scare death

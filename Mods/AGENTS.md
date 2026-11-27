@@ -18,7 +18,7 @@ do not: each group's role and what it is coupled to.
 * `TestFramework/`: the test framework. `api.lua` holds the test contract,
   `fixtures.lua` the shared helpers, and `TestFramework.lua` the framework's
   self-tests and the suite start.
-* `GaryTheCowardlySheep/`: the Gary the Cowardly Sheep character mod, and
+* `GaryTheCowardlySheep/`: the character mod for Muriel and her sheep Gary, and
   its code tests in `gary-tests.lua`. Its game-design terms are in its own
   `GLOSSARY.md`.
 * `ScrapeGameData/`: the GameData context's scraper. Its `DATA` log lines are
