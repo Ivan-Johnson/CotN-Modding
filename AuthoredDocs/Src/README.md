@@ -63,4 +63,6 @@ A wiki of linked pages about the game's things, for Cadence.
   its shopkeeper.
 * [transmogrifier.md](./transmogrifier.md): the secret room that swaps an
   item for a random new one, its price and its slot tiles.
+* [shriner.md](./shriner.md): the secret room that sells shrines, and its
+  dragon fight.
 * [cadence.md](./cadence.md) and [dove.md](./dove.md): the characters.
