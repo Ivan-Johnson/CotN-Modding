@@ -53,7 +53,7 @@
 #                                  that printed an older one. A diagnostic
 #                                  for reloads that load only part of an
 #                                  install; it does not change the exit
-#                                  status.
+#                                  status. The dev shell sets it.
 
 usage() {
 	echo "live-game-run: $1" >&2

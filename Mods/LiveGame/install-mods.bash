@@ -33,6 +33,7 @@
 #                               so the log shows which files ran this copy.
 #                               Every file then changes on each install, so
 #                               the game reloads all of them each time.
+#                               The dev shell sets it.
 #   ITJ_BUNDLE_EXTRA_FILE       optional "<mod>/<file>" in the bundle to create
 #                               holding ITJ_BUNDLE_EXTRA_CONTENT, so the mod
 #                               sees it from its first load; a reinstall

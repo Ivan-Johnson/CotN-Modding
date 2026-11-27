@@ -71,8 +71,9 @@ do not: each group's role and what it is coupled to.
   installs every code-test mod (each mod with a `tests.lua` or
   `*-tests.lua`) and `TestFramework` with `live-game-run`, and in a
   second pass `ClaimTests` and `TestFramework`. Each pass locks the game,
-  forces `TestFramework` to reload so its test run fires, waits for the
-  suite, and prints only the new `NecroDancer.log` lines. The run's last
+  forces `TestFramework` to reload so its test run fires (in the dev
+  shell, every installed Lua file, as `ITJ_BUNDLE_STAMP_ALL` is set),
+  waits for the suite, and prints only the new `NecroDancer.log` lines. The run's last
   line totals both passes, and every round with `--repeat`, e.g.
   `itj-impure-tests: all tests pass: 132 PASS,
   3 XFAIL, 0 FAIL, 0 XPASS`; read that rather than counting lines in

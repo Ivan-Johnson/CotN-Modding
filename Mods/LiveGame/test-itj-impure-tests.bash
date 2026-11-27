@@ -17,6 +17,8 @@ trap '[ -n "$fakeGamePid" ] && kill "$fakeGamePid" 2>/dev/null; rm -rf "$scratch
 export ITJ_GAME_LOCK_FILE="$scratch/game.lock"
 export COTN_LOCAL_MODS_DIR="$modsDir"
 export COTN_LOG="$scratch/NecroDancer.log"
+# The dev shell turns stamping on, which changes the fake game's log.
+unset ITJ_BUNDLE_STAMP_ALL
 
 # The repo holds two minimal mods, so each install succeeds.
 goodRepo="$scratch/good-repo"

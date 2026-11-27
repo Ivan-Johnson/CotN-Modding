@@ -21,6 +21,8 @@ export ITJ_MODS_ROOT="$scratch/repo/Mods"
 export ITJ_GAME_LOCK_FILE="$lockFile"
 export COTN_LOCAL_MODS_DIR="$modsDir"
 export COTN_LOG="$scratch/NecroDancer.log"
+# The dev shell turns stamping on; the cases below opt in themselves.
+unset ITJ_BUNDLE_STAMP_ALL
 
 # Two minimal mods, each with the entry script the default reload touches.
 for mod in Alpha Beta; do

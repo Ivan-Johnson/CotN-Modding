@@ -288,6 +288,9 @@ in
                         export COTN_LOCAL_MODS_DIR="$COTN_COMPATDATA/pfx/drive_c/users/steamuser/AppData/Local/NecroDancer/mods/"
 
                         export COTN_LOG="${cotnLogPath}"
+                        # Evidence for when the game stops loading the installed mods;
+                        # see live-game-run.bash.
+                        export ITJ_BUNDLE_STAMP_ALL=1
                         # The whole Proton prefix is read-only (e.g. for replays); the
                         # mods dir is bound read-write on top of it.
                         export EXTRA_RO_BINDS="''${EXTRA_RO_BINDS:+''$EXTRA_RO_BINDS:}$COTN_LOG:$COTN_COMPATDATA"
